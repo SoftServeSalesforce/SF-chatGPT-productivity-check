@@ -18,6 +18,16 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
         }
     }
 
+    createNewOrder() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__objectPage',
+            attributes: {
+                objectApiName: 'Order',
+                actionName: 'new'
+            }
+        });
+    }
+
     navigateToOrderRecord(event) {
         const orderId = event.currentTarget.dataset.id;
         this[NavigationMixin.Navigate]({

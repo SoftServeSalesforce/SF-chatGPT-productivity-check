@@ -210,3 +210,102 @@ Copy code
 This approach ensures that the navigation is handled through the Lightning platform's native mechanisms, providing a consistent user experience.
 
 After implementing these changes, clicking the order number will use the NavigationMixin to navigate to the respective order record.
+
+On the card of LWC Component make Title look same as LWC Datatable with button to create new Order
+ChatGPT
+To make the title look like the one in lightning-datatable and add a "New Order" button, you'd typically use SLDS classes in combination with a lightning-button.
+
+Here's how you can achieve that:
+
+Adjusted LWC Component
+HTML ordersListView.html:
+
+html
+Copy code
+<template>
+    <lightning-card>
+        <div class="slds-page-header slds-page-header_object-home">
+            <div class="slds-media">
+                <div class="slds-media__figure">
+                    <span class="slds-icon_container slds-icon-standard-order" title="Orders">
+                        <lightning-icon icon-name="standard:order" alternative-text="Orders" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Orders</span>
+                    </span>
+                </div>
+                <div class="slds-media__body">
+                    <div class="slds-grid slds-grid_align-spread">
+                        <div class="slds-col slds-has-flexi-truncate">
+                            <div class="slds-media slds-no-space slds-grow">
+                                <div class="slds-media__body">
+                                    <h1 class="slds-page-header__title slds-truncate" title="Orders List">Orders List</h1>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-no-flex slds-grid slds-align-top">
+                            <div class="slds-button-group" role="group">
+                                <lightning-button label="New Order" onclick={createNewOrder}></lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ... Your Table Code ... -->
+    </lightning-card>
+</template>
+JavaScript ordersListView.js:
+
+Add a method to handle the creation of a new Order:
+
+javascript
+Copy code
+// ... Rest of your imports ...
+
+export default class OrdersListView extends NavigationMixin(LightningElement) {
+    // ... Rest of your class ...
+
+    createNewOrder() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__objectPage',
+            attributes: {
+                objectApiName: 'Order',
+                actionName: 'new'
+            }
+        });
+    }
+}
+The createNewOrder method uses the NavigationMixin to navigate the user to the new record page for the Order object.
+
+This will give you a title that looks similar to the lightning-datatable title with a "New Order" button next to it.
+
+
+
+
+User
+h1 tag with Orders List text isnt visible on page how I can fix that?
+ChatGPT
+If the h1 tag with the "Orders List" text isn't visible, it might be due to the slds-truncate class causing the text to be truncated or other potential CSS issues. Let's troubleshoot and solve this step by step:
+
+Ensure Correctness of SLDS Classes: Firstly, double-check the Salesforce Lightning Design System (SLDS) classes used in the h1 tag. The combination of classes you've used, especially slds-truncate, could be causing the text to be hidden if there's not enough space.
+
+Explicit Width: Try giving an explicit width to the element with the slds-truncate class. This sometimes helps as the slds-truncate class needs a defined width to determine when to truncate.
+
+html
+Copy code
+<h1 class="slds-page-header__title slds-truncate" title="Orders List" style="width: 200px;">Orders List</h1>
+This is more of a quick fix. Ideally, you'd identify the root cause of the layout issue and solve it without hardcoding widths.
+
+Check Parent Elements: Ensure that parent elements are not causing the h1 tag to be hidden or pushed out of view.
+
+SLDS Updates: Salesforce does update SLDS periodically. It's possible that there have been changes or updates that might affect the visibility. Check the current documentation for any changes.
+
+Use Browser's Developer Tools: Open your browser's developer tools and inspect the element. This can provide insights into whether:
+
+The element has actually been rendered.
+The text color hasn't accidentally been set to the background color.
+The element isn't being hidden by an overflow CSS property on a parent container.
+Custom CSS: If you have custom CSS in your org or in this component, ensure that there aren't any styles conflicting with the visibility of the h1 tag.
+
+Recheck LWC Code: Ensure that the component's JavaScript code or other parts of the HTML aren't dynamically affecting the visibility of the title.
+
+By following the above steps and systematically checking each potential cause, you should be able to diagnose and fix the issue with the h1 visibility. If none of these solutions work, it might be beneficial to reconstruct the component bit by bit, testing at each step to identify when the problem emerges.
