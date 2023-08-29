@@ -153,25 +153,21 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
         let hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
         let minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
 
-        let result = '';
+        if (years > 0) return this.combineTime('year', years, 'month', months);
+        if (months > 0) return this.combineTime('month', months, 'day', days);
+        if (days > 0) return this.combineTime('day', days, 'hour', hours);
+        if (hours > 0) return this.combineTime('hour', hours, 'minute', minutes);
+        return this.formatTime('minute', minutes);
+    }
 
-        if (years > 0) {
-            result += `${years} year${years > 1 ? 's' : ''} `;
-            if (months > 0) result += `${months} month${months > 1 ? 's' : ''}`;
-        } else if (months > 0) {
-            result += `${months} month${months > 1 ? 's' : ''} `;
-            if (days > 0) result += `${days} day${days > 1 ? 's' : ''}`;
-        } else if (days > 0) {
-            result += `${days} day${days > 1 ? 's' : ''} `;
-            if (hours > 0) result += `${hours} hour${hours > 1 ? 's' : ''}`;
-        } else if (hours > 0) {
-            result += `${hours} hour${hours > 1 ? 's' : ''} `;
-            if (minutes > 0) result += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-        } else {
-            result = `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-        }
+    formatTime(unit, value) {
+        return `${value} ${unit}${value > 1 ? 's' : ''}`;
+    }
 
-        return result.trim();
+    combineTime(primaryUnit, primaryValue, secondaryUnit, secondaryValue) {
+        let result = this.formatTime(primaryUnit, primaryValue);
+        if (secondaryValue > 0) result += ' ' + this.formatTime(secondaryUnit, secondaryValue);
+        return result;
     }
 
     getStatusClass(status) {

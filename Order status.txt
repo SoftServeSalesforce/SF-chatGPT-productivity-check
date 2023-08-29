@@ -336,3 +336,79 @@ export default class OrderTable extends LightningElement {
     }
 }
 This code now allows for combinations of time units (like "1 year 7 months" or "7 months 15 days") in the getTimeDifference function's output.
+Could you refactor getTimeDifference to simplier functions to reduce complexity of function?
+ChatGPT
+Certainly! We can break the getTimeDifference function into smaller utility functions, which would handle the calculation and formatting of each time unit. This modular approach can improve readability and reduce the complexity of the main function:
+
+javascript
+Copy code
+import { LightningElement, api, track } from 'lwc';
+
+export default class OrderTable extends LightningElement {
+    @track orders = []; // This should be populated with the actual data
+
+    getTotalSeconds(lastChangedDate) {
+        let currentDate = new Date();
+        let statusDate = new Date(lastChangedDate);
+        return Math.floor((currentDate - statusDate) / 1000);
+    }
+
+    formatTime(unit, value) {
+        return `${value} ${unit}${value > 1 ? 's' : ''}`;
+    }
+
+    getTimeDifference(lastChangedDate) {
+        let totalSeconds = this.getTotalSeconds(lastChangedDate);
+
+        let years = this.getYears(totalSeconds);
+        totalSeconds -= years * 365 * 24 * 60 * 60;
+
+        let months = this.getMonths(totalSeconds);
+        totalSeconds -= months * 30 * 24 * 60 * 60;
+
+        let days = this.getDays(totalSeconds);
+        totalSeconds -= days * 24 * 60 * 60;
+
+        let hours = this.getHours(totalSeconds);
+        totalSeconds -= hours * 60 * 60;
+
+        let minutes = this.getMinutes(totalSeconds);
+
+        if (years > 0) return this.combineTime('year', years, 'month', months);
+        if (months > 0) return this.combineTime('month', months, 'day', days);
+        if (days > 0) return this.combineTime('day', days, 'hour', hours);
+        if (hours > 0) return this.combineTime('hour', hours, 'minute', minutes);
+        return this.formatTime('minute', minutes);
+    }
+
+    getYears(seconds) {
+        return Math.floor(seconds / (365 * 24 * 60 * 60));
+    }
+
+    getMonths(seconds) {
+        return Math.floor(seconds / (30 * 24 * 60 * 60));
+    }
+
+    getDays(seconds) {
+        return Math.floor(seconds / (24 * 60 * 60));
+    }
+
+    getHours(seconds) {
+        return Math.floor(seconds / (60 * 60));
+    }
+
+    getMinutes(seconds) {
+        return Math.floor(seconds / 60);
+    }
+
+    combineTime(primaryUnit, primaryValue, secondaryUnit, secondaryValue) {
+        let result = this.formatTime(primaryUnit, primaryValue);
+        if (secondaryValue > 0) result += ' ' + this.formatTime(secondaryUnit, secondaryValue);
+        return result;
+    }
+
+    getBadgeClass(status) {
+        // ... the same code as provided before ...
+    }
+}
+The main function getTimeDifference is now more readable as we've abstracted the calculations and formatting to separate utility functions.
