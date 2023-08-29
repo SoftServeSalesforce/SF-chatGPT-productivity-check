@@ -1,0 +1,42 @@
+<template>
+    <lightning-card title="Orders List" icon-name="standard:order">
+        <div class="slds-p-around_medium">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            <div title="Order Number">Number</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Start Date">Date</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Status">Status</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Amount">Amount (USD)</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={orders} for:item="order">
+                        <tr key={order.orderId}>
+                            <td data-label="Order Number">
+                                <a data-id={order.orderId} onclick={navigateToOrderRecord}>{order.orderNumber}</a>
+                            </td>
+                            <td data-label="Start Date">
+                                {order.startDate}
+                            </td>
+                            <td data-label="Status">
+                                {order.status}
+                            </td>
+                            <td data-label="Amount">
+                                ${order.amount}
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </lightning-card>
+</template>

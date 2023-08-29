@@ -1,0 +1,212 @@
+Great, now you need make adjustments to code provided and create new LWC component with this details: 
+Create LWC component that displays list of orders in table view. 
+The component must load data via apex controller created on previous steps with following fields:
+Number (link to order record)
+Date (Start Date)
+Status (text)
+Amount (currency in USD)
+Provide code for LWC and Apex classes with modifications
+ChatGPT
+Absolutely! I'll help you adjust the code accordingly and create the LWC component.
+
+1. Adjustments to Apex Classes
+Firstly, we need to modify our Apex classes to reflect the fields you've mentioned:
+
+Adjusted AccountOrdersController.cls:
+
+apex
+Copy code
+public class AccountOrdersController {
+    
+    // Wrapper class for Order SObject
+    public class OrderDTO {
+        public Id orderId;
+        public String orderNumber;
+        public Date startDate;
+        public String status;
+        public Decimal amount;
+        
+        public OrderDTO(Order o) {
+            this.orderId = o.Id;
+            this.orderNumber = o.OrderNumber;
+            this.startDate = o.EffectiveDate; // Assuming this is the start date
+            this.status = o.Status;
+            this.amount = o.TotalAmount; // This might be a custom field. Adjust accordingly
+        }
+    }
+    
+    @AuraEnabled(cacheable=true)
+    public static List<OrderDTO> getOrders(Id accountId) {
+        List<Order> orderList = OrderSelector.getOrdersByAccountId(accountId);
+        List<OrderDTO> orderDTOList = new List<OrderDTO>();
+        for(Order o : orderList) {
+            orderDTOList.add(new OrderDTO(o));
+        }
+        return orderDTOList;
+    }
+}
+Adjusted OrderSelector.cls:
+
+apex
+Copy code
+public class OrderSelector {
+    
+    public static List<Order> getOrdersByAccountId(Id accountId) {
+        return [SELECT Id, OrderNumber, EffectiveDate, Status, TotalAmount 
+                FROM Order 
+                WHERE AccountId = :accountId];
+    }
+}
+2. LWC Component
+HTML ordersListView.html:
+
+html
+Copy code
+<template>
+    <lightning-card title="Orders List" icon-name="standard:order">
+        <div class="slds-p-around_medium">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            <div title="Order Number">Number</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Start Date">Date</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Status">Status</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Amount">Amount (USD)</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={orders} for:item="order">
+                        <tr key={order.orderId}>
+                            <td data-label="Order Number">
+                                <a href={"/lightning/r/Order/" + order.orderId + "/view"}>{order.orderNumber}</a>
+                            </td>
+                            <td data-label="Start Date">
+                                {order.startDate}
+                            </td>
+                            <td data-label="Status">
+                                {order.status}
+                            </td>
+                            <td data-label="Amount">
+                                ${order.amount}
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </lightning-card>
+</template>
+JavaScript ordersListView.js:
+
+javascript
+Copy code
+import { LightningElement, api, wire } from 'lwc';
+import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+
+export default class OrdersListView extends LightningElement {
+    @api recordId; // Assuming this component is on a record page and the recordId is the Account Id
+    orders = [];
+    
+    @wire(getOrders, { accountId: '$recordId' })
+    wiredOrders({ error, data }) {
+        if(data) {
+            this.orders = data;
+            this.error = undefined;
+        } else if(error) {
+            this.error = error;
+            this.orders = undefined;
+        }
+    }
+}
+Meta XML ordersListView.js-meta.xml:
+
+xml
+Copy code
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>52.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordPage</target>
+    </targets>
+</LightningComponentBundle>
+Make sure to deploy all these components to Salesforce and then you can drag and drop the LWC ordersListView onto an Account record page in Lightning App Builder.
+
+
+
+
+User
+In your code change link to record using JavaScript method with NavigationMixin
+ChatGPT
+Certainly! Using NavigationMixin in LWC is a great way to navigate to records, URLs, etc.
+
+Let's adjust our LWC code to incorporate the NavigationMixin.
+
+Adjusted LWC Component
+JavaScript ordersListView.js:
+
+First, you'll need to import NavigationMixin and wrap your class with it:
+
+javascript
+Copy code
+import { LightningElement, api, wire } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
+import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+
+export default class OrdersListView extends NavigationMixin(LightningElement) {
+    @api recordId; // Assuming this component is on a record page and the recordId is the Account Id
+    orders = [];
+    
+    @wire(getOrders, { accountId: '$recordId' })
+    wiredOrders({ error, data }) {
+        if(data) {
+            this.orders = data;
+            this.error = undefined;
+        } else if(error) {
+            this.error = error;
+            this.orders = undefined;
+        }
+    }
+
+    navigateToOrderRecord(event) {
+        const orderId = event.currentTarget.dataset.id;
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: orderId,
+                actionName: 'view'
+            }
+        });
+    }
+}
+HTML ordersListView.html:
+
+Adjust the Order Number field to use the JavaScript navigation method:
+
+html
+Copy code
+<template>
+    <!-- ... rest of your code ... -->
+                <tbody>
+                    <template for:each={orders} for:item="order">
+                        <tr key={order.orderId}>
+                            <td data-label="Order Number">
+                                <a data-id={order.orderId} onclick={navigateToOrderRecord} href="javascript:void(0);">{order.orderNumber}</a>
+                            </td>
+                            <!-- ... rest of your rows ... -->
+                        </tr>
+                    </template>
+                </tbody>
+    <!-- ... rest of your code ... -->
+</template>
+This approach ensures that the navigation is handled through the Lightning platform's native mechanisms, providing a consistent user experience.
+
+After implementing these changes, clicking the order number will use the NavigationMixin to navigate to the respective order record.
