@@ -11,10 +11,8 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
     wiredOrders({ error, data }) {
         if(data) {
             this.orders = JSON.parse(JSON.stringify(data));
-            console.log(this.orders);
             this.error = undefined;
         } else if(error) {
-            console.log(error);
             this.error = error;
             this.orders = undefined;
         }
@@ -22,7 +20,6 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
 
     navigateToOrderRecord(event) {
         const orderId = event.currentTarget.dataset.id;
-        console.log(orderId);
         this[NavigationMixin.Navigate]({
             type: 'standard__recordPage',
             attributes: {
