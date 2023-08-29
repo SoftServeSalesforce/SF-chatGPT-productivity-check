@@ -1,0 +1,60 @@
+Act as Salesforce Developer, using sfdx cli v2 you need to create scratch org and deploy empty project to newly created org, show only short steps
+ChatGPT
+Certainly! Here's a concise step-by-step guide to create a scratch org and deploy an empty project using Salesforce DX (SFDX) CLI v2:
+
+Install Salesforce CLI (if not already done)
+
+You can download the latest Salesforce CLI from the official Salesforce site and install it.
+
+Authenticate with Dev Hub (if not already done)
+
+Copy code
+sfdx auth:web:login -d -a MyDevHub
+-d denotes this as the default Dev Hub org.
+-a assigns an alias (MyDevHub in this example) to the org for easier reference.
+
+Set up an Empty Project
+
+Create a new directory and navigate into it:
+
+bash
+Copy code
+mkdir MyEmptyProject && cd MyEmptyProject
+Create a new Salesforce DX project:
+
+lua
+Copy code
+sfdx force:project:create -n . 
+Create a Scratch Org
+
+First, you'll want to create a configuration file for your scratch org, if you don't already have one. By default, project-scratch-def.json is created in the config directory of your Salesforce DX project. Modify it if needed.
+
+Then, create the scratch org:
+
+lua
+Copy code
+sfdx force:org:create -f config/project-scratch-def.json -a MyScratchOrg
+-a assigns an alias (MyScratchOrg in this example) to the org for easier reference.
+
+Push the Project to Scratch Org
+
+Since the project is empty, this step will essentially be setting up the metadata structure in the scratch org without actually pushing any tangible components. Still, the command to use is:
+
+bash
+Copy code
+sfdx force:source:push -u MyScratchOrg
+Open the Scratch Org (Optional)
+
+If you want to view your scratch org in a web browser:
+
+arduino
+Copy code
+sfdx force:org:open -u MyScratchOrg
+Delete Scratch Org (when done)
+
+When you're finished with the scratch org, you can delete it with:
+
+arduino
+Copy code
+sfdx force:org:delete -u MyScratchOrg
+That's it! Remember, these commands are provided in a generic manner. Depending on your specific setup and needs, you might need to adjust parameters or add additional commands.
