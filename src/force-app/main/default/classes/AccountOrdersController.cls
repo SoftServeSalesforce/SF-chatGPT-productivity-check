@@ -1,5 +1,6 @@
 public with sharing class AccountOrdersController {
-    public List<OrderDTO> getOrders(Id accountId) {
+    @AuraEnabled(cacheable=true)
+    public static List<OrderDTO> getOrders(Id accountId) {
         if(accountId == null || String.isBlank(accountId)) {
             throw new IllegalArgumentException('Invalid Account ID provided.');
         }

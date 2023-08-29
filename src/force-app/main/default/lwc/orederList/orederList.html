@@ -1,0 +1,31 @@
+<template>
+    <lightning-card title="Orders">
+        <template if:true={orders}>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr>
+                        <th scope="col">Number</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={orders} for:item="order">
+                        <tr key={order.orderId}>
+                            <td><lightning-button label={order.orderName} variant="base" onclick={handleNavigation} data-id={order.orderId}></lightning-button></td>
+                            <td>{order.startDate}</td>
+                            <td>{order.status}</td>
+                            <td>
+                                <lightning-formatted-number value={order.amount} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+        <template if:true={error}>
+            {error}
+        </template>
+    </lightning-card>
+</template>

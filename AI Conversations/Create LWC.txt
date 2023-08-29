@@ -1,0 +1,253 @@
+---------------------------------------
+Here is my second assignment:
+ - Create LWC component that displays list of orders in table view.  
+ - The component must load data via apex controller created on previous steps with following fields: 
+ 1.  Number (link to order record) 
+ 2. Date (Start Date) 
+ 3. Status (text) 
+ 4. Amount (currency in USD) 
+ - Put the component on FlexiPage for Account 
+---------------------------------------
+Certainly! Given that you've already created the `AccountOrdersController` Apex class, we can proceed to creating the LWC component that displays the list of orders in a table view.
+
+1. **LWC Component Creation**:
+
+Let's start with the files you'll need:
+
+- `orderList.html`
+- `orderList.js`
+- `orderList.js-meta.xml`
+
+**orderList.html:**
+```html
+<template>
+    <lightning-card title="Orders">
+        <template if:true={orders}>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr>
+                        <th scope="col">Number</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={orders} for:item="order">
+                        <tr key={order.orderId}>
+                            <td><a href={"/lightning/r/Order/" + order.orderId + "/view"}>{order.orderName}</a></td>
+                            <td>{order.startDate}</td>
+                            <td>{order.status}</td>
+                            <td>${order.amount}</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+        <template if:true={error}>
+            {error}
+        </template>
+    </lightning-card>
+</template>
+```
+
+**orderList.js:**
+```javascript
+import { LightningElement, api, wire } from 'lwc';
+import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+
+export default class OrderList extends LightningElement {
+    @api recordId; // This is the Account Id when you place this LWC in Account FlexiPage
+    orders;
+    error;
+
+    @wire(getOrders, { accountId: '$recordId' })
+    wiredOrders({ error, data }) {
+        if (data) {
+            this.orders = data;
+            this.error = undefined;
+        } else if (error) {
+            this.error = error;
+            this.orders = undefined;
+        }
+    }
+}
+```
+
+**orderList.js-meta.xml:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>53.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordPage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordPage">
+            <objects>
+                <object>Account</object>
+            </objects>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>
+```
+
+2. **Adding to FlexiPage**:
+
+After you have developed and deployed your LWC:
+
+- Navigate to the Account object in Setup.
+- Edit the Lightning Record Page where you want to place the LWC.
+- Drag and drop your LWC (`orderList`) onto the FlexiPage.
+- Save and activate the page.
+
+Remember:
+
+- You might need to adapt the code depending on your Order object fields, especially in the Apex wrapper and LWC.
+- Ensure you test the component thoroughly in a sandbox or scratch org before deploying to production.
+
+Hope this helps with your assignment! Let me know if you have further questions or require more information on any part.
+---------------------------------------
+IDE shows me an errors in html code:
+---------------------------------------
+I apologize for the oversight. Let's address the issues step by step.
+
+1. **Formatting Currency in the LWC Component**:
+   
+   LWC doesn't directly support currency formatting in the template with the curly braces like `{order.amount}`. Instead, you can use `lightning-formatted-number` for currency.
+
+2. **Navigating to a Record from a LWC Component**:
+
+   The anchor tag approach (`<a>`) is simplistic. A better way is to use `lightning-navigation` for navigation. This involves a slight tweak in the JS and the template.
+
+Here's how to correct the issues:
+
+**orderList.html (revised)**:
+```html
+<template>
+    <lightning-card title="Orders">
+        <template if:true={orders}>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr>
+                        <th scope="col">Number</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={orders} for:item="order">
+                        <tr key={order.orderId}>
+                            <td><lightning-button label={order.orderName} variant="base" onclick={handleNavigation} data-id={order.orderId}></lightning-button></td>
+                            <td>{order.startDate}</td>
+                            <td>{order.status}</td>
+                            <td>
+                                <lightning-formatted-number value={order.amount} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+        <template if:true={error}>
+            {error}
+        </template>
+    </lightning-card>
+</template>
+```
+
+**orderList.js (revised)**:
+
+Import the necessary module for navigation:
+
+```javascript
+import { NavigationMixin } from 'lightning/navigation';
+```
+
+Now, extend the class with the `NavigationMixin`:
+
+```javascript
+export default class OrderList extends NavigationMixin(LightningElement) {
+    // ... rest of the code
+
+    handleNavigation(event) {
+        const orderId = event.currentTarget.dataset.id;
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: orderId,
+                actionName: 'view'
+            }
+        });
+    }
+}
+```
+
+These corrections should help you navigate to the record when clicking the Order Name and display the currency correctly. Make sure to test thoroughly in your environment after making these changes.
+---------------------------------------
+another eroor using the apex class in js file:
+Unable to find Apex action method referenced as 'AccountOrdersController.getOrders'.
+---------------------------------------
+If the Salesforce IDE is unable to find the Apex action method `AccountOrdersController.getOrders`, there could be a few reasons. Here are some steps to diagnose and fix the issue:
+
+1. **Check the Apex Class**: 
+   
+   Ensure that the `AccountOrdersController` class has the method `getOrders` and is `@AuraEnabled`. The method signature should look something like this:
+
+   ```apex
+   public class AccountOrdersController {
+       @AuraEnabled(cacheable=true)
+       public static List<OrderDTO> getOrders(Id accountId) {
+           // implementation
+       }
+   }
+   ```
+
+2. **Namespace**: 
+
+   If your Salesforce instance uses a namespace (especially in managed packages), you'll have to prefix your Apex class with that namespace when importing in LWC. 
+
+   ```javascript
+   import getOrders from '@salesforce/apex/NAMESPACE__AccountOrdersController.getOrders';
+   ```
+
+3. **Refreshing the SFDX Project**:
+
+   Sometimes the local environment and the Salesforce org might be out of sync. Try to:
+
+   - Refresh your SFDX project.
+   - Ensure that the Apex class is saved and compiled without errors.
+   - Pull the latest changes from your Salesforce org to your local development environment.
+   
+4. **Deployment**:
+
+   If you're working in a scratch org or sandbox, ensure the Apex class has been successfully deployed to the org where you're testing the LWC.
+
+5. **Check for Typos**:
+
+   Make sure there's no typo in the class name or method name in both the Apex class and LWC.
+
+6. **Security & Permissions**:
+
+   Ensure that the profile or permission set associated with the user you're logged in as has access to the `AccountOrdersController` class. 
+
+7. **API Version**:
+
+   Ensure that both your LWC and the Apex class are using compatible API versions. Sometimes, discrepancies in the API version can cause unexpected behaviors.
+
+8. **Recompile the Apex Class**:
+
+   Go to Developer Console, open your class, and simply save it again. Sometimes a simple recompile can fix unexpected issues.
+
+9. **Clearing Cache**:
+
+   Sometimes, the local cache can cause discrepancies. Clearing the cache (or using a hard reload in your browser) might solve the problem.
+
+10. **Checking Developer Console**:
+
+   Open the Developer Console and check the logs when you load the LWC component. This might give more details about what might be going wrong.
+
+If after all these steps you're still facing the issue, consider checking the Salesforce Developer forums or Salesforce Stack Exchange for any similar issues or edge cases related to your specific setup.
+---------------------------------------
