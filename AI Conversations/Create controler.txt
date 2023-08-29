@@ -1,0 +1,85 @@
+---------------------------------------
+Hi. I'm a Salesforce Developer,  I am doing a task in which I need to use Apex and LWC. 
+I was given Acceptance criteria: 
+ - All custom metadata, including Apex and LWC code is deployed to environment without errors. 
+ - The source code should be without commented or unused functions and methods. 
+ - Publicly accessible methods must validate input parameters for correctness and follow fail-fast approach. 
+Help me complete the tasks, as an experienced Salesforce Developer.
+
+Here is my first assignment:
+ - Create new apex AccountOrdersController class as a back-end actions controller with method getOrders(Id accountId) that accepts account id parameter. 
+ - Create wrapper (inner) class OrderDTO for Order SObject. 
+ - Create OrderSelector class (with factory method) that incapsulates SOQL query. 
+ - Controller must use the selector instead of inline query. 
+ - Wrap selected records and return to the caller.
+
+---------------------------------------
+Sure, let's break down your assignment step by step and provide solutions for each part.
+
+1. AccountOrdersController Class:
+This is the main controller class where you will have the getOrders method that accepts an accountId.
+
+2. OrderDTO Class:
+This is the wrapper class for the Order SObject.
+
+3. OrderSelector Class:
+This class encapsulates the SOQL query. It should have a factory method to retrieve the orders for the given account.
+
+4. No Inline SOQL Query:
+In the AccountOrdersController, you'll use the OrderSelector to fetch the orders, rather than using an inline SOQL.
+
+Here's a basic version of how you can structure the classes:
+// AccountOrdersController.cls
+public class AccountOrdersController {
+    
+    public List<OrderDTO> getOrders(Id accountId) {
+        // Validate the input
+        if(accountId == null || String.isBlank(accountId)) {
+            throw new IllegalArgumentException('Invalid Account ID provided.');
+        }
+        
+        List<Order> orders = OrderSelector.getOrdersByAccountId(accountId);
+        List<OrderDTO> orderDTOList = new List<OrderDTO>();
+        
+        for(Order o : orders) {
+            orderDTOList.add(new OrderDTO(o));
+        }
+        
+        return orderDTOList;
+    }
+    
+    // OrderDTO inner class
+    public class OrderDTO {
+        public Id orderId;
+        public String orderName;
+        // ... any other fields you might want from the Order object
+        
+        public OrderDTO(Order o) {
+            this.orderId = o.Id;
+            this.orderName = o.Name;
+            // ... populate other fields
+        }
+    }
+}
+
+// OrderSelector.cls
+public class OrderSelector {
+    
+    public static List<Order> getOrdersByAccountId(Id accountId) {
+        return [SELECT Id, Name, ... FROM Order WHERE AccountId = :accountId]; // Add all the necessary fields from Order object
+    }
+}
+
+This is a basic implementation. Depending on your org and the specific requirements of your project, you may need to make some modifications.
+
+Few Points to Remember:
+
+Validation: Always validate your input. Since the acceptance criteria specify a "fail-fast approach," if you find an issue with your inputs (like a null or invalid Account ID), throw an exception immediately.
+
+Unused Code: Make sure you don’t have any commented-out code or unused methods/functions before deploying.
+
+Tests: Always write unit tests for your code to ensure everything works as expected and you meet the required code coverage for deployment.
+
+Hope this helps you with your assignment! If you have further questions or require deeper assistance with any part, let me know.
+
+---------------------------------------
