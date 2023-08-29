@@ -1,0 +1,57 @@
+Act as professional Salesforce Developer, you got next instructions provide me with titles and contents of files :
+1. Create new apex AccountOrdersController class as a back-end actions controller with method getOrders(Id accountId) that accepts account id parameter. 
+2. Create wrapper (inner) class OrderDTO for Order SObject inside of AccountOrdersController class . 
+3. Create OrderSelector class (with factory method) that incapsulates SOQL query. 
+4. Controller must use the selector instead of inline query. 
+5. Wrap selected records and return to the caller. 
+ChatGPT
+Sure, let's break it down step by step.
+
+1 & 2. AccountOrdersController Class with getOrders Method and OrderDTO Wrapper
+File: AccountOrdersController.cls
+
+apex
+Copy code
+public class AccountOrdersController {
+    
+    // Wrapper class for Order SObject
+    public class OrderDTO {
+        public Id orderId;
+        public String orderName;
+        // Add other fields as necessary
+        
+        public OrderDTO(Order o) {
+            this.orderId = o.Id;
+            this.orderName = o.Name;
+            // map other fields
+        }
+    }
+    
+    public List<OrderDTO> getOrders(Id accountId) {
+        List<Order> orderList = OrderSelector.getOrdersByAccountId(accountId);
+        List<OrderDTO> orderDTOList = new List<OrderDTO>();
+        for(Order o : orderList) {
+            orderDTOList.add(new OrderDTO(o));
+        }
+        return orderDTOList;
+    }
+}
+3. OrderSelector Class
+File: OrderSelector.cls
+
+apex
+Copy code
+public class OrderSelector {
+    
+    public static List<Order> getOrdersByAccountId(Id accountId) {
+        return [SELECT Id, Name /*, other fields you want to select*/ 
+                FROM Order 
+                WHERE AccountId = :accountId];
+    }
+}
+4 & 5. Controller using the Selector and Returning Wrapped Records
+The getOrders method in the AccountOrdersController class, as shown above, already uses the OrderSelector for the SOQL query and returns the wrapped records to the caller.
+
+With the above classes in place, the desired flow is achieved. The AccountOrdersController class's getOrders method takes an AccountId, then uses the OrderSelector class to retrieve the related Order records. It then wraps these records into a list of OrderDTO instances and returns this list.
+
+Note: Ensure that the fields and relationships in these examples match your actual Salesforce org's schema. Adjust field names and relationships as needed. If there are other specific fields or logic required, you can expand on these class templates as necessary.
