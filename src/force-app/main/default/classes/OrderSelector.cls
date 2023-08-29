@@ -1,4 +1,4 @@
-public class OrderSelector {
+public inherited sharing class OrderSelector {
     
     public static List<Order> getOrdersByAccountId(Id accountId) {
         return [SELECT Id, Name

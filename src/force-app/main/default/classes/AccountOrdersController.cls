@@ -1,4 +1,4 @@
-public class AccountOrdersController {
+public with sharing class AccountOrdersController {
     
     // Wrapper class for Order SObject
     public class OrderDTO {
@@ -13,12 +13,17 @@ public class AccountOrdersController {
         }
     }
     
-    public List<OrderDTO> getOrders(Id accountId) {
-        List<Order> orderList = OrderSelector.getOrdersByAccountId(accountId);
-        List<OrderDTO> orderDTOList = new List<OrderDTO>();
-        for(Order o : orderList) {
-            orderDTOList.add(new OrderDTO(o));
+    @AuraEnabled
+    public static List<OrderDTO> getOrders(Id accountId) {
+        try {
+            List<Order> orderList = OrderSelector.getOrdersByAccountId(accountId);
+            List<OrderDTO> orderDTOList = new List<OrderDTO>();
+            for(Order o : orderList) {
+                orderDTOList.add(new OrderDTO(o));
+            }
+            return orderDTOList;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
         }
-        return orderDTOList;
     }
 }
