@@ -134,8 +134,58 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
                 activateValue: 'activate_' + order.orderId,
                 markShippedValue: 'markShipped_' + order.orderId,
                 previewInvoiceValue: 'previewInvoice_' + order.contentDocumentId,
-                downloadInvoiceValue: 'downloadInvoice_' + order.contentDocumentId
+                downloadInvoiceValue: 'downloadInvoice_' + order.contentDocumentId,
+                statusTime: this.getTimeDifference(order.lastStatusChanged),
+                statusClass: this.getStatusClass(order.status)
             };
         });
+    }
+
+    getTimeDifference(lastChangedDate) {
+        let currentDate = new Date();
+        let statusDate = new Date(lastChangedDate);
+        
+        let totalSeconds = Math.floor((currentDate - statusDate) / 1000);
+
+        let years = Math.floor(totalSeconds / (365 * 24 * 60 * 60));
+        let months = Math.floor((totalSeconds % (365 * 24 * 60 * 60)) / (30 * 24 * 60 * 60));
+        let days = Math.floor((totalSeconds % (30 * 24 * 60 * 60)) / (24 * 60 * 60));
+        let hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+        let minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+
+        let result = '';
+
+        if (years > 0) {
+            result += `${years} year${years > 1 ? 's' : ''} `;
+            if (months > 0) result += `${months} month${months > 1 ? 's' : ''}`;
+        } else if (months > 0) {
+            result += `${months} month${months > 1 ? 's' : ''} `;
+            if (days > 0) result += `${days} day${days > 1 ? 's' : ''}`;
+        } else if (days > 0) {
+            result += `${days} day${days > 1 ? 's' : ''} `;
+            if (hours > 0) result += `${hours} hour${hours > 1 ? 's' : ''}`;
+        } else if (hours > 0) {
+            result += `${hours} hour${hours > 1 ? 's' : ''} `;
+            if (minutes > 0) result += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        } else {
+            result = `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        }
+
+        return result.trim();
+    }
+
+    getStatusClass(status) {
+        switch(status) {
+            case 'Draft':
+                return 'badge-draft';
+            case 'Activated':
+                return 'badge-activated';
+            case 'Shipped':
+                return 'badge-shipped';
+            case 'Delivered':
+                return 'badge-delivered';
+            default:
+                return 'badge-draft';
+        }
     }
 }

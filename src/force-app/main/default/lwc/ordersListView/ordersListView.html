@@ -59,7 +59,10 @@
                                 {order.startDate}
                             </td>
                             <td data-label="Status">
-                                {order.status}
+                                <div class="slds-var-m-around_medium">
+                                    <span class="slds-text-title">{order.statusTime} in </span>
+                                    <lightning-badge label={order.status} class={order.statusClass}></lightning-badge>
+                                </div>
                             </td>
                             <td data-label="Amount">
                                 ${order.amount}

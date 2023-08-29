@@ -1,0 +1,20 @@
+
+.badge-activated {
+    --slds-c-badge-color-background: #FFD1A1;
+    --slds-c-badge-text-color: #D46A28;
+}
+
+.badge-shipped {
+    --slds-c-badge-color-background: #A8C8D5;
+    --slds-c-badge-text-color: #28536D;
+}
+
+.badge-delivered {
+    --slds-c-badge-color-background: #A8D5BA;
+    --slds-c-badge-text-color: #286D4E;
+}
+
+.badge-draft {
+    --slds-c-badge-color-background: #D6D6D6;
+    --slds-c-badge-text-color: #595959;
+}

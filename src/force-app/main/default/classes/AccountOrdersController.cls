@@ -27,6 +27,8 @@ public with sharing class AccountOrdersController {
         public String invoiceName;
         @AuraEnabled
         public Id contentDocumentId;
+        @AuraEnabled
+        public Datetime lastStatusChanged;
         
         
         public OrderDTO(Order ord) {
@@ -35,6 +37,7 @@ public with sharing class AccountOrdersController {
             this.startDate = ord.EffectiveDate; // Assuming this is the start date
             this.status = ord.Status;
             this.amount = ord.TotalAmount; // This might be a custom field. Adjust accordingly
+            this.lastStatusChanged = ord.LastStatusChanged__c;
             
             if(!ord.AttachedContentDocuments.isEmpty()) {
                 this.invoiceId = ord.AttachedContentDocuments[0].Id;
