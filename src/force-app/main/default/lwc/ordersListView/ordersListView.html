@@ -41,10 +41,16 @@
                         <th scope="col">
                             <div title="Amount">Amount (USD)</div>
                         </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Invoice">Invoice</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Actions"></div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <template for:each={orders} for:item="order">
+                    <template for:each={processedOrders} for:item="order">
                         <tr key={order.orderId}>
                             <td data-label="Order Number">
                                 <a data-id={order.orderId} onclick={navigateToOrderRecord}>{order.orderNumber}</a>
@@ -57,6 +63,25 @@
                             </td>
                             <td data-label="Amount">
                                 ${order.amount}
+                            </td>
+                            <td data-label="Invoice">
+                                <template if:true={order.contentDocumentId}>
+                                    <lightning-icon icon-name="utility:download" size="small" title="Download Invoice" onclick={handleDownloadInvoiceIcon} data-id={order.contentDocumentId}></lightning-icon>
+                                </template>
+                            </td>
+                            <td data-label="Actions">
+                                <lightning-button-menu alternative-text="Actions" onselect={handleMenuSelect} icon-name="utility:down" icon-size="small">
+                                    <template if:true={order.isDraft}>
+                                        <lightning-menu-item value={order.activateValue} label="Activate"></lightning-menu-item>
+                                    </template>
+                                    <template if:true={order.isActivated}>
+                                        <lightning-menu-item value={order.markShippedValue} label="Mark as Shipped"></lightning-menu-item>
+                                    </template>
+                                    <template if:true={order.contentDocumentId}>
+                                        <lightning-menu-item value={order.previewInvoiceValue} label="Preview Invoice"></lightning-menu-item>
+                                        <lightning-menu-item value={order.downloadInvoiceValue} label="Download Invoice"></lightning-menu-item>
+                                    </template>
+                                </lightning-button-menu>
                             </td>
                         </tr>
                     </template>
