@@ -1,0 +1,354 @@
+---------------------------------------
+
+Here is my third assignment:
+1. Update apex controller with two new action methods: 
+ - Activate Order 
+ - Mark Order as Shipped 
+ - The action logic must verify that orders are in appropriate status before updating status (Several users may work simultaneously). And, return response with status and error message if any. E.g.: {status: <OK|ERROR>, ErrorMessage: <null | ’Invalid Operation for Order #123’>} 
+2. Update selector and DTO classes with additional information about invoice file (Latest Salesforce file attached to order with name that starts with ‘Invoice’, e.g.: Invoice-123.pdf, InvoiceForPepsi2023.pdf) 
+3. Update LWC with:
+ - column ‘Invoice’ that displays clickable ‘Download’ icon (only for orders that have invoice file) 
+ - four row actions: 
+    1) Activate (visible only for Draft orders) 
+    2) Mark as Shipped (visible only for Active orders) 
+    3) Preview Invoice – navigates to standard file preview page (visible only for orders that have invoice file) 
+    4) Download Invoice (visible only for orders that have invoice file) 
+
+---------------------------------------
+
+This is a comprehensive task. I'll provide you with a basic outline and some sample code snippets to help you complete your assignment.
+
+**1. Update Apex Controller with New Action Methods:**
+
+```apex
+public class AccountOrdersController {
+
+    @AuraEnabled
+    public static Map<String, Object> activateOrder(Id orderId) {
+        Map<String, Object> response = new Map<String, Object>();
+
+        Order ord = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
+        if(ord.Status != 'Draft') {
+            response.put('status', 'ERROR');
+            response.put('ErrorMessage', 'Invalid Operation for Order #' + orderId);
+            return response;
+        }
+
+        ord.Status = 'Activated';
+        update ord;
+
+        response.put('status', 'OK');
+        response.put('ErrorMessage', null);
+        return response;
+    }
+
+    @AuraEnabled
+    public static Map<String, Object> markOrderAsShipped(Id orderId) {
+        Map<String, Object> response = new Map<String, Object>();
+
+        Order ord = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
+        if(ord.Status != 'Activated') {
+            response.put('status', 'ERROR');
+            response.put('ErrorMessage', 'Invalid Operation for Order #' + orderId);
+            return response;
+        }
+
+        ord.Status = 'Shipped';
+        update ord;
+
+        response.put('status', 'OK');
+        response.put('ErrorMessage', null);
+        return response;
+    }
+}
+```
+
+**2. Update Selector and DTO classes for Invoice:**
+
+In `OrderSelector`:
+
+```apex
+public static List<Order> getOrdersWithInvoiceInfo(Id accountId) {
+    return [SELECT Id, Status, (SELECT Id, Title FROM AttachedContentDocuments WHERE Title LIKE 'Invoice%') FROM Order WHERE AccountId = :accountId];
+}
+```
+
+In `OrderDTO`:
+
+Add attributes for `invoiceId` and `invoiceName`.
+
+**3. Update LWC Component:**
+
+In your component, you'll want to add a column for 'Invoice' and integrate row actions for Activate, Mark as Shipped, Preview Invoice, and Download Invoice. 
+
+Given the comprehensive nature of your requirements, I recommend making changes in steps:
+
+- Add an 'Invoice' column to your data table.
+  
+- Implement the row actions. Salesforce Lightning DataTable supports row actions, so you would define actions and then conditionally show them based on your order data.
+
+- Implement the Apex calls for the actions using the row actions' `action` attribute.
+
+- Make use of `lightning-file-download-button` for the 'Download' feature if you're storing the invoice as a Salesforce File. 
+
+This is a very high-level guide due to the complexity of the tasks, but it should set you on the right path. I recommend breaking down the tasks into smaller pieces, implementing one feature at a time, and testing each thoroughly before moving to the next. If you have any issues with specific parts of the task, please let me know, and I'll be happy to provide more detailed guidance!
+---------------------------------------
+
+describe in more detail using the change code in OrderDTO
+
+---------------------------------------
+
+Certainly! The `OrderDTO` (Data Transfer Object) is a way to create an easily serializable object with the necessary fields for your frontend components, without exposing the entire SObject or making additional SOQL queries on the frontend.
+
+Given the changes to incorporate invoice information, you would want to update the `OrderDTO` to include attributes that relate to the invoice, such as `invoiceId` and `invoiceName`.
+
+**1. Enhancing the OrderDTO:**
+
+Let's start by updating the `OrderDTO` class:
+
+```apex
+public class OrderDTO {
+
+    public Id orderId {get; set;}
+    public String status {get; set;}
+    // ... any other attributes from Order you want to expose ...
+
+    public Id invoiceId {get; set;}
+    public String invoiceName {get; set;}
+
+    public OrderDTO(Order ord) {
+        this.orderId = ord.Id;
+        this.status = ord.Status;
+        // ... initialize other attributes ...
+
+        // Assuming the Order has a child relationship with AttachedContentDocument named "OrderDocuments"
+        if(ord.OrderDocuments != null && !ord.OrderDocuments.isEmpty()) {
+            this.invoiceId = ord.OrderDocuments[0].Id;
+            this.invoiceName = ord.OrderDocuments[0].Title;
+        }
+    }
+}
+```
+
+**2. Construct DTO from Selector:**
+
+When you retrieve the orders using the selector, loop through them to convert them into DTO objects:
+
+```apex
+List<Order> orders = OrderSelector.getOrdersWithInvoiceInfo(accountId);
+List<OrderDTO> dtos = new List<OrderDTO>();
+
+for(Order ord : orders) {
+    dtos.add(new OrderDTO(ord));
+}
+```
+
+This approach helps in two ways:
+
+1. **Encapsulation**: The frontend doesn't need to know the intricate details of the backend SObject relationships. It just consumes the DTO which is tailored to what the frontend requires.
+2. **Performance**: By constructing the DTO on the server side (Apex), you are reducing the data transferred to the frontend. You only send exactly what is required.
+
+**3. Expose the DTOs to the LWC**: 
+
+Your `getOrders` method will now return a `List<OrderDTO>` instead of `List<Order>`. This makes it much more efficient and user-friendly for your LWC component to consume the data and display it. 
+
+On the LWC side, you will just loop through the DTOs and display the fields as necessary. For invoice-related operations, you will use `invoiceId` and `invoiceName` from the DTO directly.
+
+---------------------------------------
+
+describe in more detail using the code changes in 3. Update LWC Component
+
+---------------------------------------
+Absolutely! Let's dive deeper into the changes that you need to make in the LWC component.
+
+### 1. **Frontend Apex Calls:**
+
+Firstly, you'll need to import the new Apex methods (`activateOrder` and `markOrderAsShipped`) that you've created. Assuming you're using the `AccountOrdersController` class:
+
+```javascript
+import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
+import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
+```
+
+### 2. **Enhance the DataTable Columns:**
+
+For the new Invoice column and the row actions:
+
+```javascript
+columns = [
+    // ... existing columns ...
+
+    { 
+        label: 'Invoice', 
+        type: 'button', 
+        initialWidth: 135,
+        typeAttributes: {
+            label: 'Download',
+            title: 'Download Invoice',
+            name: 'download_invoice',
+            iconName: 'utility:download',
+            variant: 'base',
+            disabled: {fieldName: 'isInvoiceAvailable'},  // Disable if no invoice is present
+        },
+    }
+];
+```
+
+### 3. **Row Action Handling:**
+
+Handle the row actions in your component:
+
+```javascript
+handleRowAction(event) {
+    const actionName = event.detail.action.name;
+    const row = event.detail.row;
+
+    switch (actionName) {
+        case 'activate':
+            this.activateSelectedOrder(row.orderId);
+            break;
+        case 'mark_as_shipped':
+            this.markOrderAsShipped(row.orderId);
+            break;
+        case 'preview_invoice':
+            this.navigateToInvoicePreview(row.invoiceId);
+            break;
+        case 'download_invoice':
+            this.downloadInvoice(row.invoiceId);
+            break;
+        default:
+            break;
+    }
+}
+```
+
+### 4. **Implementing Row Action Methods:**
+
+Here's how to implement the row action methods:
+
+```javascript
+activateSelectedOrder(orderId) {
+    activateOrder({ orderId: orderId })
+        .then(result => {
+            if (result.status === 'OK') {
+                // Handle success. E.g., refresh the data table.
+            } else {
+                // Handle error. E.g., show a toast with the error message.
+                this.showToast('Error', result.ErrorMessage, 'error');
+            }
+        })
+        .catch(error => {
+            this.showToast('Error', error.body.message, 'error');
+        });
+}
+
+markOrderAsShipped(orderId) {
+    markOrderAsShipped({ orderId: orderId })
+        .then(result => {
+            // Similar handling as above.
+        })
+        .catch(error => {
+            this.showToast('Error', error.body.message, 'error');
+        });
+}
+
+navigateToInvoicePreview(invoiceId) {
+    // Use NavigationMixin to navigate to the standard file preview page
+    this[NavigationMixin.Navigate]({
+        type: 'standard__recordPage',
+        attributes: {
+            recordId: invoiceId,
+            actionName: 'view'
+        }
+    });
+}
+
+downloadInvoice(invoiceId) {
+    // Directly navigate to the content download link.
+    window.open(`/sfc/servlet.shepherd/document/download/${invoiceId}`);
+}
+```
+
+### 5. **Utility Function for Toasts:**
+
+```javascript
+showToast(title, message, variant) {
+    const evt = new ShowToastEvent({
+        title: title,
+        message: message,
+        variant: variant,
+    });
+    this.dispatchEvent(evt);
+}
+```
+
+Make sure to import the necessary modules at the top:
+
+```javascript
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { NavigationMixin } from 'lightning/navigation';
+```
+
+And, if you're using the `NavigationMixin`, make sure to wrap your component export with it:
+
+```javascript
+export default class OrderList extends NavigationMixin(LightningElement) {
+    // ... rest of your code ...
+}
+```
+
+### 6. **Handle Visibility of Row Actions:**
+
+The actions for "Activate" and "Mark as Shipped" should be visible based on the status of the order. Similarly, "Preview Invoice" and "Download Invoice" should be visible only if there's an invoice. You would do this when processing the records received from the Apex call:
+
+```javascript
+processOrders(orders) {
+    let processedOrders = orders.map(order => {
+        let processedOrder = {...order}; // Shallow copy of the order
+        
+        processedOrder.isInvoiceAvailable = !!order.invoiceId;
+        processedOrder.rowActions = this.getRowActionsForOrder(order);
+
+        return processedOrder;
+    });
+
+    this.orders = processedOrders; // Assuming you save the processed records in a variable 'orders'
+}
+
+getRowActionsForOrder(order) {
+    let actions = [];
+
+    if (order.status === 'Draft') {
+        actions.push({ label: 'Activate', name: 'activate', iconName: 'utility:activate' });
+    } else if (order.status === 'Active') {
+        actions.push({ label: 'Mark as Shipped', name: 'mark_as_shipped', iconName: 'utility:check' });
+    }
+
+    if (order.invoiceId) {
+        actions.push({ label: 'Preview Invoice', name: 'preview_invoice', iconName: 'utility:preview' });
+        actions.push({ label: 'Download Invoice', name: 'download_invoice', iconName: 'utility:download' });
+    }
+
+    return actions;
+}
+```
+
+When you receive the data from the Apex method, process the orders:
+
+```javascript
+getOrders({ accountId: this.recordId })
+    .then(result => {
+        this.processOrders(result);
+    })
+    .catch(error => {
+        // Handle the error
+    });
+```
+
+**Final Thoughts:**
+
+This example provides an overview of how you can incorporate the new functionalities into your LWC component. Depending on your org's requirements and existing implementation, you might need to adjust and optimize this approach.
+
+---------------------------------------
+
