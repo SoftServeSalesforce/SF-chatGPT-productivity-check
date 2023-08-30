@@ -1,0 +1,16 @@
+.status-draft {
+    color: gray;
+}
+
+.status-activated {
+    color: orange;
+}
+
+.status-shipped {
+    color: blue;
+}
+
+.status-delivered {
+    color: green;
+}
+

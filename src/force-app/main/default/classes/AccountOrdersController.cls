@@ -77,6 +77,8 @@ public with sharing class AccountOrdersController {
         public String invoiceName;
         @AuraEnabled
         public Id contentDocumentId;
+        @AuraEnabled
+        public Datetime lastStatusChanged;
 
         public OrderDTO(Order o) {
             this.orderId = o.Id;
@@ -84,6 +86,7 @@ public with sharing class AccountOrdersController {
             this.status = o.Status;
             this.startDate = o.EffectiveDate;
             this.amount = o.TotalAmount;
+            this.lastStatusChanged = o.LastStatusChanged__c;
 
             if(o.AttachedContentDocuments != null && !o.AttachedContentDocuments.isEmpty()) {
                 this.invoiceId = o.AttachedContentDocuments[0].Id;

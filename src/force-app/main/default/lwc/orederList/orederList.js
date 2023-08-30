@@ -9,124 +9,113 @@ import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrd
 export default class OrderList extends NavigationMixin(LightningElement) {
     @api recordId;
     orders = [];
-    activateActionDisabled = false;
-    markAsShippedActionDisabled = false;
-    previewInvoiceActionDisabled = false;
-    downloadInvoiceActionDisabled = false;
-
-    actions = [
-        { label: 'Activate', name: 'activate', disabled: this.activateActionDisabled },
-        { label: 'Mark As Shipped', name: 'markAsShipped', disabled: this.markAsShippedActionDisabled },
-        { label: 'Preview Invoice', name: 'previewInvoice', disabled: this.previewInvoiceActionDisabled },
-        { label: 'Download Invoice', name: 'downloadInvoice', disabled: this.downloadInvoiceActionDisabled }
-    ];
-    columns = [
-        {
-            label: 'Number',
-            fieldName: 'orderId',
-            type: 'button',
-            typeAttributes: {
-                label: { fieldName: 'orderNumber' },
-                variant: 'base',
-                name: 'redirectToOrder'
-            }
-        },
-        {
-            label: 'Date',
-            fieldName: 'startDate',
-            type: 'date',
-        },
-        {
-            label: 'Status',
-            fieldName: 'status',
-            type: 'text',
-        },
-        {
-            label: 'Amount',
-            fieldName: 'amount',
-            type: 'currency',
-            typeAttributes: { currencyCode: 'USD' },
-            cellAttributes: { alignment: 'left' }
-        },
-        { 
-            label: 'Invoice', 
-            type: 'button', 
-            initialWidth: 135,
-            disabled: this.downloadInvoiceActionDisabled,
-            typeAttributes: {
-                label: 'Download',
-                title: 'Download Invoice',
-                name: 'downloadInvoice',
-                iconName: 'utility:download',
-                variant: 'base',
-                disabled: {fieldName: 'isInvoiceAvailable'},
-            },
-        },
-        {
-            type: 'action',
-            typeAttributes: {
-                rowActions: this.actions,
-            }
-        }
-    ];
 
     @wire(getOrders, { accountId: '$recordId' })
     wiredOrders({error, data}) {
         if(data) {
             this.orders = data;
-            // this.disableActions();
-
         } else if(error) {
             this.showToast('Error', error.body.message, 'error');
         }
     }
 
-    disableActions() {
-        for (let order of this.orders) {
-            console.log(order);
-            if (order.status !== 'Draft') {
-                this.activateActionDisabled = true;
-            }
-            else if (order.status !== 'Activated') {
-                this.markAsShippedActionDisabled = true;
-            }
-            else if (order.contentDocumentId == null) {
-                this.previewInvoiceActionDisabled = true;
-                this.downloadInvoiceActionDisabled = true;
-            }
+    get getOrdersWithStatusProceed() {
+        return this.orders.map(order => {
+            return {
+                ...order,
+                isActivated: order.status == 'Activated',
+                isDraft: order.status == 'Draft',
+                activateValue: 'activate.' + order.orderId,
+                markShippedValue: 'markShipped.' + order.orderId,
+                previewInvoiceValue: 'previewInvoice.' + order.contentDocumentId,
+                downloadInvoiceValue: 'downloadInvoice.' + order.contentDocumentId,
+                statusTime: this.getStatusTime(order.lastStatusChanged),
+                statusStyle: this.getStatusStyle(order.status)
+            };
+        });
+    }
+
+    getStatusStyle(status) {
+        console.log(status);
+        switch (status) {
+            case 'Draft':
+                return 'status-draft';
+            case 'Activated':
+                return 'status-activated';
+            case 'Shipped':
+                return 'status-shipped';
+            case 'Delivered':
+                return 'status-delivered';
+            default:
+                return 'status-draft';
+        }
+    }
+
+    getStatusTime(lastStatusChanged) {
+        if (lastStatusChanged == null || lastStatusChanged == undefined) {
+            return ' ';
+        }
+
+        const currentDate = new Date();
+        const duration = currentDate - new Date(lastStatusChanged);
+
+        const minute = 60 * 1000;
+        const hour = minute * 60;
+        const day = hour * 24;
+        const month = day * 30;
+        const year = day * 365;
+
+        if (duration < minute) {
+            return `${Math.round(duration / 1000)} seconds`; 
+        } else if (duration < hour) {
+            return `${Math.round(duration / minute)} minutes`;
+        } else if (duration < day) {
+            return `${Math.round(duration / hour)} hours`;
+        } else if (duration < month) {
+            return `${Math.round(duration / day)} days`;
+        } else if (duration < year) {
+            return `${Math.round(duration / month)} months`;
+        } else {
+            return `${Math.round(duration / year)} years`;
         }
     }
 
     handleRowAction(event) {
-        const actionName = event.detail.action.name;
-        const row = event.detail.row;
+        let actionName = event.currentTarget.name;
+        let id = event.currentTarget.dataset.id;
+        const value = event.detail.value;
+
+        if (actionName == undefined) {
+            actionName = value.split('.')[0];
+            id = value.split('.')[1];
+        }
 
         switch (actionName) {
             case 'redirectToOrder':
-                this.redirectToOrderRecord(row);
+                this.redirectToOrderRecord(id);
                 break;
             case 'activate':
-                this.activateSelectedOrder(row.orderId);
+                this.activateSelectedOrder(id);
                 break;
             case 'markAsShipped':
-                this.markOrderAsShipped(row.orderId);
+                this.markOrderAsShipped(id);
                 break;
             case 'previewInvoice':
-                this.navigateToInvoicePreview(row.contentDocumentId);
+                this.navigateToInvoicePreview(id);
                 break;
             case 'downloadInvoice':
-                this.downloadInvoice(row.contentDocumentId);
+                this.downloadInvoice(id);
                 break;
             default:
                 break;
         }
     }
 
-    redirectToOrderRecord(row) {
+    redirectToOrderRecord(id) {
         this[NavigationMixin.Navigate]({
             type: 'standard__recordPage',
             attributes: {
-                recordId: row.orderId,
+                recordId: id,
                 actionName: 'view'
             }
         });

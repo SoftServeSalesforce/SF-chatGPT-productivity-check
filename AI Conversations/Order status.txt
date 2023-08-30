@@ -1,0 +1,293 @@
+----------------------------------------------------
+Hi, I'm a Salesforce Developer and i need your help in a role of experienced Salesforce Developer to complete this task.
+
+Create trigger logic on Order object that updates LastStatusChanged__c field on order status change.
+----------------------------------------------------
+Certainly! Here's how you can create a trigger for the Order object to update the `LastStatusChanged__c` field whenever the order status changes.
+
+1. **Trigger**
+Create a new trigger for the Order object.
+
+```apex
+trigger OrderStatusChangeTrigger on Order (before update) {
+    // Prepare a list to hold the Orders that require a status change date update
+    List<Order> ordersToUpdate = new List<Order>();
+
+    for (Order newOrder : Trigger.new) {
+        Order oldOrder = Trigger.oldMap.get(newOrder.Id);
+
+        // Check if the status has changed
+        if (oldOrder.Status != newOrder.Status) {
+            newOrder.LastStatusChanged__c = System.now();
+        }
+    }
+}
+```
+
+2. **Trigger Handler (optional)**
+For maintainability and to follow best practices, you can implement the logic within a trigger handler class. This keeps your trigger lightweight and easier to test.
+
+Here's how you can create a trigger handler for this requirement:
+
+```apex
+public class OrderTriggerHandler {
+    public static void handleStatusChange(List<Order> oldOrders, List<Order> newOrders) {
+        for (Integer i = 0; i < newOrders.size(); i++) {
+            if (oldOrders[i].Status != newOrders[i].Status) {
+                newOrders[i].LastStatusChanged__c = System.now();
+            }
+        }
+    }
+}
+```
+
+You can then call this handler method from your trigger:
+
+```apex
+trigger OrderStatusChangeTrigger on Order (before update) {
+    OrderTriggerHandler.handleStatusChange(Trigger.old, Trigger.new);
+}
+```
+
+3. **Testing**
+It's essential to create test classes to ensure your trigger works correctly and maintains code coverage:
+
+```apex
+@isTest
+private class TestOrderStatusChangeTrigger {
+    @isTest static void testOrderStatusChange() {
+        // Setup: Create a new Order with a status
+        Order testOrder = new Order(Status = 'Draft');
+        insert testOrder;
+
+        // Change the status and update the order
+        testOrder.Status = 'Confirmed';
+        update testOrder;
+
+        // Retrieve the updated order
+        Order updatedOrder = [SELECT LastStatusChanged__c FROM Order WHERE Id = :testOrder.Id LIMIT 1];
+
+        // Assert that the LastStatusChanged__c field has been set
+        System.assertNotEquals(null, updatedOrder.LastStatusChanged__c);
+    }
+}
+```
+
+Make sure you modify the code snippets above according to your actual field names and Order status values if they're different.
+----------------------------------------------------
+Next make LWC code to update component with new view for status column:
+1) Text: <number> <years (1-..)|months (1-11)|days (1-30)|hours (1-23)|minutes(0-59)> in <status> E.g.: 1 year in Draft, 8 months in Activated, 3 minutes in Shipped 
+2) Color: Draft/Activated/Shipped/Delivered - gray/orange/blue/green. 
+----------------------------------------------------
+Let's create a Lightning Web Component (LWC) that displays the duration since the `LastStatusChanged__c` was updated and the current status of the Order in the desired format. 
+
+1. **LWC Component Files**
+You'll need three main files:
+
+- `statusView.html` (HTML template)
+- `statusView.js` (Javascript logic)
+- `statusView.css` (Styling)
+
+**statusView.html:**
+```html
+<template>
+    <div class="status-box" title={status}>
+        <p class={statusClass}>
+            {timeSinceChange} in {status}
+        </p>
+    </div>
+</template>
+```
+
+**statusView.js:**
+```js
+import { LightningElement, api } from 'lwc';
+
+export default class StatusView extends LightningElement {
+    @api status;
+    @api lastStatusChanged; // Assuming this will be a JavaScript Date object.
+
+    get timeSinceChange() {
+        const now = new Date();
+        const duration = now - this.lastStatusChanged;
+
+        const minute = 60 * 1000;
+        const hour = minute * 60;
+        const day = hour * 24;
+        const month = day * 30; // Approximation
+        const year = day * 365; // Approximation
+
+        if (duration < minute) {
+            return `${Math.round(duration / 1000)} seconds`; 
+        } else if (duration < hour) {
+            return `${Math.round(duration / minute)} minutes`;
+        } else if (duration < day) {
+            return `${Math.round(duration / hour)} hours`;
+        } else if (duration < month) {
+            return `${Math.round(duration / day)} days`;
+        } else if (duration < year) {
+            return `${Math.round(duration / month)} months`;
+        } else {
+            return `${Math.round(duration / year)} years`;
+        }
+    }
+
+    get statusClass() {
+        switch (this.status) {
+            case 'Draft':
+                return 'status-draft';
+            case 'Activated':
+                return 'status-activated';
+            case 'Shipped':
+                return 'status-shipped';
+            case 'Delivered':
+                return 'status-delivered';
+            default:
+                return 'status-default';
+        }
+    }
+}
+```
+
+**statusView.css:
+
+**statusView.css:**
+```css
+.status-box {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px 0;
+    width: fit-content;
+}
+
+.status-draft {
+    color: gray;
+}
+
+.status-activated {
+    color: orange;
+}
+
+.status-shipped {
+    color: blue;
+}
+
+.status-delivered {
+    color: green;
+}
+
+.status-default {
+    color: black; /* Default color for statuses not explicitly handled */
+}
+```
+
+2. **Using the LWC Component**
+
+To use the component, you'll embed it in another component or Lightning page and provide it with the necessary `status` and `lastStatusChanged` attributes.
+
+For instance, if you were to use this in a parent component or Lightning App Builder:
+
+```html
+<c-status-view status="Draft" last-status-changed={orderLastStatusChanged}></c-status-view>
+```
+
+In the code above, `orderLastStatusChanged` would be a tracked variable or an API property in the parent component that provides the `LastStatusChanged__c` value for the specific order.
+
+3. **Testing**
+
+You'd want to test the component in different scenarios:
+
+- Test with various status values to ensure color coding is correct.
+- Test with various durations to ensure the text displays years, months, days, hours, or minutes correctly.
+
+You can do this by embedding the component in a test harness Lightning App and setting different `status` and `lastStatusChanged` values.
+
+Remember that you might need to adjust this code based on the actual requirements and use-cases in your Salesforce instance. The above code is a solid starting point for the functionality you described.
+----------------------------------------------------
+
+i need to use this status column in lwc datatable
+----------------------------------------------------
+Alright! Using the custom LWC within a Lightning Datatable requires a different approach, as the standard datatable does not directly support custom LWCs as cell types. 
+
+You can handle this by creating a custom column type in the datatable, but it would primarily utilize a formatted-rich-text column and some logic to render the appropriate content.
+
+Here’s a step-by-step guide:
+
+1. **JavaScript Logic Update for the Datatable**
+
+Update the JavaScript logic to provide the datatable with the required data:
+
+```js
+import { LightningElement, wire } from 'lwc';
+import { getOrderRecords } from 'my/orderDataService'; // Assuming you have a service to get the Order data
+
+export default class OrderStatusDatatable extends LightningElement {
+    columns = [
+        // ... your other columns
+        {
+            label: 'Status',
+            fieldName: 'statusDisplay',
+            type: 'formatted-rich-text'
+        }
+    ];
+
+    @wire(getOrderRecords)
+    wiredOrders({ error, data }) {
+        if (data) {
+            this.data = data.map(record => {
+                let statusDisplay = this.getStatusDisplay(record.Status, record.LastStatusChanged__c);
+                return { ...record, statusDisplay };
+            });
+        } else if (error) {
+            // handle error
+        }
+    }
+
+    getStatusDisplay(status, lastStatusChanged) {
+        // Utilize the logic from the previous LWC component to get the time since change 
+        const now = new Date();
+        const duration = now - new Date(lastStatusChanged);
+        
+        // ... [similar logic for computing time since change]
+
+        let color;
+        switch (status) {
+            case 'Draft':
+                color = 'gray';
+                break;
+            case 'Activated':
+                color = 'orange';
+                break;
+            case 'Shipped':
+                color = 'blue';
+                break;
+            case 'Delivered':
+                color = 'green';
+                break;
+            default:
+                color = 'black';
+        }
+
+        return `<span style="color:${color}">${timeSinceChange} in ${status}</span>`;
+    }
+}
+```
+
+2. **LWC Datatable in the HTML template**
+
+Here's how you can use the datatable in your template:
+
+```html
+<template>
+    <lightning-datatable
+        key-field="Id"
+        data={data}
+        columns={columns}
+        hide-checkbox-column
+    >
+    </lightning-datatable>
+</template>
+```
+
+This approach renders the status with appropriate color and text directly within the datatable without needing a separate LWC for the status display.

@@ -1,10 +1,77 @@
 <template>
     <lightning-card title="Orders" icon-name="standard:orders">
-            <lightning-datatable
+            <!-- <lightning-datatable
                 key-field="Id"
                 data={orders}
                 columns={columns}
-                onrowaction={handleRowAction}>
-            </lightning-datatable>
+                onrowaction={handleRowAction}
+                hide-checkbox-column
+                >
+            </lightning-datatable> -->
+
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered" aria-label="Orders List">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            <div title="Order Number">Number</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Start Date">Date</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Status">Status</div>
+                        </th>
+                        <th scope="col">
+                            <div title="Amount">Amount</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Invoice">Invoice</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Actions"></div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={getOrdersWithStatusProceed} for:item="order">
+                        <tr key={order.orderId}>
+                            <td data-label="Order Number">
+                                <a data-id={order.orderId} name="redirectToOrder" onclick={handleRowAction}>{order.orderNumber}</a>
+                            </td>
+                            <td data-label="Start Date">
+                                {order.startDate}
+                            </td>
+                            <td data-label="Status">
+                                <div class="slds-var-m-around_medium">
+                                    <span class="slds-text-title">{order.statusTime} in </span>
+                                    <lightning-badge label={order.status} class={order.statusStyle}></lightning-badge>
+                                </div>
+                            </td>
+                            <td data-label="Amount">
+                                ${order.amount}
+                            </td>
+                            <td data-label="Invoice">
+                                <template if:true={order.contentDocumentId}>
+                                    <lightning-button-icon icon-name="utility:save" size="small" title="Download Invoice" name="downloadInvoice" onclick={handleRowAction} data-id={order.contentDocumentId}></lightning-button-icon>
+                                </template>
+                            </td>
+                            <td data-label="Actions">
+                                <lightning-button-menu alternative-text="Actions" onselect={handleRowAction} icon-name="utility:down" icon-size="small">
+                                    <template if:true={order.isDraft}>
+                                        <lightning-menu-item value={order.activateValue} label="Activate"></lightning-menu-item>
+                                    </template>
+                                    <template if:true={order.isActivated}>
+                                        <lightning-menu-item value={order.markShippedValue} label="Mark as Shipped"></lightning-menu-item>
+                                    </template>
+                                    <template if:true={order.contentDocumentId}>
+                                        <lightning-menu-item value={order.previewInvoiceValue} label="Preview Invoice"></lightning-menu-item>
+                                        <lightning-menu-item value={order.downloadInvoiceValue} label="Download Invoice"></lightning-menu-item>
+                                    </template>
+                                </lightning-button-menu>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
     </lightning-card>
 </template>
