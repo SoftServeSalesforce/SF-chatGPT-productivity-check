@@ -2,6 +2,7 @@
     <lightning-card title="Account Related Orders">
         <template lwc:if={orders}>
           <div class="slds-m-around_medium">
+            <template lwc:if={error}>{error}</template>
             <table class="slds-table_bordered">
                 <thead>
                     <tr>
@@ -9,6 +10,8 @@
                         <th scope="col">Date</th>
                         <th scope="col">Status</th>
                         <th scope="col">Amount</th>
+                        <th scope="col">Invoice</th> 
+                        <th scope="col">Actions</th> 
                     </tr>
                 </thead>
                 <tbody>
@@ -17,7 +20,9 @@
                             <td><a data-id={order.orderId} onclick={handleOrderNumberClick}>{order.orderNumber}</a></td>
                             <td>{order.startDate}</td>                            
                             <td>{order.orderStatus}</td>                            
-                            <td>{order.amount} $</td>                        
+                            <td>{order.amount} $</td>
+                            <td data-id={order.orderId} onclick={handleActivate}>Activate</td>
+                            <td data-id={order.orderId} onclick={handleMarkAsShipped}>Mark as Shipped</td>                        
                         </tr>
                     </template>
                 </tbody>

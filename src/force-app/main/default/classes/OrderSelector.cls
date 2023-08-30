@@ -4,4 +4,8 @@ public with sharing class OrderSelector {
         return [SELECT Id, EffectiveDate, OrderNumber, Status, TotalAmount 
         FROM Order WHERE AccountId = :accountId];
     }
+
+    public static Order getOrderById(Id orderId) {
+        return [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
+    }
 }

@@ -1,7 +1,10 @@
 import { LightningElement, wire, api } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
+import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
 import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { notifyRecordUpdateAvailable } from 'lightning/uiRecordApi';
 
 export default class AccountRelatedOrders extends NavigationMixin(LightningElement) {
     @api recordId; 
@@ -15,11 +18,7 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
             this.error = undefined;           
         } else if (error) {
             this.error = error;
-            new ShowToastEvent({
-                title: "Error updating order",
-                message: error.body.message,
-                variant: "error",
-            });
+            this.showToast('Error updating order', error.body.message, 'error');            
         }
     }
 
@@ -32,5 +31,46 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
             actionName: 'view'
         },
     });        
+    }
+
+    handleActivate(event) {
+        const orderId = event.target.dataset.id;
+        activateOrder({ orderId: orderId })
+            .then(result => {
+                this.handleResponse(result, orderId);
+            })
+            .catch(error => {
+                this.showToast('Some error occurred', error.body.message, 'error');
+            });
+    }
+
+    handleMarkAsShipped(event) {
+        const orderId = event.target.dataset.id;
+        markOrderAsShipped({ orderId: orderId })
+            .then(result => {
+                this.handleResponse(result, orderId);
+            })
+            .catch(error => {
+                this.showToast('Some error occurred', error.body.message, 'error');
+            });
+    }
+
+    handleResponse(response, recordId) {
+        if (response.responseStatus === 'Success') {
+            this.showToast('Success', response.responseMessage, response.responseStatus);
+            notifyRecordUpdateAvailable([{recordId: recordId}]);
+        } else if (response.responseStatus === 'Error') {
+            this.showToast('Something went wrong', response.responseMessage, response.responseStatus);
+        }
+    }
+
+    showToast(title, message, variant) {
+        this.dispatchEvent(
+            new ShowToastEvent({
+              title: title,
+              message: message,
+              variant: variant,
+            }),
+          );
     }
 }
