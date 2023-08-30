@@ -92,7 +92,16 @@ public with sharing class AccountOrdersController {
         public Date startDate;
 
         @AuraEnabled
-        public Decimal amount;       
+        public Decimal amount;  
+        
+        @AuraEnabled
+        public Id attachmentId;
+
+        @AuraEnabled
+        public String attachmentTitle;
+
+        @AuraEnabled
+        public Id contentDocumentId;
         
         public OrderDTO(Order order) {
             this.orderId = order.Id;
@@ -100,6 +109,11 @@ public with sharing class AccountOrdersController {
             this.orderNumber = order.OrderNumber;
             this.amount = order.TotalAmount;
             this.startDate = order.EffectiveDate;
+            if(!order.AttachedContentDocuments.isEmpty()) {
+                this.attachmentId = order.AttachedContentDocuments[0].Id;
+                this.attachmentTitle = order.AttachedContentDocuments[0].Title;
+                this.contentDocumentId = order.AttachedContentDocuments[0].ContentDocumentId; 
+            }                   
         }
     }
 }
