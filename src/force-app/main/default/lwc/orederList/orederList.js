@@ -9,11 +9,16 @@ import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrd
 export default class OrderList extends NavigationMixin(LightningElement) {
     @api recordId;
     orders = [];
+    activateActionDisabled = false;
+    markAsShippedActionDisabled = false;
+    previewInvoiceActionDisabled = false;
+    downloadInvoiceActionDisabled = false;
+
     actions = [
-        { label: 'Activate', name: 'activate' },
-        { label: 'Mark As Shipped', name: 'markAsShipped' },
-        { label: 'Preview Invoice', name: 'previewInvoice' },
-        { label: 'Download Invoice', name: 'downloadInvoice' }
+        { label: 'Activate', name: 'activate', disabled: this.activateActionDisabled },
+        { label: 'Mark As Shipped', name: 'markAsShipped', disabled: this.markAsShippedActionDisabled },
+        { label: 'Preview Invoice', name: 'previewInvoice', disabled: this.previewInvoiceActionDisabled },
+        { label: 'Download Invoice', name: 'downloadInvoice', disabled: this.downloadInvoiceActionDisabled }
     ];
     columns = [
         {
@@ -47,6 +52,7 @@ export default class OrderList extends NavigationMixin(LightningElement) {
             label: 'Invoice', 
             type: 'button', 
             initialWidth: 135,
+            disabled: this.downloadInvoiceActionDisabled,
             typeAttributes: {
                 label: 'Download',
                 title: 'Download Invoice',
@@ -67,19 +73,33 @@ export default class OrderList extends NavigationMixin(LightningElement) {
     @wire(getOrders, { accountId: '$recordId' })
     wiredOrders({error, data}) {
         if(data) {
-            console.log(JSON.parse(JSON.stringify(data)));
             this.orders = data;
+            // this.disableActions();
+
         } else if(error) {
             this.showToast('Error', error.body.message, 'error');
+        }
+    }
+
+    disableActions() {
+        for (let order of this.orders) {
+            console.log(order);
+            if (order.status !== 'Draft') {
+                this.activateActionDisabled = true;
+            }
+            else if (order.status !== 'Activated') {
+                this.markAsShippedActionDisabled = true;
+            }
+            else if (order.contentDocumentId == null) {
+                this.previewInvoiceActionDisabled = true;
+                this.downloadInvoiceActionDisabled = true;
+            }
         }
     }
 
     handleRowAction(event) {
         const actionName = event.detail.action.name;
         const row = event.detail.row;
-
-        console.log(actionName);
-        console.log(row);
 
         switch (actionName) {
             case 'redirectToOrder':
