@@ -1,40 +1,142 @@
-import { LightningElement, wire, api, track } from 'lwc';
+import { LightningElement, api, wire, track } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
+import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class AccountOrders extends LightningElement {
-    @api recordId;  
+    @api recordId;
     @track orders;
-    @track error;
 
     columns = [
-        { label: 'Order Number', fieldName: 'OrderURL', type: 'url', 
-          typeAttributes: { label: { fieldName: 'OrderNumber' }, target: '_blank'} },
+        { label: 'Number', fieldName: 'OrderURL', type: 'url', typeAttributes: { label: { fieldName: 'OrderNumber' }, target: '_blank' } },
         { label: 'Start Date', fieldName: 'EffectiveDate', type: 'date' },
         { label: 'Status', fieldName: 'Status', type: 'text' },
-        { label: 'Amount', fieldName: 'TotalAmount', type: 'currency' }
+        { label: 'Amount', fieldName: 'TotalAmount', type: 'currency' },
+        { label: 'Invoice', fieldName: 'InvoiceFileId', type: 'button-icon', 
+            typeAttributes: { 
+                iconName: 'utility:download', disabled: {fieldName: 'isInvoiceDisabled'}
+            } 
+        },
+        { type: 'action', typeAttributes: { rowActions: this.rowActions } }
     ];
-
-    // data  [{"Id":"8017Y000002KMYhQAO","OrderNumber":"00000101","Status":"Draft","TotalAmount":0,"EffectiveDate":"2023-09-07"},
-    // {"Id":"8017Y000002KMYDQA4","OrderNumber":"00000100","Status":"Draft","TotalAmount":0,"EffectiveDate":"2023-09-03"}]
 
     @wire(getOrders, { accountId: '$recordId' })
     wiredOrders({ error, data }) {
         if (data) {
-            // console.log('data ', JSON.stringify(data));
-            for (let dat of data) {
-                console.log('dat', dat);
-            }
             this.orders = data.map(row => {
                 let rowData = { ...row };
-                rowData.OrderURL = `/lightning/r/Order/${row.Id}/view`;
+                rowData.OrderURL = `/lightning/r/Order/${rowData.Id}/view`;
+                rowData.isInvoiceDisabled = rowData.ContentDocumentId ? false : true;
 
                 return rowData;
             });
             this.error = undefined;
         } else if (error) {
-            this.error = error;
-            this.orders = undefined;
+            console.error('Error received: ', error);
         }
     }
+
+    get rowActions() {
+        return (record, doneCallback) => {
+            const actions = [];
+            if (record.Status === 'Draft') {
+                actions.push({ label: 'Activate', name: 'activate' });
+            }
+            if (record.Status === 'Active') {
+                actions.push({ label: 'Mark as Shipped', name: 'mark_as_shipped' });
+            }
+            if (record.InvoiceFileName) {
+                actions.push({ label: 'Preview Invoice', name: 'preview_invoice' });
+                actions.push({ label: 'Download Invoice', name: 'download_invoice' });
+            }
+            setTimeout(() => {
+                doneCallback(actions);
+            }, 0);
+        };
+    }
+
+    handleRowAction(event) {
+        const actionName = event.detail.action.name;
+        const row = event.detail.row;
+
+        switch (actionName) {
+            case 'activate':
+                this.activateOrder(row);
+                break;
+            case 'mark_as_shipped':
+                this.markAsShipped(row);
+                break;
+            case 'preview_invoice':
+                this.previewInvoice(row);
+                break;
+            case 'download_invoice':
+                this.downloadInvoice(row);
+                break;
+            default:
+                break;
+        }
+    }
+
+    activateOrder(row) {
+        activateOrder({ orderId: row.Id })
+            .then(result => {
+                this.handleServerResponse(result);
+            })
+            .catch(error => {
+                this.showToast('Error', 'An unexpected error occurred.', 'error');
+            });
+    }
+
+    markAsShipped(row) {
+        markOrderAsShipped({ orderId: row.Id })
+            .then(result => {
+                this.handleServerResponse(result);
+            })
+            .catch(error => {
+                this.showToast('Error', 'An unexpected error occurred.', 'error');
+            });
+    }
+
+    handleServerResponse(result) {
+        const status = result.status;
+        const errorMessage = result.ErrorMessage;
+
+        if (status === 'OK') {
+            this.showToast('Success', 'Operation successful.', 'success');
+        } else {
+            this.showToast('Error', errorMessage, 'error');
+        }
+    }
+
+    showToast(title, message, variant) {
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: title,
+                message: message,
+                variant: variant,
+            }),
+        );
+    }
+
+    previewInvoice(row) {
+        const fileId = row.InvoiceFileId;
+        this[NavigationMixin.Navigate]({
+            type: 'standard__namedPage',
+            attributes: {
+                pageName: 'filePreview',
+            },
+            state: {
+                // assigning ContentDocumentId to show file preview
+                selectedRecordId: fileId,
+            },
+        });
+    }
+
+    downloadInvoice(row) {
+        const downloadUrl = row.InvoiceFileDownloadUrl;
+        window.open(downloadUrl);
+    }    
 }
+
 
