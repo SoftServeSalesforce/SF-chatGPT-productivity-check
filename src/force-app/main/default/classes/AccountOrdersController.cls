@@ -92,7 +92,13 @@ public with sharing class AccountOrdersController {
         public Date startDate;
 
         @AuraEnabled
-        public Decimal amount;  
+        public Decimal amount; 
+        
+        @AuraEnabled
+        public Datetime lastStatusChanged; 
+        
+        @AuraEnabled
+        public Id attachmentId;
 
         @AuraEnabled
         public Id contentDocumentId;
@@ -103,7 +109,9 @@ public with sharing class AccountOrdersController {
             this.orderNumber = order.OrderNumber;
             this.amount = order.TotalAmount;
             this.startDate = order.EffectiveDate;
-            if(!order.AttachedContentDocuments.isEmpty()) {            
+            this.lastStatusChanged = order.LastStatusChanged__c;
+            if(!order.AttachedContentDocuments.isEmpty()) {
+                this.attachmentId = order.AttachedContentDocuments[0].Id;
                 this.contentDocumentId = order.AttachedContentDocuments[0].ContentDocumentId; 
             }                   
         }

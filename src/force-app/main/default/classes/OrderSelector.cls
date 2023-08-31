@@ -1,8 +1,8 @@
 public with sharing class OrderSelector {
 
     public static List<Order> getOrdersWithAttachmentsByAccountId(Id accountId) {
-        return [SELECT Id, EffectiveDate, OrderNumber, Status, TotalAmount,        
-        (SELECT ContentDocumentId FROM AttachedContentDocuments 
+        return [SELECT Id, EffectiveDate, OrderNumber, Status, TotalAmount, LastStatusChanged__c,        
+        (SELECT Id, ContentDocumentId FROM AttachedContentDocuments 
          WHERE Title LIKE 'Invoice%' ORDER BY CreatedDate DESC) 
         FROM Order WHERE AccountId = :accountId];
     }

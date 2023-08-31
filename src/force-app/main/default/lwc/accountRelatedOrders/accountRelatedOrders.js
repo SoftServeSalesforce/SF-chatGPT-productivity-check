@@ -27,6 +27,8 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
                     "orderNumber": item.orderNumber,
                     "startDate": item.EffectiveDate,
                     "orderStatus": item.orderStatus,
+                    "timeInCurrentStatus": this.getTimeInCurrentStatus(item.lastStatusChanged),
+                    "statusBadgeCSS": this.getStatusCSS(item.orderStatus),
                     "amount": item.amount,
                     "contentDocumentId": item.contentDocumentId,
                     "orderIdContentDocumentId": orderIdContentDocumentId,
@@ -39,6 +41,36 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
             this.error = error;
             this.showToast('Error updating order', error.body.message, 'error');            
         }
+    }
+
+    getTimeInCurrentStatus(lastStatusChanged) {
+        let finalTimeInStatusString = '';
+        let lastStatusChangedParsed = Date.parse(lastStatusChanged);
+        let timeDiff = Date.now() - lastStatusChangedParsed;
+        let totalMinutes = parseInt(Math.floor(timeDiff / (60 * 1000)));
+        if (totalMinutes < 60) {
+            finalTimeInStatusString += totalMinutes + ' minutes in ';
+            return finalTimeInStatusString;
+        }
+        let totalHours = parseInt(Math.floor(totalMinutes / (60)));
+        if (totalHours < 24) {
+            finalTimeInStatusString += totalHours + ' hours ' + parseInt(totalMinutes % 60) + ' minutes in ';
+            return finalTimeInStatusString;
+        }
+        let totalDays = parseInt(Math.floor(totalHours / 24));
+        if (totalDays <  30) {
+            finalTimeInStatusString += totalDays + ' days ' + parseInt(totalMinutes % 24) + ' hours ' + parseInt(totalMinutes % 60) + ' minutes in ';
+            return finalTimeInStatusString;
+        }
+        let totalMonths = parseInt(Math.floor(totalDays / 30));
+        if (totalMonths <  12) {
+            finalTimeInStatusString += totalMonths + ' months ' + parseInt(totalDays % 30) + ' days ' + parseInt(totalMinutes % 24) + ' hours ' + parseInt(totalMinutes % 60) + ' minutes in ';
+            return finalTimeInStatusString;
+        } else {
+            let totalYears = parseInt(Math.floor(totalDays / 365));
+                finalTimeInStatusString += totalYears + 'years ' + parseInt(totalYears % 12) + ' months ' + parseInt(totalDays % 30) + ' days ' + parseInt(totalMinutes % 24) + ' hours ' + parseInt(totalMinutes % 60) + ' minutes in ';
+                return finalTimeInStatusString;        
+        }        
     }
 
     populateOrderActions(status, hasInvoices) {
@@ -77,7 +109,22 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
                 this.downloadInvoice(contentDocumentId);
                 break;            
         }        
-    }  
+    }
+    
+    getStatusCSS(status) {
+        switch(status) {
+            case 'Draft':
+                return 'slds-badge';
+            case 'Activated':
+                return 'slds-badge slds-theme_warning';
+            case 'Shipped':
+                return 'slds-badge badge-status-shipped';
+            case 'Delivered':
+                return 'slds-badge slds-theme_success';
+            default:
+                return 'slds-badge';
+        }
+    }
 
     handleOrderNumberClick(event) {        
         this[NavigationMixin.Navigate]({

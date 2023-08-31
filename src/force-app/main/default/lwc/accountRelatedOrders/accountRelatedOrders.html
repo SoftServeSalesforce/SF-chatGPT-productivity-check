@@ -19,7 +19,7 @@
                         <tr key={order.Id}>
                             <td><a data-id={order.Id} onclick={handleOrderNumberClick}>{order.orderNumber}</a></td>
                             <td>{order.startDate}</td>                            
-                            <td>{order.orderStatus}</td>
+                            <td><span>{order.timeInCurrentStatus}</span><span class={order.statusBadgeCSS}>{order.orderStatus}</span></td>
                             <td><lightning-formatted-number value={order.amount} format-style="currency" currency-code="USD" currency-display-as="symbol"></lightning-formatted-number></td>
                             <td>
                                 <template lwc:if={order.hasInvoices}><lightning-icon data-id={order.contentDocumentId} size="small" icon-name="utility:download" alternative-text="Download Invoice" onclick={handleDownloadInvoice}></lightning-icon></template>
