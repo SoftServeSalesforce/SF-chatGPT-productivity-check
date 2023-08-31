@@ -5,26 +5,35 @@ import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrd
 import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { refreshApex } from "@salesforce/apex";
+const SEPARATOR = '_';
 
 export default class AccountRelatedOrders extends NavigationMixin(LightningElement) {
     @api recordId; 
     wiredOrders;
     orders;
     error;
-    rowActions = [
-        { value: 'activate', label: 'Activate' },
-        { value: 'markAsShipped', label: 'Mark as Shipped' },
-        { value: 'previewInvoice', label: 'Preview Invoice'},
-        { value: 'downloadInvoice', label: 'Download Invoice'}
-    ];
 
     @wire(getOrders, { accountId: '$recordId' })
     handleOrders(value) {        
         this.wiredOrders = value; 
         const { data, error } = value; 
         if (data) {  
-            this.orders = data;
-            console.log('data ' + JSON.parse(JSON.stringify(data)));
+            console.log(JSON.parse(JSON.stringify(data)));
+            this.orders = data.map(item => {
+                const hasInvoices = item.attachmentId ? true : false;
+                const orderIdContentDocumentId = item.orderId + SEPARATOR + item.contentDocumentId;
+                return {
+                    "Id": item.orderId,
+                    "orderNumber": item.orderNumber,
+                    "startDate": item.EffectiveDate,
+                    "orderStatus": item.orderStatus,
+                    "amount": item.amount,
+                    "contentDocumentId": item.contentDocumentId,
+                    "orderIdContentDocumentId": orderIdContentDocumentId,
+                    "hasInvoices": hasInvoices,
+                    "orderActions": this.populateOrderActions(item.orderStatus, hasInvoices)
+                }
+            });
             this.error = undefined;           
         } else if (error) {
             this.error = error;
@@ -32,9 +41,28 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
         }
     }
 
-    handleActionSelected(event) {        
+    populateOrderActions(status, hasInvoices) {
+        let isDraft = status === 'Draft';
+        let isActivated = status === 'Activated';
+        let rowActions = new Array();
+        if (isDraft) {
+            rowActions.push({ value: 'activate', label: 'Activate' });  
+        } else if (isActivated) {
+            rowActions.push({ value: 'markAsShipped', label: 'Mark as Shipped' });
+        }
+        if (hasInvoices) {
+            rowActions.push({ value: 'previewInvoice', label: 'Preview Invoice'});
+            rowActions.push({ value: 'downloadInvoice', label: 'Download Invoice'});
+        }
+        return rowActions;
+    }
+
+    handleActionSelected(event) {   
         const selectedAction = event.detail.value;
-        const orderId = event.target.dataset.id;
+        const orderIdContentDocumentId = event.target.dataset.id;
+        const ids = orderIdContentDocumentId.split(SEPARATOR);
+        const orderId = ids[0];
+        const contentDocumentId = ids[1];
         switch (selectedAction) {
             case 'activate':
                 this.handleActivate(orderId);
@@ -43,18 +71,13 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
                 this.handleMarkAsShipped(orderId);
                 break;
             case 'previewInvoice':
-                console.log('previewInvoice ' + selectedAction);
+                this.handlePreviewInvoice(contentDocumentId)
                 break;
             case 'downloadInvoice':
-                handleDownloadRowAction(orderId);
+                this.downloadInvoice(contentDocumentId);
                 break;            
         }        
-    }
-
-    handleDownloadRowAction(orderId) {
-        const row = this.template.querySelectorAll(`[data-id="$orderId"]`);
-        console.log(row);
-    }
+    }  
 
     handleOrderNumberClick(event) {        
         this[NavigationMixin.Navigate]({
@@ -121,7 +144,7 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
                 recordIds: fileId
             }
         });
-    }
+    }    
 
     showToast(title, message, variant) {
         this.dispatchEvent(

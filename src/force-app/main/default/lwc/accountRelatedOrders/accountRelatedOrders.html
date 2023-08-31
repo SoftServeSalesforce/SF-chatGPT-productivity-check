@@ -16,18 +16,25 @@
                 </thead>
                 <tbody>
                     <template for:each={orders} for:item="order">
-                        <tr key={order.orderId}>
-                            <td><a data-id={order.orderId} onclick={handleOrderNumberClick}>{order.orderNumber}</a></td>
+                        <tr key={order.Id}>
+                            <td><a data-id={order.Id} onclick={handleOrderNumberClick}>{order.orderNumber}</a></td>
                             <td>{order.startDate}</td>                            
                             <td>{order.orderStatus}</td>
                             <td><lightning-formatted-number value={order.amount} format-style="currency" currency-code="USD" currency-display-as="symbol"></lightning-formatted-number></td>
-                            <template lwc:if={order.contentDocumentId}><lightning-icon data-id={order.contentDocumentId} size="small" icon-name="utility:download" alternative-text="Download Invoice" onclick={handleDownloadInvoice}></lightning-icon></template>
-                            <template lwc:else><td></td></template>
-                            <td><lightning-combobox key={order.orderId} data-id={order.orderId}
-                                name="Action"                                
-                                value={value}
-                                options={rowActions}
-                                onchange={handleActionSelected} ></lightning-combobox></td>                                                 
+                            <td>
+                                <template lwc:if={order.hasInvoices}><lightning-icon data-id={order.contentDocumentId} size="small" icon-name="utility:download" alternative-text="Download Invoice" onclick={handleDownloadInvoice}></lightning-icon></template>
+                                <template lwc:else></template>
+                            </td>
+                            <td>
+                                <template lwc:if={order.orderActions.length}>
+                                    <lightning-combobox data-id={order.orderIdContentDocumentId}
+                                        name="Action" 
+                                        options={order.orderActions}
+                                        onchange={handleActionSelected} 
+                                        dropdown-alignment="auto"></lightning-combobox>
+                                </template>
+                                <template lwc:else>No row actions available</template>
+                            </td>                                    
                         </tr>
                     </template>
                 </tbody>
