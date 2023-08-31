@@ -7,8 +7,7 @@ public with sharing class AccountOrdersController {
                 throw new IllegalArgumentException(ACCOUNT_ID_EMPTY_ERROR_MESSAGE);
             }
             Map<Id, Order> orders = OrderSelector.getInstance().getOrdersByAccountId(accountId);
-            List<OrderDTO> orderDtos = mapOrdersToDTO(orders.values());
-            return orderDtos;
+            return mapOrdersToDTO(orders.values());
         } catch(Exception ex) {
             throw new AuraHandledException(ex.getMessage());
         }
