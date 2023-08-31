@@ -20,7 +20,7 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
         if (data) {  
             console.log(JSON.parse(JSON.stringify(data)));
             this.orders = data.map(item => {
-                const hasInvoices = item.attachmentId ? true : false;
+                const hasInvoices = item.attachmentId;
                 const orderIdContentDocumentId = item.orderId + SEPARATOR + item.contentDocumentId;
                 return {
                     "Id": item.orderId,
