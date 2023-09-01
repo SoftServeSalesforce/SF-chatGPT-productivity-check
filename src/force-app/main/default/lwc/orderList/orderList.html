@@ -1,0 +1,15 @@
+<template>
+    <template lwc:if={loading}>
+        <lightning-spinner 
+            alternative-text="Loading" 
+            size="large">
+        </lightning-spinner>
+    </template>
+    <template lwc:else>
+        <lightning-datatable
+            key-field="id"
+            data={data}
+            columns={columns}>
+    </lightning-datatable>
+    </template>
+</template>

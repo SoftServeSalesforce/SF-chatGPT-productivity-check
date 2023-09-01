@@ -22,12 +22,14 @@ public with sharing class AccountOrdersController {
     }
 
     public class OrderDTO {
+        @AuraEnabled public Id orderId;
         @AuraEnabled public String orderNumber;
         @AuraEnabled public String status;
         @AuraEnabled public Date startDate;
         @AuraEnabled public Decimal amount;
 
         public OrderDTO(Order order) {
+            this.orderId = order.Id;
             this.orderNumber = order.OrderNumber;
             this.status = order.Status;
             this.startDate = order.EffectiveDate;
