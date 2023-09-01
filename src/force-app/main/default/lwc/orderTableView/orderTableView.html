@@ -1,0 +1,13 @@
+<template>
+    <lightning-card title="Order Table View" icon-name="standard:orders">
+        <div class="slds-m-around_medium">
+            <lightning-datatable
+                key-field="Id"
+                data={orders}
+                columns={columns}
+                hide-checkbox-column
+                onrowaction={handleRowAction}>
+            </lightning-datatable>
+        </div>
+    </lightning-card>
+</template>
