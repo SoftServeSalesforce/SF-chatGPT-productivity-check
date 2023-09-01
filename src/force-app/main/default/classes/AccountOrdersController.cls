@@ -1,5 +1,5 @@
 public with sharing class AccountOrdersController {
-    private static final String ORDER_ACTIVE_STATUS = 'Active';
+    private static final String ORDER_ACTIVATED_STATUS = 'Activated';
     private static final String ORDER_SHIPPED_STATUS = 'Shipped';
 
 
@@ -33,7 +33,7 @@ public with sharing class AccountOrdersController {
             }
 
             Order orderToActivate = ordersToActivate[0];
-            orderToActivate.Status = ORDER_ACTIVE_STATUS;
+            orderToActivate.Status = ORDER_ACTIVATED_STATUS;
             update orderToActivate;
 
             response.put('status', 'OK');
@@ -85,6 +85,8 @@ public with sharing class AccountOrdersController {
         public Date EffectiveDate { get; set; }
         @AuraEnabled
         public Id ContentDocumentId { get; set;}
+        @AuraEnabled
+        public String InvoiceUrl { get; set; }
 
         public OrderDTO(Order ord) {
             this.Id = ord.Id;
@@ -95,6 +97,7 @@ public with sharing class AccountOrdersController {
             if (ord.AttachedContentDocuments != null && !ord.AttachedContentDocuments.isEmpty()) {
                 List<AttachedContentDocument> subq = (List<AttachedContentDocument>) ord.AttachedContentDocuments;
                 this.ContentDocumentId = subq[0].ContentDocumentId;
+                this.InvoiceUrl = '/sfc/servlet.shepherd/document/download/' + this.ContentDocumentId;
             }
         }
     }

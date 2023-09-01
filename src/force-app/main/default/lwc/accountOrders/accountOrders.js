@@ -2,9 +2,10 @@ import { LightningElement, api, wire, track } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
+import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
-export default class AccountOrders extends LightningElement {
+export default class AccountOrders extends NavigationMixin(LightningElement) {
     @api recordId;
     @track orders;
 
@@ -13,13 +14,32 @@ export default class AccountOrders extends LightningElement {
         { label: 'Start Date', fieldName: 'EffectiveDate', type: 'date' },
         { label: 'Status', fieldName: 'Status', type: 'text' },
         { label: 'Amount', fieldName: 'TotalAmount', type: 'currency' },
-        { label: 'Invoice', fieldName: 'InvoiceFileId', type: 'button-icon', 
+        { label: 'Invoice', name: 'download_button', fieldName: 'ContentDocumentId', type: 'button-icon', 
             typeAttributes: { 
                 iconName: 'utility:download', disabled: {fieldName: 'isInvoiceDisabled'}
             } 
         },
         { type: 'action', typeAttributes: { rowActions: this.rowActions } }
     ];
+
+    get rowActions() {
+        return (record, doneCallback) => {
+            const actions = [];
+            if (record.Status === 'Draft') {
+                actions.push({ label: 'Activate', name: 'activate' });
+            }
+            if (record.Status === 'Activated') {
+                actions.push({ label: 'Mark as Shipped', name: 'mark_as_shipped' });
+            }
+            if (!record.isInvoiceDisabled) {
+                actions.push({ label: 'Preview Invoice', name: 'preview_invoice' });
+                actions.push({ label: 'Download Invoice', name: 'download_invoice' });
+            }
+            setTimeout(() => {
+                doneCallback(actions);
+            }, 0);
+        };
+    }
 
     @wire(getOrders, { accountId: '$recordId' })
     wiredOrders({ error, data }) {
@@ -37,24 +57,53 @@ export default class AccountOrders extends LightningElement {
         }
     }
 
-    get rowActions() {
-        return (record, doneCallback) => {
-            const actions = [];
-            if (record.Status === 'Draft') {
-                actions.push({ label: 'Activate', name: 'activate' });
-            }
-            if (record.Status === 'Active') {
-                actions.push({ label: 'Mark as Shipped', name: 'mark_as_shipped' });
-            }
-            if (record.InvoiceFileName) {
-                actions.push({ label: 'Preview Invoice', name: 'preview_invoice' });
-                actions.push({ label: 'Download Invoice', name: 'download_invoice' });
-            }
-            setTimeout(() => {
-                doneCallback(actions);
-            }, 0);
-        };
+    activateOrder(row) {
+        activateOrder({ orderId: row.Id })
+            .then(result => {
+                this.showToast(result.status, result.ErrorMessage);
+            })
+            .catch(() => {
+                this.showToast('ERROR', 'An unexpected error occurred.');
+            });
     }
+
+    markAsShipped(row) {
+        markOrderAsShipped({ orderId: row.Id })
+            .then(result => {
+                this.showToast(result.status, result.ErrorMessage);
+            })
+            .catch(() => {
+                this.showToast('ERROR', 'An unexpected error occurred.');
+            });
+    }
+
+    showToast(title, message) {
+        const variant = title === 'OK' ? 'success' : 'error';
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: title,
+                message: message,
+                variant: variant,
+            }),
+        );
+    }
+
+    previewInvoice(row) {
+        const fileId = row.ContentDocumentId;
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                pageName: 'filePreview',
+                recordId: fileId,
+                actionName: 'view'
+            }
+        });
+    }
+
+    handleInvoiceDownload(row) {
+        const downloadUrl = row.InvoiceUrl;
+        window.open(downloadUrl);
+    }    
 
     handleRowAction(event) {
         const actionName = event.detail.action.name;
@@ -71,72 +120,13 @@ export default class AccountOrders extends LightningElement {
                 this.previewInvoice(row);
                 break;
             case 'download_invoice':
-                this.downloadInvoice(row);
+                this.handleInvoiceDownload(row);
                 break;
             default:
+                this.handleInvoiceDownload(row);
                 break;
         }
     }
-
-    activateOrder(row) {
-        activateOrder({ orderId: row.Id })
-            .then(result => {
-                this.handleServerResponse(result);
-            })
-            .catch(error => {
-                this.showToast('Error', 'An unexpected error occurred.', 'error');
-            });
-    }
-
-    markAsShipped(row) {
-        markOrderAsShipped({ orderId: row.Id })
-            .then(result => {
-                this.handleServerResponse(result);
-            })
-            .catch(error => {
-                this.showToast('Error', 'An unexpected error occurred.', 'error');
-            });
-    }
-
-    handleServerResponse(result) {
-        const status = result.status;
-        const errorMessage = result.ErrorMessage;
-
-        if (status === 'OK') {
-            this.showToast('Success', 'Operation successful.', 'success');
-        } else {
-            this.showToast('Error', errorMessage, 'error');
-        }
-    }
-
-    showToast(title, message, variant) {
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: title,
-                message: message,
-                variant: variant,
-            }),
-        );
-    }
-
-    previewInvoice(row) {
-        const fileId = row.InvoiceFileId;
-        this[NavigationMixin.Navigate]({
-            type: 'standard__namedPage',
-            attributes: {
-                pageName: 'filePreview',
-            },
-            state: {
-                // assigning ContentDocumentId to show file preview
-                selectedRecordId: fileId,
-            },
-        });
-    }
-
-    downloadInvoice(row) {
-        const downloadUrl = row.InvoiceFileDownloadUrl;
-        window.open(downloadUrl);
-    }    
 }
 
 
