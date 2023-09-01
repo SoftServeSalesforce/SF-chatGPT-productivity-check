@@ -4,6 +4,8 @@ import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrde
 import activateOrders from '@salesforce/apex/AccountOrdersController.activateOrders';
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
 import markOrdersAsShipped from '@salesforce/apex/AccountOrdersController.markOrdersAsShipped';
+import getPageSize from '@salesforce/apex/AccountOrdersController.getPageSize';
+import setPageSize from '@salesforce/apex/AccountOrdersController.setPageSize';
 import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { refreshApex } from "@salesforce/apex";
@@ -18,12 +20,28 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
     noDraftSelected = true;
     noActivatedSelected = true;
 
+    currentPage = 1;
+    totalPages = 1;    
+    isFirstPage = true;
+    isLastPage = false;
+    @api pageSize;    
+
+    connectedCallback() {
+        getPageSize()
+            .then(result => {
+                console.log('getPageSize ' + result);
+            this.pageSize = result;
+          })
+          .catch(error => {
+            console.error('Failed to get page size:', error);
+          });
+    }  
+
     @wire(getOrders, { accountId: '$recordId' })
     handleOrders(value) {        
         this.wiredOrders = value; 
         const { data, error } = value; 
-        if (data) {  
-            console.log(JSON.parse(JSON.stringify(data)));
+        if (data) { 
             this.orders = data.map(item => {
                 const hasInvoices = item.attachmentId;
                 const orderIdContentDocumentId = item.orderId + SEPARATOR + item.contentDocumentId;
@@ -41,12 +59,40 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
                     "orderActions": this.populateOrderActions(item.orderStatus, hasInvoices)
                 }
             });
-            this.error = undefined;           
+
+            this.totalPages = 2;
+            this.isFirstPage = this.currentPage === 1;
+            this.isLastPage = this.currentPage >= this.totalPages;
+            this.error = undefined;   
+            
         } else if (error) {
             this.error = error;
             this.showToast('Error updating order', error.body.message, 'error');            
         }
     }
+
+    goToPreviousPage() {
+        if (this.currentPage > 1) {
+          this.currentPage -= 1;
+        }
+      }
+    
+      goToNextPage() {
+        if (this.currentPage < this.totalPages) {
+          this.currentPage += 1;
+        }
+      }
+    
+      handlePageSizeChange(event) {
+        this.pageSize = event.target.value;
+        setPageSize({ pageSize: this.pageSize })
+          .then((result) => {
+            this.handleResponse(result);
+          })
+          .catch(error => {
+            console.error('Failed to set page size:', error);
+          });
+      }
 
     getTimeInCurrentStatus(lastStatusChanged) {
         let finalTimeInStatusString = '';
@@ -257,5 +303,14 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
         const selectedStatuses = Array.from(this.selectedOrders.values());
         this.noDraftSelected = !(selectedStatuses.length && (selectedStatuses.every((status) => status === 'Draft')));        
         this.noActivatedSelected = !(selectedStatuses.length > 0 && (selectedStatuses.every((status) => status === 'Activated')));
+    }
+
+    get pageSizeOptions() {
+        return [
+                 { label: '10', value: 10 },
+                 { label: '20', value: 20 },
+                 { label: '50', value: 50 },
+                 { label: '100', value: 100 }                
+               ];
     }
 }

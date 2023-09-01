@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>Hierarchy</customSettingsType>
+    <description>Stored value for pagination page size for accountRelatedOrders component table</description>
+    <enableFeeds>false</enableFeeds>
+    <label>Pagination Page Size</label>
+    <visibility>Public</visibility>
+</CustomObject>

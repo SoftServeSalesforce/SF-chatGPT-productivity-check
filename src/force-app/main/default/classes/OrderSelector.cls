@@ -14,4 +14,12 @@ public with sharing class OrderSelector {
     public static List<Order> getOrdersByIds(List<Id> orderIds) {
         return [SELECT Id, Status FROM Order WHERE Id IN :orderIds FOR UPDATE];        
     }
+
+    public static List<Order> getOrdersWithAttachmentsByAccountId(Id accountId, Integer limitSize, Integer offsetSize) {
+        return [SELECT Id, EffectiveDate, OrderNumber, Status, TotalAmount, LastStatusChanged__c,
+        (SELECT Id, ContentDocumentId FROM AttachedContentDocuments 
+         WHERE Title LIKE 'Invoice%' ORDER BY CreatedDate DESC) 
+        FROM Order WHERE AccountId = :accountId
+        LIMIT :limitSize OFFSET :offsetSize];
+    }
 }

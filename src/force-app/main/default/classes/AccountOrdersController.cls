@@ -1,17 +1,59 @@
-public with sharing class AccountOrdersController {
+public with sharing class AccountOrdersController {   
     
     @AuraEnabled(cacheable=true)
     public static List<OrderDTO> getOrders(Id accountId) {
-        if(String.isBlank(accountId)) {
-            throw new AuraHandledException(Constants.INVALID_ACCOUNT_ID_MESSAGE);
-        }
+        System.debug('request ' + accountId);
+
+        // if(String.isBlank(request.accountId)) {
+        //     throw new AuraHandledException(Constants.INVALID_ACCOUNT_ID_MESSAGE);
+        // }
+
+        // Integer offsetSize = (request.pageNumber - 1) * request.pageSize;
+
         try {
-            List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(accountId);
+            //List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(request.accountId, request.pageSize, offsetSize);
+            List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(accountId, 5, 1);
             return populateOrderDTOs(accountRelatedOrders);
         } catch(Exception e) {
             throw new AuraHandledException(e.getMessage());
-        }        
+        }
     }
+    
+    @AuraEnabled
+    public static Integer getPageSize() {
+        PaginationPageSize__c settings = PaginationPageSize__c.getInstance(UserInfo.getUserId());
+        System.debug('PaginationPageSize__c settings ' + settings);
+        if(settings == null || settings?.Page_Size__c <= 0) {
+            throw new AuraHandledException('Please setup default page size in custom settings');
+        }
+        return (Integer) settings.Page_Size__c;
+    }
+
+    @AuraEnabled
+    public static OrderDMLSummaryResponse setPageSize(Integer pageSize) {
+        if(pageSize <= 0) {
+            throw new AuraHandledException('Invalid page size');
+        }
+
+        PaginationPageSize__c settings = PaginationPageSize__c.getInstance(UserInfo.getUserId());        
+        System.debug('settings ' + settings);
+        if (settings == null) {
+            settings = new PaginationPageSize__c();
+            settings.SetupOwnerId = UserInfo.getUserId();
+        }
+        
+        settings.Page_Size__c = pageSize; 
+
+        try{
+            Database.UpsertResult upsertResult = Database.upsert(settings);
+            System.debug('Database.UpsertResult ' + upsertResult);
+            return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_SUCCESS, 'Default page size has been updated');
+        } catch(DmlException e) {
+            throw new AuraHandledException(e.getMessage());
+        } 
+    }
+    
+    
 
     @AuraEnabled
     public static OrderDMLSummaryResponse activateOrder(Id orderId) {
@@ -101,6 +143,18 @@ public with sharing class AccountOrdersController {
         }
         return orderDTOs;
     }
+
+    public class GetOrdersRequest {
+        @AuraEnabled
+        public Id accountId;
+    
+        @AuraEnabled
+        public Integer pageNumber;
+    
+        @AuraEnabled
+        public Integer pageSize; 
+    }
+    
 
     public class OrderDMLSummaryResponse {
         @AuraEnabled
