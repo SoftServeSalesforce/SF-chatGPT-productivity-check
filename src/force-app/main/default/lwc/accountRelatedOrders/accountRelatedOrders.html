@@ -2,10 +2,15 @@
     <lightning-card title="Account Related Orders">
         <template lwc:if={orders}>
           <div class="slds-m-around_medium">
-            <template lwc:if={error}>{error}</template>
-            <table class="slds-table_bordered" aria-label="Orders List">
+            <div class="slds-m-bottom_medium">
+                <lightning-button variant="brand" label="Activate" title="Activate" onclick={handleActivateButtonSelected} disabled={noDraftSelected}></lightning-button>
+                <lightning-button variant="brand" label="Mark as Shipped" title="Mark as Shipped" onclick={handleMarkAsShippedButtonSelected} disabled={noActivatedSelected}></lightning-button>
+                <lightning-button variant="brand" label="Refresh" title="Refresh" onclick={handleRefresh}></lightning-button>
+            </div>
+            <table aria-multiselectable="true" class="slds-table_bordered" aria-label="Orders List">
                 <thead>
                     <tr>
+                        <th scope="col"></th> 
                         <th scope="col">Number</th>
                         <th scope="col">Date</th>
                         <th scope="col">Status</th>
@@ -17,8 +22,9 @@
                 <tbody>
                     <template for:each={orders} for:item="order">
                         <tr key={order.Id}>
+                            <td><input type="checkbox" data-id={order.Id} value={order.orderStatus} onchange={handleCheckboxChange}></td>
                             <td><a data-id={order.Id} onclick={handleOrderNumberClick}>{order.orderNumber}</a></td>
-                            <td>{order.startDate}</td>                            
+                            <td>{order.startDate}</td>        
                             <td><span>{order.timeInCurrentStatus}</span><span class={order.statusBadgeCSS}>{order.orderStatus}</span></td>
                             <td><lightning-formatted-number value={order.amount} format-style="currency" currency-code="USD" currency-display-as="symbol"></lightning-formatted-number></td>
                             <td>

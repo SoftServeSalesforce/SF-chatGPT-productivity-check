@@ -1,7 +1,9 @@
 import { LightningElement, wire, api } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
+import activateOrders from '@salesforce/apex/AccountOrdersController.activateOrders';
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
+import markOrdersAsShipped from '@salesforce/apex/AccountOrdersController.markOrdersAsShipped';
 import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { refreshApex } from "@salesforce/apex";
@@ -12,6 +14,9 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
     wiredOrders;
     orders;
     error;
+    selectedOrders = new Map();
+    noDraftSelected = true;
+    noActivatedSelected = true;
 
     @wire(getOrders, { accountId: '$recordId' })
     handleOrders(value) {        
@@ -201,5 +206,56 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
               variant: variant,
             }),
           );
+    }
+
+    handleCheckboxChange(event) {
+        const isChecked = event.target.checked;
+        const orderId = event.target.dataset.id;
+        const value = event.target.value;
+        if (isChecked) {
+            this.selectedOrders.set(orderId, value);
+        } else if (this.selectedOrders.has(orderId)) {
+                this.selectedOrders.delete(orderId); 
+        }        
+
+        this.updateButtonStatus();
+    }
+
+    handleActivateButtonSelected() {
+        if (window.confirm(`Do you confirm to activate ${this.selectedOrders.size} of Draft order(s)?`)) {
+            const orderIds = [... this.selectedOrders.keys()];            
+            activateOrders({ orderIds: orderIds})
+                .then(result => {
+                    this.handleResponse(result);
+                    refreshApex(this.wiredOrders);
+                })
+                .catch(error => {
+                    this.showToast('Some error occurred', error.body.message, 'error');
+                });
+        }
+    }
+
+    handleMarkAsShippedButtonSelected() {
+        if(window.confirm(`Do you confirm to mark as sent ${this.selectedOrders.length} of activated order(s)?`)) {
+            const orderIds = [... this.selectedOrders.keys()];
+            markOrdersAsShipped({ orderIds: orderIds })
+                .then(result => {
+                    this.handleResponse(result);
+                    refreshApex(this.wiredOrders);
+                })
+                .catch(error => {
+                    this.showToast('Some error occurred', error.body.message, 'error');
+                });
+        }
+    }
+
+    handleRefresh() {
+        refreshApex(this.wiredOrders);
+    }
+
+    updateButtonStatus() {
+        const selectedStatuses = Array.from(this.selectedOrders.values());
+        this.noDraftSelected = !(selectedStatuses.length && (selectedStatuses.every((status) => status === 'Draft')));        
+        this.noActivatedSelected = !(selectedStatuses.length > 0 && (selectedStatuses.every((status) => status === 'Activated')));
     }
 }

@@ -39,6 +39,43 @@ public with sharing class AccountOrdersController {
         }        
     }
 
+    @AuraEnabled
+    public static OrderDMLSummaryResponse activateOrders(List<Id> orderIds) {
+        List<Order> orders = OrderSelector.getOrdersByIds(orderIds);
+        return handleBulkOrderStatus(orders, Constants.ORDER_STATUS_DRAFT, Constants.ORDER_STATUS_ACTIVATED);
+    }
+
+    @AuraEnabled
+    public static OrderDMLSummaryResponse markOrdersAsShipped(List<Id> orderIds) {
+        List<Order> orders = OrderSelector.getOrdersByIds(orderIds);
+        return handleBulkOrderStatus(orders, Constants.ORDER_STATUS_ACTIVATED, Constants.ORDER_STATUS_SHIPPED);
+    }
+
+    private static OrderDMLSummaryResponse handleBulkOrderStatus(List<Order> orders, String statusToCompare, String statusToSet) {
+        List<Id> invalidOrders = new List<Id>();
+
+        for(Order order : orders) {
+            if(order.Status != statusToCompare) {
+                invalidOrders.add(order.Id);
+            } else {
+                order.Status = statusToSet;
+            }                
+        }
+
+        if(!invalidOrders.isEmpty()) {
+            return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_ERROR,
+                 String.format(Constants.ORDER_DML_RESPONSE_BULK_ERROR_MESSAGE, invalidOrders));
+        } else {
+            try {
+                update orders;
+                return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_SUCCESS,
+                     String.format(Constants.ORDER_DML_RESPONSE_BULK_SUCCESS_MESSAGE, new List<String>{statusToSet}));
+            } catch(DmlException e) {
+                throw new AuraHandledException(e.getMessage());
+            }    
+        }      
+    }
+
     private static OrderDMLSummaryResponse handleOrderStatus(Order order, String statusToCompare, String statusToSet) {
         if(order?.Status != statusToCompare) {
             return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_ERROR, Constants.ORDER_DML_RESPONSE_ERROR_MESSAGE + order?.Id);

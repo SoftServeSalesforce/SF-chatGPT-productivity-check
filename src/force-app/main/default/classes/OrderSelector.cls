@@ -10,4 +10,8 @@ public with sharing class OrderSelector {
     public static Order getOrderById(Id orderId) {
         return [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
     }
+
+    public static List<Order> getOrdersByIds(List<Id> orderIds) {
+        return [SELECT Id, Status FROM Order WHERE Id IN :orderIds FOR UPDATE];        
+    }
 }
