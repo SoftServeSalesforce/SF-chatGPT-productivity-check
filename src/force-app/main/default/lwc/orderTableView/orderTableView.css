@@ -1,0 +1,12 @@
+.draft {
+    color: gray;
+}
+
+.activated {
+    color: orange;
+}
+
+.shipped {
+    color: blue;
+}
+
