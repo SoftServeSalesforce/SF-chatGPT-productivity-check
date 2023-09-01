@@ -23,5 +23,4 @@ public with sharing class AccountOrdersController {
 
         return orderDTOs;
     }
-
 }
