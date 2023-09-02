@@ -37,25 +37,25 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- <template for:each={orderInfos.data} for:item="orderInfo">
-                                <tr class="slds-hint-parent" key={orderInfo.record.Id}>
+                            <template for:each={orderInfos.data} for:item="orderInfo">
+                                <tr class="slds-hint-parent" key={orderInfo.recordId}>
                                     <td data-label="Number">
-                                        <lightning-formatted-url label={orderInfo.record.OrderNumber} target="_blank"
+                                        <lightning-formatted-url label={orderInfo.orderNumber} target="_blank"
                                             value={orderInfo.recordURL}></lightning-formatted-url>
                                     </td>
                                     <td data-label="Date">
                                         <lightning-formatted-date-time
-                                            value={orderInfo.record.EffectiveDate}></lightning-formatted-date-time>
+                                            value={orderInfo.startDate}></lightning-formatted-date-time>
                                     </td>
                                     <td data-label="Status">
-                                        <div class="slds-truncate" title="Status">{orderInfo.record.Status}</div>
+                                        <div class="slds-truncate" title="Status">{orderInfo.status}</div>
                                     </td>
                                     <td data-label="Amount">
-                                        <lightning-formatted-number value={orderInfo.record.TotalAmount}
+                                        <lightning-formatted-number value={orderInfo.amount}
                                             style="currency" currency="USD"></lightning-formatted-number>
                                     </td>
                                 </tr>
-                            </template> -->
+                            </template>
                         </tbody>
                     </table>
                 </template>
@@ -64,7 +64,7 @@
                         <h2>An error occured while loading related Orders.</h2>
                     </div>
                 </template>
-                <template lwc:if={showNoDataReturned}>
+                <template lwc:if={showNoRelatedOrdersMsg}>
                     <div class="slds-text-align_center">This Account has no related Orders.</div>
                 </template>
             </div>

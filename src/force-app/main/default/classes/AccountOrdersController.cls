@@ -1,6 +1,6 @@
 /**
  * @description AccountOrdersController: Apex Class used as a controller for 'AccountOrders' LWC.
- * @note: 'AccountOrders' LWC does not exist yet; Apex tests needs to be added.
+ * //TODO: Cover with Apex Tests.
  */
 public with sharing class AccountOrdersController {
 
@@ -34,7 +34,7 @@ public with sharing class AccountOrdersController {
             //Safety block. Ensures that there is anything to convert.
             if (!orderInfos.isEmpty()) {
                 result.addAll(convertOrderInfosToOrderDTOs(orderInfos));
-            }            
+            }
             //Return UI-friendly data.
             System.debug('result: ' + result);
             return result;
@@ -47,18 +47,12 @@ public with sharing class AccountOrdersController {
      * @description convertOrderInfosToOrderDTOs: Helper method needed to convert list of
      * "Order" SObject records to list of "OrderDTO" ones.
      * @param orderInfos: Records to convert.
-     * @return: "Order" records converted to "OrderDTO" ones. 
+     * @return: "Order" records converted to "OrderDTO" ones.
      */
     private static List<OrderDTO> convertOrderInfosToOrderDTOs(List<Order> orderInfos) {
         List<OrderDTO> result = new List<OrderDTO>();
         for (Order orderInfo : orderInfos) {
-            OrderDTO dto = new OrderDTO();
-            dto.recordId = orderInfo.Id;
-            dto.recordURL = '/' + orderInfo.Id;
-            dto.startDate = orderInfo.EffectiveDate;
-            dto.status = orderInfo.Status;
-            dto.amount = orderInfo.TotalAmount;
-            result.add(dto);
+            result.add(new OrderDTO(orderInfo));
         }
         return result;
     }
@@ -67,10 +61,31 @@ public with sharing class AccountOrdersController {
      * @description OrderDTO: DTO Used to pass orders in UI-friendly format.
      */
     public class OrderDTO {
+        @AuraEnabled
         public String recordId;
+        @AuraEnabled
         public String recordURL;
+        @AuraEnabled
+        public String orderNumber;
+        @AuraEnabled
         public Date startDate;
+        @AuraEnabled
         public String status;
+        @AuraEnabled
         public Decimal amount;
+
+        /**
+         * @description OrderDTO description
+         * @param o: Order to be wrapped
+         * @return: OrderDTO instance.
+         */
+        public OrderDTO(Order o) {
+            this.recordId = o.Id;
+            this.recordURL = '/' + o.Id;
+            this.orderNumber = o.OrderNumber;
+            this.startDate = o.EffectiveDate;
+            this.status = o.Status;
+            this.amount = o.TotalAmount;
+        }
     }
 }
