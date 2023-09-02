@@ -7,6 +7,6 @@
   ],
   "name": "src",
   "namespace": "",
-  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sfdcLoginUrl": "https://cunning-raccoon-g14d27-dev-ed.trailblaze.my.salesforce.com/",
   "sourceApiVersion": "58.0"
 }
