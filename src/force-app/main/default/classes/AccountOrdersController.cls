@@ -30,12 +30,13 @@ public with sharing class AccountOrdersController {
             }
             //Get data.
             List<OrderDTO> result = new List<OrderDTO>();
-            List<Order> relatedOrders = OrderSelector.getInstance().getOrdersByParentAccountId(ORDER_FIELDS, accountId);
-            //Convert to UI-friendly format.
-            for (Order relatedOrder : relatedOrders) {
-                result.add(new OrderDTO(relatedOrder));
-            }
+            List<Order> orderInfos = OrderSelector.getInstance().getOrdersByParentAccountId(ORDER_FIELDS, accountId);
+            //Safety block. Ensures that there is anything to convert.
+            if (!orderInfos.isEmpty()) {
+                result.addAll(convertOrderInfosToOrderDTOs(orderInfos));
+            }            
             //Return UI-friendly data.
+            System.debug('result: ' + result);
             return result;
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
@@ -43,14 +44,33 @@ public with sharing class AccountOrdersController {
     }
 
     /**
+     * @description convertOrderInfosToOrderDTOs: Helper method needed to convert list of
+     * "Order" SObject records to list of "OrderDTO" ones.
+     * @param orderInfos: Records to convert.
+     * @return: "Order" records converted to "OrderDTO" ones.
+     */
+    private static List<OrderDTO> convertOrderInfosToOrderDTOs(List<Order> orderInfos) {
+        List<OrderDTO> result = new List<OrderDTO>();
+        for (Order orderInfo : orderInfos) {
+            OrderDTO dto = new OrderDTO();
+            dto.recordId = orderInfo.Id;
+            dto.recordURL = '/' + orderInfo.Id;
+            dto.startDate = orderInfo.EffectiveDate;
+            dto.status = orderInfo.Status;
+            dto.amount = orderInfo.TotalAmount;
+            result.add(dto);
+        }
+        return result;
+    }
+
+    /**
      * @description OrderDTO: DTO Used to pass orders in UI-friendly format.
-     * @note: Not certain what for it is needed as we can use fields we have available.
-     * To be updated/deleted later.
      */
     public class OrderDTO {
-        Order record;
-        public OrderDTO(Order o) {
-            this.record = o;
-        }
+        public String recordId;
+        public String recordURL;
+        public Date startDate;
+        public String status;
+        public Decimal amount;
     }
 }

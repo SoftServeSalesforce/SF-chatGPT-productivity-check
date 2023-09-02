@@ -1,0 +1,19 @@
+/**
+ * OOTB styles overrides to make custom component look like standard one.
+ */
+.slds-card__header {
+    background-color: #f3f3f3;
+    padding: 1rem !important;
+    margin-bottom: 0px !important;
+}
+
+.slds-card__body {
+    padding: 0px !important;
+    margin: 0px !important;
+}
+
+.slds-table {
+    border-bottom: none !important;
+    border-bottom-left-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+}

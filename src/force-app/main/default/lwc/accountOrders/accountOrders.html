@@ -1,0 +1,73 @@
+<template>
+    <template lwc:if={showSpinner}>
+        <lightning-spinner alternative-text="Loading Orders Data..." size="small"></lightning-spinner>
+    </template>
+    <template lwc:else>
+        <article class="slds-card slds-card_boundary">
+            <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                    <div class="slds-media__figure">
+                        <lightning-icon icon-name="standard:orders" alternative-text="Order" title="Order"
+                            size="small"></lightning-icon>
+                    </div>
+                    <div class="slds-media__body">
+                        <h2 class="slds-card__header-title">
+                            <span>{title}</span>
+                        </h2>
+                    </div>
+                </header>
+            </div>
+            <div class="slds-card__body slds-card__body_inner">
+                <template lwc:if={showData}>
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Number">Number</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Date">Date</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Status">Status</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Amount">Amount</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- <template for:each={orderInfos.data} for:item="orderInfo">
+                                <tr class="slds-hint-parent" key={orderInfo.record.Id}>
+                                    <td data-label="Number">
+                                        <lightning-formatted-url label={orderInfo.record.OrderNumber} target="_blank"
+                                            value={orderInfo.recordURL}></lightning-formatted-url>
+                                    </td>
+                                    <td data-label="Date">
+                                        <lightning-formatted-date-time
+                                            value={orderInfo.record.EffectiveDate}></lightning-formatted-date-time>
+                                    </td>
+                                    <td data-label="Status">
+                                        <div class="slds-truncate" title="Status">{orderInfo.record.Status}</div>
+                                    </td>
+                                    <td data-label="Amount">
+                                        <lightning-formatted-number value={orderInfo.record.TotalAmount}
+                                            style="currency" currency="USD"></lightning-formatted-number>
+                                    </td>
+                                </tr>
+                            </template> -->
+                        </tbody>
+                    </table>
+                </template>
+                <template lwc:if={showError}>
+                    <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+                        <h2>An error occured while loading related Orders.</h2>
+                    </div>
+                </template>
+                <template lwc:if={showNoDataReturned}>
+                    <div class="slds-text-align_center">This Account has no related Orders.</div>
+                </template>
+            </div>
+        </article>
+    </template>
+</template>
