@@ -47,7 +47,7 @@ public with sharing class AccountOrdersController {
      * @description convertOrderInfosToOrderDTOs: Helper method needed to convert list of
      * "Order" SObject records to list of "OrderDTO" ones.
      * @param orderInfos: Records to convert.
-     * @return: "Order" records converted to "OrderDTO" ones.
+     * @return: "Order" records converted to "OrderDTO" ones. 
      */
     private static List<OrderDTO> convertOrderInfosToOrderDTOs(List<Order> orderInfos) {
         List<OrderDTO> result = new List<OrderDTO>();
