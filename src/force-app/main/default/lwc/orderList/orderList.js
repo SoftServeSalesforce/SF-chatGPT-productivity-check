@@ -1,4 +1,4 @@
-import { LightningElement, api, track } from 'lwc';
+import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders'
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder'
@@ -101,17 +101,18 @@ export default class OrderList extends NavigationMixin(LightningElement) {
         const orderId = event.detail.row.orderId;
         if (actionName === 'activate') {
             await this.handleActivateOrder(orderId);
+            await this.refreshView();
         }
         if (actionName === 'markAsShipped') {
             await this.handleMarkOrderAsShipped(orderId);
+            await this.refreshView();
         }
         if (actionName === 'previewInvoice') {
-            await this.handlePreviewInvoice(orderId);
+            this.handlePreviewInvoice(orderId);
         }
         if (actionName === 'downloadInvoice') {
-            await this.handleDownloadInvoice(orderId);
+            this.handleDownloadInvoice(orderId);
         }
-        await this.refreshView();
     }
 
     async handleActivateOrder(orderId) {
