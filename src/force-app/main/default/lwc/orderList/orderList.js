@@ -25,7 +25,7 @@ export default class OrderList extends NavigationMixin(LightningElement) {
             type: 'date'
         },
         { 
-            label: 'Status', 
+            label: 'Status',
             type: 'orderStatusTimeBadge',
             typeAttributes: { status: { fieldName: 'status'}, lastStatusChanged: { fieldName: 'lastStatusChanged'} },
         },
@@ -53,7 +53,6 @@ export default class OrderList extends NavigationMixin(LightningElement) {
 
     async refreshView() {
         this.loading = true;
-        this.data = [];
         try {
             const response = await getOrders({ accountId: this.recordId });
             this.orders = response;
@@ -66,13 +65,12 @@ export default class OrderList extends NavigationMixin(LightningElement) {
     }
 
     async processResponse(response) {
+        this.data = [];
         response.forEach(async row => {
             this.data.push({
                 ...row,
                 disableDownloadButton: !row.lastInvoiceId,
-                recordUrl: await this.generateRecordUrl(row.orderId),
-                //timeInStatus: this.calculateTimeInStatus(row)
-                tempStatus: 'test'
+                recordUrl: await this.generateRecordUrl(row.orderId)
             })
         })
     }
@@ -178,9 +176,5 @@ export default class OrderList extends NavigationMixin(LightningElement) {
                 actionName: 'view',
             },
         })
-    }
-
-    calculateTimeInStatus(order) {
-        const test = new Intl.RelativeTimeFormat('en', { style: 'short' });
     }
 }

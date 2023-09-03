@@ -15,8 +15,11 @@ export default class OrderStatusTimeBadge extends LightningElement {
     }
 
     calculateRelativeTime() {
-        const seconds = Math.floor((new Date() - Date.parse(this.lastStatusChanged)) / 1000);
+        const seconds = this.lastStatusChanged ? Math.floor((new Date() - Date.parse(this.lastStatusChanged)) / 1000) : 0;
         const found = this.timeDividers.find(timeDivider => seconds / timeDivider.divider > 1);
+        if (!found) {
+            return '1 second(s) in '
+        }
         return Math.floor(seconds / found.divider) + found.text;
     }
 
@@ -43,7 +46,7 @@ export default class OrderStatusTimeBadge extends LightningElement {
         },
         {
             divider: 1,
-            text: ' second(s) in in '
+            text: ' second(s) in '
         },
     ]
 }
