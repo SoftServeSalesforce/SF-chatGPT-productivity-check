@@ -27,7 +27,7 @@ export default class AccountOrders extends LightningElement {
      * while Orders data is being loaded.
      */
     get showSpinner() {
-        return Object.hasOwn(this.orderInfos || {}, 'data');
+        return !Object.hasOwn(this.orderInfos || {}, 'data');
     }
 
     /**
