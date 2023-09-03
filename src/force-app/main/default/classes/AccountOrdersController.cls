@@ -38,7 +38,7 @@ public with sharing class AccountOrdersController {
             if (orderDto.status != 'Activated') {
                 return new OrderUpdateResponse(ERROR_STATUS, ORDER_INVALID_STATUS_ERROR_MESSAGE);
             }
-            update new Order(Id = orderDto.orderId, IsShipped__c = true);
+            update new Order(Id = orderDto.orderId, Status = 'Shipped');
             return new OrderUpdateResponse(OK_STATUS, null);
         } catch (Exception e) {
             System.debug(e.getMessage());
@@ -61,7 +61,7 @@ public with sharing class AccountOrdersController {
         @AuraEnabled public Date startDate;
         @AuraEnabled public Decimal amount;
         @AuraEnabled public Id lastInvoiceId;
-        @AuraEnabled public Boolean isShipped;
+        @AuraEnabled public Datetime lastStatusChanged;
 
         public OrderDTO(Order order) {
             this.orderId = order.Id;
@@ -70,7 +70,7 @@ public with sharing class AccountOrdersController {
             this.startDate = order.EffectiveDate;
             this.amount = order.TotalAmount;
             this.lastInvoiceId = order.CombinedAttachments.isEmpty() ? null : order.CombinedAttachments[0].Id;
-            this.isShipped = order.IsShipped__c;
+            this.lastStatusChanged = order.LastStatusChanged__c;
         }
     }
 

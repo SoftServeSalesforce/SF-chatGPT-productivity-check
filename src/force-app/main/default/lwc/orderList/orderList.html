@@ -6,11 +6,11 @@
         </lightning-spinner>
     </template>
     <template lwc:else>
-        <lightning-datatable
+        <c-order-datatable
             key-field="id"
             data={data}
             columns={columns}
             onrowaction={handleRowAction}>
-    </lightning-datatable>
+    </c-order-datatable>
     </template>
 </template>

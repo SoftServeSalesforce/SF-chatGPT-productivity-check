@@ -1,0 +1,15 @@
+.draft {
+    --slds-c-badge-color-background: gray;
+}
+
+.activated {
+    --slds-c-badge-color-background: orange;
+}
+
+.shipped {
+    --slds-c-badge-color-background: blue;
+}
+
+.delivered {
+    --slds-c-badge-color-background: green;
+}

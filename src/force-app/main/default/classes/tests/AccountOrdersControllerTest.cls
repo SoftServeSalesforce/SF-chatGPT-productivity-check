@@ -74,7 +74,7 @@ private class AccountOrdersControllerTest {
         System.assertEquals(AccountOrdersController.OK_STATUS, response.status);
 
         Order updatedOrder = OrderSelector.getInstance().getOrderById(order.Id);
-        System.assertEquals(true, updatedOrder.IsShipped__c);
+        System.assertEquals('Shipped', updatedOrder.Status);
     }
 
     @IsTest

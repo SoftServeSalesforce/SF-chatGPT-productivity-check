@@ -26,12 +26,8 @@ export default class OrderList extends NavigationMixin(LightningElement) {
         },
         { 
             label: 'Status', 
-            fieldName: 'status'
-        },
-        { 
-            label: 'Shipped?', 
-            fieldName: 'isShipped',
-            type: 'boolean'
+            type: 'orderStatusTimeBadge',
+            typeAttributes: { status: { fieldName: 'status'}, lastStatusChanged: { fieldName: 'lastStatusChanged'} },
         },
         {
             label: 'Amount',
@@ -74,7 +70,9 @@ export default class OrderList extends NavigationMixin(LightningElement) {
             this.data.push({
                 ...row,
                 disableDownloadButton: !row.lastInvoiceId,
-                recordUrl: await this.generateRecordUrl(row.orderId)
+                recordUrl: await this.generateRecordUrl(row.orderId),
+                //timeInStatus: this.calculateTimeInStatus(row)
+                tempStatus: 'test'
             })
         })
     }
@@ -84,7 +82,7 @@ export default class OrderList extends NavigationMixin(LightningElement) {
         if (row.status === 'Draft') {
             actions.push({ label: 'Activate', name: 'activate' });
         }
-        if (row.status === 'Activated' && !row.isShipped) {
+        if (row.status === 'Activated') {
             actions.push({ label: 'Mark as Shipped', name: 'markAsShipped' });
         }
         if (row.lastInvoiceId != null) {
@@ -180,5 +178,9 @@ export default class OrderList extends NavigationMixin(LightningElement) {
                 actionName: 'view',
             },
         })
+    }
+
+    calculateTimeInStatus(order) {
+        const test = new Intl.RelativeTimeFormat('en', { style: 'short' });
     }
 }
