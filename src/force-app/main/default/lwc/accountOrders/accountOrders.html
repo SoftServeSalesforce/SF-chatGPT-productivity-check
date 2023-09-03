@@ -17,7 +17,7 @@
                     </div>
                 </header>
             </div>
-            <div class="slds-card__body slds-card__body_inner">
+            <div class={cardBodyCSSClasses}>
                 <template lwc:if={showData}>
                     <table class="slds-table slds-table_cell-buffer slds-table_bordered">
                         <thead>
@@ -51,8 +51,8 @@
                                         <div class="slds-truncate" title="Status">{orderInfo.status}</div>
                                     </td>
                                     <td data-label="Amount">
-                                        <lightning-formatted-number value={orderInfo.amount}
-                                            style="currency" currency="USD"></lightning-formatted-number>
+                                        <lightning-formatted-number value={orderInfo.amount} format-style="currency"
+                                            currency-code="USD"></lightning-formatted-number>
                                     </td>
                                 </tr>
                             </template>
@@ -68,6 +68,11 @@
                     <div class="slds-text-align_center">This Account has no related Orders.</div>
                 </template>
             </div>
+            <footer class="slds-card__footer">
+                <template lwc:if={showViewAll}>
+                    <a class="slds-card__footer-action" onclick={handleViewAllClick}>View All</a>
+                </template>
+            </footer>
         </article>
     </template>
 </template>

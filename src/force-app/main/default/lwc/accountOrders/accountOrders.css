@@ -12,8 +12,27 @@
     margin: 0px !important;
 }
 
-.slds-table {
-    border-bottom: none !important;
-    border-bottom-left-radius: 0.25rem;
-    border-bottom-right-radius: 0.25rem;
+.slds-card__body.preview {
+    max-height: 12.25rem !important; /*25px + 28.5px * 6 => rem, where 25px is a header heigth; 28.5px is a row heigth*/
+    overflow-y: hidden !important;
+}
+
+.slds-card__body.show-all {
+    max-height: 24.5rem !important; /*25px + 28.5px * 12 => rem, where 25px is a header heigth; 28.5px is a row heigth*/
+    overflow-y: scroll !important;
+}
+
+.show-all table {
+    border-bottom: 0px !important;
+    border-bottom-left-radius: 0.25rem !important;
+    border-bottom-right-radius: 0.25rem !important;
+}
+
+tr th:first-of-type,
+tr td:first-of-type {
+    padding-left: 0.5rem !important;
+}
+
+.slds-card__footer {
+    margin-top: 0px !important;
 }
