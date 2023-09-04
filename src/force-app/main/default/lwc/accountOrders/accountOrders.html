@@ -1,6 +1,8 @@
 <template>
     <template lwc:if={showSpinner}>
-        <lightning-spinner alternative-text="Loading Orders Data..." size="small"></lightning-spinner>
+        <div class="main-spinner-container slds-align_absolute-center">
+            <lightning-spinner alternative-text="Loading Orders Data..." size="small"></lightning-spinner>
+        </div>
     </template>
     <template lwc:else>
         <article class="slds-card slds-card_boundary">
@@ -40,7 +42,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template for:each={dataToDisplay.data} for:item="o" for:index="i">
+                            <template for:each={orders.data} for:item="o" for:index="i">
                                 <tr class="slds-hint-parent" key={o.recordId}>
                                     <td data-label="Number">
                                         <lightning-formatted-url label={o.orderNumber} target="_blank" value={o.recordURL}></lightning-formatted-url>
@@ -58,26 +60,21 @@
                                     </td>
                                     <td data-label="Actions">
                                         <template lwc:if={o.showActionsMenu}>
-                                            <div class={o.actionMenuCSSClasses}>
-                                                <lightning-button-icon icon-name="utility:down" size="x-small" alternative-text="View Actions"
-                                                    class="slds-m-left_xx-small" onclick={toggleActionsMenu} data-index={i}></lightning-button-icon>
-                                                <div class="slds-dropdown slds-dropdown_right slds-dropdown_actions">
-                                                    <ul class="slds-dropdown__list" role="menu" aria-label="Show Actions">
-                                                        <template lwc:if={o.canBeActivated}>
-                                                            <li class="slds-dropdown__item" role="presentation">
-                                                                <lightning-button variant="base" label="Activate" title="Activate"
-                                                                    onclick={handleActivateOrderClick} class="slds-m-left_x-small"></lightning-button>
-                                                            </li>
-                                                        </template>
-                                                        <template lwc:if={o.canBeShipped}>
-                                                            <li class="slds-dropdown__item" role="presentation">
-                                                                <lightning-button variant="base" label="Mark as Shipped" title="Mark as Shipped"
-                                                                    onclick={handleMarkAsShippedClick} class="slds-m-left_x-small"></lightning-button>
-                                                            </li>
-                                                        </template>
-                                                    </ul>
-                                                </div>
-                                            </div>
+                                            <lightning-button-menu alternative-text="Show menu" icon-size="x-small">
+                                                <template lwc:if={o.canBeActivated}>
+                                                    <lightning-menu-item value="Activate" label="Activate" onclick={handleActivateOrderClick} data-record-id={o.recordId}>
+                                                    </lightning-menu-item>
+                                                </template>
+                                                <template lwc:if={o.canBeShipped}>
+                                                    <lightning-menu-item value="Mark as Shipped" label="Mark as Shipped" onclick={handleMarkAsShippedClick}
+                                                        data-record-id={o.recordId}>
+                                                    </lightning-menu-item>
+                                                </template>
+                                                <template lwc:if={o.hasInvoice}>
+                                                    <lightning-menu-item href={o.invoicePreviewURL} label="Preview Invoice"></lightning-menu-item>
+                                                    <lightning-menu-item href={o.invoiceDownloadURL} label="Download Invoice"></lightning-menu-item>
+                                                </template>
+                                            </lightning-button-menu>
                                         </template>
                                     </td>
                                 </tr>
@@ -91,7 +88,7 @@
                     </div>
                 </template>
                 <template lwc:if={showNoRelatedOrdersMsg}>
-                    <div class="slds-text-align_center">This Account has no related Orders.</div>
+                    <div class="slds-text-align_center slds-p-around_small">This Account has no related Orders.</div>
                 </template>
             </div>
             <footer class="slds-card__footer">

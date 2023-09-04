@@ -1,4 +1,5 @@
 import { LightningElement, track, api, wire } from 'lwc';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import moveOrdersToActivatedStatus from '@salesforce/apex/AccountOrdersController.moveOrdersToActivatedStatus';
 import moveOrdersToShippedStatus from '@salesforce/apex/AccountOrdersController.moveOrdersToShippedStatus';
@@ -6,10 +7,15 @@ import moveOrdersToShippedStatus from '@salesforce/apex/AccountOrdersController.
 const PREVIEW_ROWS_COUNT = 5;
 const CARD_STATE_PREVIEW = 'preview';
 const CARD_STATE_SHOW_ALL = 'show-all';
-const CARD_BODY_CSS_CLASSES_PREVIEW = 'slds-card__body slds-card__body_inner preview';
-const CARD_BODY_CSS_CLASSES_SHOW_ALL = 'slds-card__body slds-card__body_inner show-all';
-const ACTION_MENU_CSS_CLASSES_CLOSED = 'slds-dropdown-trigger slds-dropdown-trigger_click';
-const ACTION_MENU_CSS_CLASSES_OPEN = 'slds-dropdown-trigger slds-dropdown-trigger_click slds-is-open';
+const CARD_BODY_BASE_CSS_CLASSES = 'slds-card__body slds-card__body_inner ';
+
+const ORDER_UPDATE_RESPONSE_STATUS_OK = 'ok';
+const TOAST_TITLE_SUCCESS = 'Success!';
+const TOAST_TITLE_ERROR = 'Error!';
+const TOAST_MESSAGE_SUCCESS = 'Order status was successfuly updated!';
+const TOAST_MESSAGE_ERROR_TEMPLATE = 'Invalid Operation for Order #{0}.';
+const TOAST_VARIANT_SUCCESS = 'success';
+const TOAST_VARIANT_ERROR = 'error';
 
 export default class AccountOrders extends LightningElement {
     /**
@@ -24,68 +30,34 @@ export default class AccountOrders extends LightningElement {
     _cardState = CARD_STATE_PREVIEW;
 
     /**
+     * @description _isLoadingOrders: Orders data load indicator.
+     * When set, component load spinner is shown.
+     */
+    _isLoadingOrders = true;
+
+    /**
      * @desciption _isUpdatingOrder: Order update indicator. Set to "true" when
      * update is in progress. Once set, component load spinner is shown.
      */
     _isUpdatingOrder = false;
 
     /**
-     * @description dataToDisplay: Currently shown data.
+     * @description orders: Currently shown data.
      */
     @track
-    dataToDisplay;
+    orders;
 
-    /**
-     * @description orderInfos: All data returned by Apex controller.
-     */
-    _orderInfos;
+    _totalOrders = 0;
 
-    /**
-     * @description wiredOrders: Method used to get Orders data and make it
-     * display-ready.
-     * @param {Object} response: Returned information (error and/or data).
-     */
-    @wire(getOrders, { accountId: '$recordId' })
-    wiredOrders(response) {
-        this._orderInfos = { data: undefined, error: undefined };
-        let info = JSON.parse(JSON.stringify(response));
-        if (!info?.data) {
-            return;
-        }
-        for (let i = info.data.length; i--;) {
-            this._configureActionsMenu(info.data[i]);
-        }
-        this._orderInfos = info;
-        this._setDataToDisplay();
-        console.clear();
-        console.log('this._orderInfos?.data', this._orderInfos?.data);
-    };
-
-    _configureActionsMenu(dataItem) {
-        dataItem.showActionsMenu = dataItem.canBeActivated || dataItem.canBeShipped;
-        dataItem.isActionMenuOpen = false;
-        dataItem.actionMenuCSSClasses = ACTION_MENU_CSS_CLASSES_CLOSED;
-    }
-
-    _setDataToDisplay() {
-        if (
-            PREVIEW_ROWS_COUNT >= this._orderInfos.length
-            || PREVIEW_ROWS_COUNT === this._cardState
-        ) {
-            this.dataToDisplay = this._orderInfos;
-        } else {
-            this.dataToDisplay = {
-                data: this._orderInfos.data.slice(0, PREVIEW_ROWS_COUNT),
-                error: this._orderInfos.error
-            };
-        }
+    async connectedCallback() {
+        await this._getOrders();
     }
 
     /**
      * @description title: Getter used to reactively render component title.
      */
     get title() {
-        return `Orders (${this._orderInfos?.data?.length || '0'})`;
+        return `Orders (${this._totalOrders})`;
     }
 
     /**
@@ -93,7 +65,7 @@ export default class AccountOrders extends LightningElement {
      * load spinner while Orders data is being loaded.
      */
     get showSpinner() {
-        return !Object.hasOwn(this._orderInfos || {}, 'data') || this._isUpdatingOrder;
+        return this._isLoadingOrders || this._isUpdatingOrder;
     }
 
     /**
@@ -101,7 +73,7 @@ export default class AccountOrders extends LightningElement {
      * (if there is any to display).
      */
     get showData() {
-        return 0 < this._orderInfos?.data?.length;
+        return 0 < this.orders?.data?.length;
     }
 
     /**
@@ -109,7 +81,7 @@ export default class AccountOrders extends LightningElement {
      * (if any returned).
      */
     get showError() {
-        return this._orderInfos?.error ? true : false;
+        return this.orders?.error;
     }
 
     /**
@@ -117,7 +89,7 @@ export default class AccountOrders extends LightningElement {
      * based on a "_cardState" property value.
      */
     get cardBodyCSSClasses() {
-        return CARD_STATE_PREVIEW === this._cardState ? CARD_BODY_CSS_CLASSES_PREVIEW : CARD_BODY_CSS_CLASSES_SHOW_ALL;
+        return CARD_BODY_BASE_CSS_CLASSES + (CARD_STATE_PREVIEW === this._cardState ? CARD_STATE_PREVIEW : CARD_STATE_SHOW_ALL);
     }
 
     /**
@@ -125,14 +97,14 @@ export default class AccountOrders extends LightningElement {
      * message if there are no Orders related to given Account.
      */
     get showNoRelatedOrdersMsg() {
-        return !this.showData && !this.showError && 0 >= this._orderInfos?.data?.length;
+        return !this.showData && !this.showError && 0 >= this.orders?.data?.length;
     }
 
     /**
      * @description showViewAll: Getter used to conditionally render "View All" button.
      */
     get showViewAll() {
-        return PREVIEW_ROWS_COUNT < this._orderInfos?.data?.length && this._cardState !== CARD_STATE_SHOW_ALL;
+        return PREVIEW_ROWS_COUNT < this._totalOrders && this._cardState !== CARD_STATE_SHOW_ALL;
     }
 
     /**
@@ -140,38 +112,94 @@ export default class AccountOrders extends LightningElement {
      * Changes "_cardState" to "CARD_STATE_SHOW_ALL".
      * @param {Object} event: Event to handle.
      */
-    handleViewAllClick(event) {
-        this.dataToDisplay = this._orderInfos;
+    async handleViewAllClick(event) {
         this._cardState = CARD_STATE_SHOW_ALL;
+        await this._getOrders();
     }
 
-    toggleActionsMenu(event) {
-        const index = parseInt(event.target.dataset.index);
-        for (let i = this.dataToDisplay.data.length; i--;) {
-            let dataItem = this.dataToDisplay.data[i];
-            if (i != index) {
-                //Close other dropdown menus.
-                dataItem.isActionMenuOpen = false;
-                dataItem.actionMenuCSSClasses = ACTION_MENU_CSS_CLASSES_CLOSED;
-            } else {
-                //Toggle touched dorpdown menu.
-                dataItem.isActionMenuOpen = !dataItem.isActionMenuOpen;
-                dataItem.actionMenuCSSClasses = dataItem.isActionMenuOpen ? ACTION_MENU_CSS_CLASSES_OPEN : ACTION_MENU_CSS_CLASSES_CLOSED;
-            }
-        }
-    }
-
+    /**
+     * @description handleActivateOrderClick: Handler for "Activate"
+     * button click. Attempts to move given Order to "Activated" Status.
+     * @param {Object} event: Event with Order details.
+     */
     async handleActivateOrderClick(event) {
         this._isUpdatingOrder = true;
-        try {
-
-        } catch (error) {
-            //TODO: handle error
-        } finally {
-            this._isUpdatingOrder = false;
-        }
+        const recordId = event.target.dataset.recordId;
+        const result = await moveOrdersToActivatedStatus({ orderIds: [recordId] });
+        await this._getOrders();
+        this._isUpdatingOrder = false;
+        this._handleOrderStatusChangeResult(recordId, result);
     }
 
+    /**
+     * @description handleMarkAsShippedClick: Handler for "Mart as Shipped"
+     * button click. Attempts to move given Order to "Shipped" Status.
+     * @param {Object} event: Event with Order details.
+     */
     async handleMarkAsShippedClick(event) {
+        this._isUpdatingOrder = true;
+        const recordId = event.target.dataset.recordId;
+        const result = await moveOrdersToShippedStatus({ orderIds: [recordId] });
+        await this._getOrders();
+        this._isUpdatingOrder = false;
+        this._handleOrderStatusChangeResult(recordId, result);
+    }
+
+    /**
+     * @description _handleOrderStatusChangeResult: Helper method used to handle
+     * Order "Status" update result by showing toast message.
+     * @param {String} recordId: Record to update Id.
+     * @param {Object} result: Update result. 
+     */
+    _handleOrderStatusChangeResult(recordId, result) {
+        this.dispatchEvent(new ShowToastEvent({
+            title: this._buildToastTitleOnOrderUpdate(result),
+            message: this._buildToastMessageOnOrderUpdate(recordId, result),
+            variant: this._buildToastVariantOnOrderUpdate(result)
+        }));
+    }
+
+    _buildToastTitleOnOrderUpdate(result) {
+        return ORDER_UPDATE_RESPONSE_STATUS_OK === result.status ? TOAST_TITLE_SUCCESS : TOAST_TITLE_ERROR;
+    }
+
+    _buildToastMessageOnOrderUpdate(recordId, result) {
+        let message;
+        if (ORDER_UPDATE_RESPONSE_STATUS_OK === result.status) {
+            message = TOAST_MESSAGE_SUCCESS;
+        } else {
+            const o = this.orders.data.find((order) => {
+                return order.recordId === recordId
+            });
+            message = TOAST_MESSAGE_ERROR_TEMPLATE.replace('{0}', o?.orderNumber);
+        }
+        return message;
+    }
+
+    _buildToastVariantOnOrderUpdate(result) {
+        return ORDER_UPDATE_RESPONSE_STATUS_OK === result.status ? TOAST_VARIANT_SUCCESS : TOAST_VARIANT_ERROR;
+    }
+
+    /**
+     * @description _getOrders: Helper method used to load Orders data
+     * related to opened Account. 
+     */
+    async _getOrders() {
+        try {
+            this._isLoadingOrders = true;
+            //Deep clone so it is possible to create new properties as necessary.
+            let response = await getOrders({ accountId: this.recordId });
+            this._totalOrders = response.length;
+            //Drop records which cannot be shown at preview state (if necessary).
+            const trunc = CARD_STATE_PREVIEW === this._cardState && PREVIEW_ROWS_COUNT <= this._totalOrders;
+            this.orders = {
+                data: trunc ? response.slice(0, PREVIEW_ROWS_COUNT) : response,
+                error: undefined
+            };
+        } catch (error) {
+            this.orders = { data: undefined, error: error };
+        } finally {
+            this._isLoadingOrders = false;
+        }
     }
 }

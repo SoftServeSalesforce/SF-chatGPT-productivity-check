@@ -5,6 +5,10 @@
     --table-rows-count-in-show-all-mode: 15;
 }
 
+.main-spinner-container {
+    height: 2.5rem;
+}
+
 /**
  * OOTB styles overrides to make custom component look like standard one.
  */
@@ -21,12 +25,10 @@
 
 .slds-card__body.preview {
     max-height: calc(var(--table-header-row-height) + var(--table-body-row-height) * var(--table-rows-count-in-preview-mode)) !important;
-    /* overflow-y: hidden !important; */
 }
 
 .slds-card__body.show-all {
     max-height: calc(var(--table-header-row-height) + var(--table-body-row-height) * var(--table-rows-count-in-show-all-mode)) !important;
-    /* overflow-y: scroll !important; */
 }
 
 .show-all table {
@@ -49,5 +51,6 @@ tr th:last-of-type {
 }
 
 .slds-card__footer {
+    border-top: 0px !important;
     margin-top: 0px !important;
 }

@@ -56,29 +56,7 @@ public inherited sharing class OrderService {
      */
     public void setOrdersStatusToShipped(List<Order> orders) {
         for (Order o : orders) {
-            o.Status = Constants.ORDER_STATUS_ACTIVATED;
+            o.Status = Constants.ORDER_STATUS_SHIPPED;
         }
-    }
-
-    /**
-     * @description canBeActivated: Helper method used to conditionally
-     * display "Activate" action button for 'AccountOrders' LWC
-     * when criteria are met.
-     * @param o: Order to check.
-     * @return: "true" if "Status" value is "Draft", "false" otherwise.
-     */
-    public Boolean canBeActivated(Order o) {
-        return Constants.ORDER_STATUS_DRAFT.equalsIgnoreCase(o.Status);
-    }
-
-    /**
-     * @description canBeActivated: Helper method used to conditionally
-     * display "Mark as Shipped" action button for 'AccountOrders' LWC
-     * when criteria are met.
-     * @param o: Order to check.
-     * @return: "true" if "Status" value is "Activated", "false" otherwise.
-     */
-    public Boolean canBeShipped(Order o) {
-        return Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(o.Status);
     }
 }
