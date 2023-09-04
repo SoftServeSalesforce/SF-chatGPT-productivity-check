@@ -20,3 +20,4 @@ The `sfdx-project.json` file contains useful configuration information for your 
 ## Project start
 
 ## Part 2 start
+## Pause
