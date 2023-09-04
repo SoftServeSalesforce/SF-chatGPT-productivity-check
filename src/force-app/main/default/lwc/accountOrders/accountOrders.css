@@ -1,3 +1,10 @@
+:host {
+    --table-header-row-height: 1.563rem;
+    --table-body-row-height: 1.922rem;
+    --table-rows-count-in-preview-mode: 5;
+    --table-rows-count-in-show-all-mode: 15;
+}
+
 /**
  * OOTB styles overrides to make custom component look like standard one.
  */
@@ -13,13 +20,13 @@
 }
 
 .slds-card__body.preview {
-    max-height: 12.25rem !important; /*25px + 28.5px * 6 => rem, where 25px is a header heigth; 28.5px is a row heigth*/
-    overflow-y: hidden !important;
+    max-height: calc(var(--table-header-row-height) + var(--table-body-row-height) * var(--table-rows-count-in-preview-mode)) !important;
+    /* overflow-y: hidden !important; */
 }
 
 .slds-card__body.show-all {
-    max-height: 24.5rem !important; /*25px + 28.5px * 12 => rem, where 25px is a header heigth; 28.5px is a row heigth*/
-    overflow-y: scroll !important;
+    max-height: calc(var(--table-header-row-height) + var(--table-body-row-height) * var(--table-rows-count-in-show-all-mode)) !important;
+    /* overflow-y: scroll !important; */
 }
 
 .show-all table {
@@ -28,9 +35,17 @@
     border-bottom-right-radius: 0.25rem !important;
 }
 
+tbody tr {
+    height: var(--table-body-row-height);
+}
+
 tr th:first-of-type,
 tr td:first-of-type {
     padding-left: 0.5rem !important;
+}
+
+tr th:last-of-type {
+    width: 3.25rem;
 }
 
 .slds-card__footer {

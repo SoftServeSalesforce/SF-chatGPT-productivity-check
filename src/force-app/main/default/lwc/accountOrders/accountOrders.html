@@ -34,25 +34,51 @@
                                 <th scope="col">
                                     <div class="slds-truncate" title="Amount">Amount</div>
                                 </th>
+                                <th scope="col">
+                                    <div class="slds-truncate slds-assistive-text" title="Actions">Actions</div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            <template for:each={orderInfos.data} for:item="orderInfo">
-                                <tr class="slds-hint-parent" key={orderInfo.recordId}>
+                            <template for:each={dataToDisplay.data} for:item="o" for:index="i">
+                                <tr class="slds-hint-parent" key={o.recordId}>
                                     <td data-label="Number">
-                                        <lightning-formatted-url label={orderInfo.orderNumber} target="_blank"
-                                            value={orderInfo.recordURL}></lightning-formatted-url>
+                                        <lightning-formatted-url label={o.orderNumber} target="_blank" value={o.recordURL}></lightning-formatted-url>
                                     </td>
                                     <td data-label="Date">
                                         <lightning-formatted-date-time
-                                            value={orderInfo.startDate}></lightning-formatted-date-time>
+                                            value={o.startDate}></lightning-formatted-date-time>
                                     </td>
                                     <td data-label="Status">
-                                        <div class="slds-truncate" title="Status">{orderInfo.status}</div>
+                                        <div class="slds-truncate" title="Status">{o.status}</div>
                                     </td>
                                     <td data-label="Amount">
-                                        <lightning-formatted-number value={orderInfo.amount} format-style="currency"
+                                        <lightning-formatted-number value={o.amount} format-style="currency"
                                             currency-code="USD"></lightning-formatted-number>
+                                    </td>
+                                    <td data-label="Actions">
+                                        <template lwc:if={o.showActionsMenu}>
+                                            <div class={o.actionMenuCSSClasses}>
+                                                <lightning-button-icon icon-name="utility:down" size="x-small" alternative-text="View Actions"
+                                                    class="slds-m-left_xx-small" onclick={toggleActionsMenu} data-index={i}></lightning-button-icon>
+                                                <div class="slds-dropdown slds-dropdown_right slds-dropdown_actions">
+                                                    <ul class="slds-dropdown__list" role="menu" aria-label="Show Actions">
+                                                        <template lwc:if={o.canBeActivated}>
+                                                            <li class="slds-dropdown__item" role="presentation">
+                                                                <lightning-button variant="base" label="Activate" title="Activate"
+                                                                    onclick={handleActivateOrderClick} class="slds-m-left_x-small"></lightning-button>
+                                                            </li>
+                                                        </template>
+                                                        <template lwc:if={o.canBeShipped}>
+                                                            <li class="slds-dropdown__item" role="presentation">
+                                                                <lightning-button variant="base" label="Mark as Shipped" title="Mark as Shipped"
+                                                                    onclick={handleMarkAsShippedClick} class="slds-m-left_x-small"></lightning-button>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </td>
                                 </tr>
                             </template>

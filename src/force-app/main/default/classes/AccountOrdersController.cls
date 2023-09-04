@@ -30,13 +30,14 @@ public with sharing class AccountOrdersController {
             }
             //Get data.
             List<OrderDTO> result = new List<OrderDTO>();
-            List<Order> orderInfos = OrderSelector.getInstance().getOrdersByParentAccountId(ORDER_FIELDS, accountId);
+            List<Order> orders = OrderSelector.getInstance().getOrdersByParentAccountId(ORDER_FIELDS, accountId);
             //Safety block. Ensures that there is anything to convert.
-            if (!orderInfos.isEmpty()) {
-                result.addAll(convertOrderInfosToOrderDTOs(orderInfos));
+            for (Order o : orders) {
+                OrderDTO odto = new OrderDTO();
+                odto.addOrderDetails(o);
+                result.add(odto);
             }
             //Return UI-friendly data.
-            System.debug('result: ' + result);
             return result;
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
@@ -44,21 +45,50 @@ public with sharing class AccountOrdersController {
     }
 
     /**
-     * @description convertOrderInfosToOrderDTOs: Helper method needed to convert list of
-     * "Order" SObject records to list of "OrderDTO" ones.
-     * @param orderInfos: Records to convert.
-     * @return: "Order" records converted to "OrderDTO" ones.
+     * @description markOrdersAsActive: Updates status of Orders in scope to "Activated".
+     * @param orderIds: Scope.
+     * @return: OrderUpdateResultDTO instance. 
      */
-    private static List<OrderDTO> convertOrderInfosToOrderDTOs(List<Order> orderInfos) {
-        List<OrderDTO> result = new List<OrderDTO>();
-        for (Order orderInfo : orderInfos) {
-            result.add(new OrderDTO(orderInfo));
+    @AuraEnabled
+    public static OrderUpdateResultDTO moveOrdersToActivatedStatus(List<Id> orderIds) {
+        OrderUpdateResultDTO our = new OrderUpdateResultDTO();
+        try {
+            OrderService service = OrderService.getInstance();
+            List<Order> orders = service.buildOrders(new Set<Id>(orderIds));
+            service.setOrdersStatusToActived(orders);
+            update orders;
+            our.status = Constants.ORDER_UPDATE_STATUS_OK;
+        } catch (Exception e) {
+            our.status = Constants.ORDER_UPDATE_STATUS_OK;
+            our.errorMessage = e.getMessage();
         }
-        return result;
+        return our;
     }
 
     /**
-     * @description OrderDTO: DTO Used to pass orders in UI-friendly format.
+     * @description markOrdersAsShipped: Updates status of Orders in scope to "Shipped".
+     * @param orderIds: Scope.
+     * @return: OrderUpdateResultDTO instance. 
+     */
+    @AuraEnabled
+    public static OrderUpdateResultDTO moveOrdersToShippedStatus(List<Id> orderIds) {
+        OrderUpdateResultDTO our = new OrderUpdateResultDTO();
+        try {
+            OrderService service = OrderService.getInstance();
+            List<Order> orders = service.buildOrders(new Set<Id>(orderIds));
+            service.setOrdersStatusToShipped(orders);
+            update orders;
+            our.status = Constants.ORDER_UPDATE_STATUS_OK;
+        } catch (Exception e) {
+            our.status = Constants.ORDER_UPDATE_STATUS_OK;
+            our.errorMessage = e.getMessage();
+        }
+        return our;
+    }
+
+    /**
+     * @description OrderDTO: DTO used to pass Order details
+     * in UI-friendly format.
      */
     public class OrderDTO {
         @AuraEnabled
@@ -73,19 +103,32 @@ public with sharing class AccountOrdersController {
         public String status;
         @AuraEnabled
         public Decimal amount;
+        @AuraEnabled
+        public Boolean canBeActivated;
+        @AuraEnabled
+        public Boolean canBeShipped;
 
-        /**
-         * @description OrderDTO description
-         * @param o: Order to be wrapped
-         * @return: OrderDTO instance.
-         */
-        public OrderDTO(Order o) {
+        public void addOrderDetails(Order o) {
+            OrderService service = OrderService.getInstance();
             this.recordId = o.Id;
             this.recordURL = '/' + o.Id;
             this.orderNumber = o.OrderNumber;
             this.startDate = o.EffectiveDate;
             this.status = o.Status;
             this.amount = o.TotalAmount;
+            this.canBeActivated = service.canBeActivated(o);
+            this.canBeShipped = service.canBeShipped(o);
         }
+    }
+
+    /**
+     * @description OrderUpdateResultDTO: DTO used to pass details
+     * about Order update in UI-friendly format.
+     */
+    public class OrderUpdateResultDTO {
+        @AuraEnabled
+        public String status;
+        @AuraEnabled
+        public String errorMessage;
     }
 }
