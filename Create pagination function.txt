@@ -1,0 +1,1082 @@
+Me: I need you act as salesforce senior developer
+
+GPT: Certainly, I can help you with Salesforce development questions and best practices. However, please note that I can't access Salesforce itself or perform actual development tasks, but I can certainly guide you through coding problems, architecture decisions, best practices, and more. Here are some of the areas I can assist with:
+
+1. **Apex Development**: Help with writing triggers, classes, batch jobs, and future methods.
+  
+2. **Visualforce Pages**: Guidance on how to create custom Visualforce pages and components.
+  
+3. **Lightning Components**: Best practices for developing Lightning components, Aura or LWC.
+
+4. **SOQL/SOSL Queries**: Writing and optimizing SOQL and SOSL queries.
+  
+5. **Workflow & Process Builder**: Setting up automated workflows and processes.
+
+6. **API Integration**: Help with REST/SOAP integrations.
+
+7. **Data Modeling**: Creating and managing objects, fields, and relationships.
+  
+8. **Deployment**: Advice on how to manage code and config deployments.
+  
+9. **Test Coverage**: Writing unit tests to ensure high test coverage.
+  
+10. **Design Patterns**: Adopting the best design patterns for scalable and maintainable code.
+
+Feel free to ask me anything related to Salesforce development!
+
+Me: 
+thanks, so I have the following controller:
+public with sharing class AccountOrdersController {
+    
+    @AuraEnabled(cacheable=true)
+    public static List<OrderDTO> getOrders(Id accountId) {
+        if(String.isBlank(accountId)) {
+            throw new AuraHandledException(Constants.INVALID_ACCOUNT_ID_MESSAGE);
+        }
+        try {
+            List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(accountId);
+            return populateOrderDTOs(accountRelatedOrders);
+        } catch(Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }        
+    }
+
+    @AuraEnabled
+    public static OrderDMLSummaryResponse activateOrder(Id orderId) {
+        if(String.isBlank(orderId)) {
+            throw new AuraHandledException(Constants.INVALID_ORDER_ID_MESSAGE);
+        }
+        try {
+            Order order = OrderSelector.getOrderById(orderId);
+            return handleOrderStatus(order, Constants.ORDER_STATUS_DRAFT, Constants.ORDER_STATUS_ACTIVATED);
+        } catch(Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }        
+    }
+
+    @AuraEnabled
+    public static OrderDMLSummaryResponse markOrderAsShipped(Id orderId) {
+        if(String.isBlank(orderId)) {
+            throw new AuraHandledException(Constants.INVALID_ORDER_ID_MESSAGE);
+        }
+        try {
+            Order order = OrderSelector.getOrderById(orderId);
+            return handleOrderStatus(order, Constants.ORDER_STATUS_ACTIVATED, Constants.ORDER_STATUS_SHIPPED);
+        } catch(Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }        
+    }
+
+    @AuraEnabled
+    public static OrderDMLSummaryResponse activateOrders(List<Id> orderIds) {
+        List<Order> orders = OrderSelector.getOrdersByIds(orderIds);
+        return handleBulkOrderStatus(orders, Constants.ORDER_STATUS_DRAFT, Constants.ORDER_STATUS_ACTIVATED);
+    }
+
+    @AuraEnabled
+    public static OrderDMLSummaryResponse markOrdersAsShipped(List<Id> orderIds) {
+        List<Order> orders = OrderSelector.getOrdersByIds(orderIds);
+        return handleBulkOrderStatus(orders, Constants.ORDER_STATUS_ACTIVATED, Constants.ORDER_STATUS_SHIPPED);
+    }
+
+    private static OrderDMLSummaryResponse handleBulkOrderStatus(List<Order> orders, String statusToCompare, String statusToSet) {
+        List<Id> invalidOrders = new List<Id>();
+
+        for(Order order : orders) {
+            if(order.Status != statusToCompare) {
+                invalidOrders.add(order.Id);
+            } else {
+                order.Status = statusToSet;
+            }                
+        }
+
+        if(!invalidOrders.isEmpty()) {
+            return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_ERROR,
+                 String.format(Constants.ORDER_DML_RESPONSE_BULK_ERROR_MESSAGE, invalidOrders));
+        } else {
+            try {
+                update orders;
+                return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_SUCCESS,
+                     String.format(Constants.ORDER_DML_RESPONSE_BULK_SUCCESS_MESSAGE, new List<String>{statusToSet}));
+            } catch(DmlException e) {
+                throw new AuraHandledException(e.getMessage());
+            }    
+        }      
+    }
+
+    private static OrderDMLSummaryResponse handleOrderStatus(Order order, String statusToCompare, String statusToSet) {
+        if(order?.Status != statusToCompare) {
+            return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_ERROR, Constants.ORDER_DML_RESPONSE_ERROR_MESSAGE + order?.Id);
+        }
+        order.Status = statusToSet;
+        try {
+            update order;
+            return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_SUCCESS, 
+                String.format(Constants.ORDER_DML_RESPONSE_SUCCESS_MESSAGE, new List<Object>{
+                    order.Status, order.Id}));
+        } catch(DmlException e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+        
+    }
+
+    private static List<OrderDTO> populateOrderDTOs(List<Order> orders) {
+        List<OrderDTO> orderDTOs = new List<OrderDTO>();
+        if(!orders.isEmpty()) {
+            for(Order order : orders) {
+                orderDTOs.add(new OrderDTO(order));
+            }
+        }
+        return orderDTOs;
+    }
+
+    public class OrderDMLSummaryResponse {
+        @AuraEnabled
+        public String responseStatus;
+
+        @AuraEnabled
+        public String responseMessage;
+
+        public OrderDMLSummaryResponse(String responseStatus, String responseMessage) {
+            this.responseStatus = responseStatus;
+            this.responseMessage = responseMessage;
+        }
+    }
+
+    public class OrderDTO {
+        @AuraEnabled
+        public Id orderId;
+
+        @AuraEnabled
+        public String orderStatus;
+
+        @AuraEnabled
+        public String orderNumber;
+
+        @AuraEnabled
+        public Date startDate;
+
+        @AuraEnabled
+        public Decimal amount; 
+        
+        @AuraEnabled
+        public Datetime lastStatusChanged; 
+        
+        @AuraEnabled
+        public Id attachmentId;
+
+        @AuraEnabled
+        public Id contentDocumentId;
+        
+        public OrderDTO(Order order) {
+            this.orderId = order.Id;
+            this.orderStatus = order.Status;
+            this.orderNumber = order.OrderNumber;
+            this.amount = order.TotalAmount;
+            this.startDate = order.EffectiveDate;
+            this.lastStatusChanged = order.LastStatusChanged__c;
+            if(!order.AttachedContentDocuments.isEmpty()) {
+                this.attachmentId = order.AttachedContentDocuments[0].Id;
+                this.contentDocumentId = order.AttachedContentDocuments[0].ContentDocumentId; 
+            }                   
+        }
+    }
+}
+and selector class:
+public with sharing class OrderSelector {
+
+    public static List<Order> getOrdersWithAttachmentsByAccountId(Id accountId) {
+        return [SELECT Id, EffectiveDate, OrderNumber, Status, TotalAmount, LastStatusChanged__c,        
+        (SELECT Id, ContentDocumentId FROM AttachedContentDocuments 
+         WHERE Title LIKE 'Invoice%' ORDER BY CreatedDate DESC) 
+        FROM Order WHERE AccountId = :accountId];
+    }
+
+    public static Order getOrderById(Id orderId) {
+        return [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
+    }
+
+    public static List<Order> getOrdersByIds(List<Id> orderIds) {
+        return [SELECT Id, Status FROM Order WHERE Id IN :orderIds FOR UPDATE];        
+    }
+}
+
+the task is to create pagination logic, now need to work on sever side, so need a modification to classes provided above. 
+This what need to be done:
+-Updated controller and selector classes with pagination support. 
+-The controller method should accept page number and page size. 
+
+--------------------------------------------------------------
+GPT:
+Certainly, implementing pagination on the server-side will optimize the performance, especially when dealing with large sets of data. Here's how you can modify your existing classes to support pagination:
+
+### Update Selector Class with OFFSET and LIMIT:
+
+First, update your `OrderSelector` class to add the ability to use `LIMIT` and `OFFSET` in the SOQL queries for pagination.
+
+```apex
+public with sharing class OrderSelector {
+
+    public static List<Order> getOrdersWithAttachmentsByAccountId(Id accountId, Integer limitSize, Integer offsetSize) {
+        return [SELECT Id, EffectiveDate, OrderNumber, Status, TotalAmount, LastStatusChanged__c,
+        (SELECT Id, ContentDocumentId FROM AttachedContentDocuments 
+         WHERE Title LIKE 'Invoice%' ORDER BY CreatedDate DESC) 
+        FROM Order WHERE AccountId = :accountId
+        LIMIT :limitSize OFFSET :offsetSize];
+    }
+
+    // ... rest of the class remains the same
+}
+```
+
+### Update Controller Class to Accept Pagination Parameters:
+
+Next, update your `AccountOrdersController` class to accept a page number and page size for the pagination. I'll only show the changes needed for `getOrders`.
+
+```apex
+public with sharing class AccountOrdersController {
+    
+    @AuraEnabled(cacheable=true)
+    public static List<OrderDTO> getOrders(Id accountId, Integer pageNumber, Integer pageSize) {
+        if(String.isBlank(accountId)) {
+            throw new AuraHandledException(Constants.INVALID_ACCOUNT_ID_MESSAGE);
+        }
+        
+        // Calculate the offset
+        Integer offsetSize = (pageNumber - 1) * pageSize;
+
+        try {
+            List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(accountId, pageSize, offsetSize);
+            return populateOrderDTOs(accountRelatedOrders);
+        } catch(Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }        
+    }
+
+    // ... rest of the class remains the same
+}
+```
+
+### Explanation:
+
+1. **Page Number and Page Size**: These are the new parameters that the `getOrders` method now accepts. These will be sent from your client-side component to the server.
+
+2. **Calculating the OFFSET**: The `OFFSET` is calculated based on the `pageNumber` and `pageSize`. The formula `(pageNumber - 1) * pageSize` will give us the starting point for the query result.
+
+3. **Query with LIMIT and OFFSET**: The `LIMIT` and `OFFSET` are applied in the `OrderSelector` class to perform the actual pagination.
+
+Now, your server-side classes are set up to handle pagination. The next step would be to update your client-side components to send the `pageNumber` and `pageSize` to the server and to navigate through the pages. 
+
+
+------------------------------------------- 
+
+
+Me:
+please not  Overload of AuraEnabled method: getOrders overload is not permitted
+
+
+GPT:
+Ah, yes, my apologies for the oversight. Salesforce does not allow overloading of `@AuraEnabled` methods. You can use a different method name or create a wrapper class to encapsulate the parameters. Using a wrapper class is a good approach as it allows you to extend the functionality easily without changing the method signature.
+
+Here's how to implement pagination using a request wrapper:
+
+### Create a Request Wrapper:
+
+First, create a request wrapper class for the pagination. You can include this as an inner class in your `AccountOrdersController`.
+
+```apex
+public class GetOrdersRequest {
+    @AuraEnabled
+    public Id accountId;
+
+    @AuraEnabled
+    public Integer pageNumber;
+
+    @AuraEnabled
+    public Integer pageSize;
+
+    public GetOrdersRequest() {}
+
+    // additional methods or validations can go here
+}
+```
+
+### Update Controller Method:
+
+Now, update the `getOrders` method to use the new request wrapper class.
+
+```apex
+@AuraEnabled(cacheable=true)
+public static List<OrderDTO> getOrders(GetOrdersRequest request) {
+    if(String.isBlank(request.accountId)) {
+        throw new AuraHandledException(Constants.INVALID_ACCOUNT_ID_MESSAGE);
+    }
+
+    // Calculate the offset
+    Integer offsetSize = (request.pageNumber - 1) * request.pageSize;
+
+    try {
+        List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(request.accountId, request.pageSize, offsetSize);
+        return populateOrderDTOs(accountRelatedOrders);
+    } catch(Exception e) {
+        throw new AuraHandledException(e.getMessage());
+    }
+}
+```
+
+### Update Selector Class:
+
+The `OrderSelector` class remains the same as in the previous example.
+
+```apex
+public static List<Order> getOrdersWithAttachmentsByAccountId(Id accountId, Integer limitSize, Integer offsetSize) {
+    return [SELECT Id, EffectiveDate, OrderNumber, Status, TotalAmount, LastStatusChanged__c,
+    (SELECT Id, ContentDocumentId FROM AttachedContentDocuments 
+     WHERE Title LIKE 'Invoice%' ORDER BY CreatedDate DESC) 
+    FROM Order WHERE AccountId = :accountId
+    LIMIT :limitSize OFFSET :offsetSize];
+}
+```
+
+### Client-side:
+
+On the client-side, you'll send a JSON object adhering to the `GetOrdersRequest` class format to the `getOrders` method.
+
+```javascript
+let request = {
+    "accountId": someAccountId,
+    "pageNumber": 1,
+    "pageSize": 10
+};
+```
+
+You can then call your `getOrders` method using this `request` object.
+
+By using a request wrapper, you can avoid the method overloading issue and at the same time make your API more extensible and easy to maintain.
+
+-----------------------------------------
+Me: 
+thanks, it's time to modify lwc, I have the following component's html:
+<template>
+    <lightning-card title="Account Related Orders">
+        <template lwc:if={orders}>
+          <div class="slds-m-around_medium">
+            <div class="slds-m-bottom_medium">
+                <lightning-button variant="brand" label="Activate" title="Activate" onclick={handleActivateButtonSelected} disabled={noDraftSelected}></lightning-button>
+                <lightning-button variant="brand" label="Mark as Shipped" title="Mark as Shipped" onclick={handleMarkAsShippedButtonSelected} disabled={noActivatedSelected}></lightning-button>
+                <lightning-button variant="brand" label="Refresh" title="Refresh" onclick={handleRefresh}></lightning-button>
+            </div>
+            <table aria-multiselectable="true" class="slds-table_bordered" aria-label="Orders List">
+                <thead>
+                    <tr>
+                        <th scope="col"></th> 
+                        <th scope="col">Number</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Amount</th>
+                        <th scope="col">Invoice</th> 
+                        <th scope="col">Actions</th> 
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={orders} for:item="order">
+                        <tr key={order.Id}>
+                            <td><input type="checkbox" data-id={order.Id} value={order.orderStatus} onchange={handleCheckboxChange}></td>
+                            <td><a data-id={order.Id} onclick={handleOrderNumberClick}>{order.orderNumber}</a></td>
+                            <td>{order.startDate}</td>        
+                            <td><span>{order.timeInCurrentStatus}</span><span class={order.statusBadgeCSS}>{order.orderStatus}</span></td>
+                            <td><lightning-formatted-number value={order.amount} format-style="currency" currency-code="USD" currency-display-as="symbol"></lightning-formatted-number></td>
+                            <td>
+                                <template lwc:if={order.hasInvoices}><lightning-icon data-id={order.contentDocumentId} size="small" icon-name="utility:download" alternative-text="Download Invoice" onclick={handleDownloadInvoice}></lightning-icon></template>
+                                <template lwc:else></template>
+                            </td>
+                            <td>
+                                <template lwc:if={order.orderActions.length}>
+                                    <lightning-combobox data-id={order.orderIdContentDocumentId}
+                                        name="Action" 
+                                        options={order.orderActions}
+                                        onchange={handleActionSelected} 
+                                        dropdown-alignment="auto"></lightning-combobox>
+                                </template>
+                                <template lwc:else>No row actions available</template>
+                            </td>                                    
+                        </tr>
+                    </template>
+                </tbody>
+            </table>            
+          </div>
+        </template>
+    </lightning-card>
+</template>
+
+An js code:
+import { LightningElement, wire, api } from 'lwc';
+import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
+import activateOrders from '@salesforce/apex/AccountOrdersController.activateOrders';
+import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
+import markOrdersAsShipped from '@salesforce/apex/AccountOrdersController.markOrdersAsShipped';
+import { NavigationMixin } from 'lightning/navigation';
+import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { refreshApex } from "@salesforce/apex";
+const SEPARATOR = '_';
+
+export default class AccountRelatedOrders extends NavigationMixin(LightningElement) {
+    @api recordId; 
+    wiredOrders;
+    orders;
+    error;
+    selectedOrders = new Map();
+    noDraftSelected = true;
+    noActivatedSelected = true;
+
+    @wire(getOrders, { accountId: '$recordId' })
+    handleOrders(value) {        
+        this.wiredOrders = value; 
+        const { data, error } = value; 
+        if (data) {  
+            console.log(JSON.parse(JSON.stringify(data)));
+            this.orders = data.map(item => {
+                const hasInvoices = item.attachmentId;
+                const orderIdContentDocumentId = item.orderId + SEPARATOR + item.contentDocumentId;
+                return {
+                    "Id": item.orderId,
+                    "orderNumber": item.orderNumber,
+                    "startDate": item.EffectiveDate,
+                    "orderStatus": item.orderStatus,
+                    "timeInCurrentStatus": this.getTimeInCurrentStatus(item.lastStatusChanged),
+                    "statusBadgeCSS": this.getStatusCSS(item.orderStatus),
+                    "amount": item.amount,
+                    "contentDocumentId": item.contentDocumentId,
+                    "orderIdContentDocumentId": orderIdContentDocumentId,
+                    "hasInvoices": hasInvoices,
+                    "orderActions": this.populateOrderActions(item.orderStatus, hasInvoices)
+                }
+            });
+            this.error = undefined;           
+        } else if (error) {
+            this.error = error;
+            this.showToast('Error updating order', error.body.message, 'error');            
+        }
+    }
+
+    getTimeInCurrentStatus(lastStatusChanged) {
+        let finalTimeInStatusString = '';
+        let lastStatusChangedParsed = Date.parse(lastStatusChanged);
+        let timeDiff = Date.now() - lastStatusChangedParsed;
+        let totalMinutes = parseInt(Math.floor(timeDiff / (60 * 1000)));
+        if (totalMinutes < 60) {
+            finalTimeInStatusString += totalMinutes + ' minutes in ';
+            return finalTimeInStatusString;
+        }
+        let totalHours = parseInt(Math.floor(totalMinutes / (60)));
+        if (totalHours < 24) {
+            finalTimeInStatusString += totalHours + ' hours ' + parseInt(totalMinutes % 60) + ' minutes in ';
+            return finalTimeInStatusString;
+        }
+        let totalDays = parseInt(Math.floor(totalHours / 24));
+        if (totalDays <  30) {
+            finalTimeInStatusString += totalDays + ' days ' + parseInt(totalMinutes % 24) + ' hours ' + parseInt(totalMinutes % 60) + ' minutes in ';
+            return finalTimeInStatusString;
+        }
+        let totalMonths = parseInt(Math.floor(totalDays / 30));
+        if (totalMonths <  12) {
+            finalTimeInStatusString += totalMonths + ' months ' + parseInt(totalDays % 30) + ' days ' + parseInt(totalMinutes % 24) + ' hours ' + parseInt(totalMinutes % 60) + ' minutes in ';
+            return finalTimeInStatusString;
+        } else {
+            let totalYears = parseInt(Math.floor(totalDays / 365));
+                finalTimeInStatusString += totalYears + 'years ' + parseInt(totalYears % 12) + ' months ' + parseInt(totalDays % 30) + ' days ' + parseInt(totalMinutes % 24) + ' hours ' + parseInt(totalMinutes % 60) + ' minutes in ';
+                return finalTimeInStatusString;        
+        }        
+    }
+
+    populateOrderActions(status, hasInvoices) {
+        let isDraft = status === 'Draft';
+        let isActivated = status === 'Activated';
+        let rowActions = new Array();
+        if (isDraft) {
+            rowActions.push({ value: 'activate', label: 'Activate' });  
+        } else if (isActivated) {
+            rowActions.push({ value: 'markAsShipped', label: 'Mark as Shipped' });
+        }
+        if (hasInvoices) {
+            rowActions.push({ value: 'previewInvoice', label: 'Preview Invoice'});
+            rowActions.push({ value: 'downloadInvoice', label: 'Download Invoice'});
+        }
+        return rowActions;
+    }
+
+    handleActionSelected(event) {   
+        const selectedAction = event.detail.value;
+        const orderIdContentDocumentId = event.target.dataset.id;
+        const ids = orderIdContentDocumentId.split(SEPARATOR);
+        const orderId = ids[0];
+        const contentDocumentId = ids[1];
+        switch (selectedAction) {
+            case 'activate':
+                this.handleActivate(orderId);
+                break;
+            case 'markAsShipped':
+                this.handleMarkAsShipped(orderId);
+                break;
+            case 'previewInvoice':
+                this.handlePreviewInvoice(contentDocumentId)
+                break;
+            case 'downloadInvoice':
+                this.downloadInvoice(contentDocumentId);
+                break;            
+        }        
+    }
+    
+    getStatusCSS(status) {
+        switch(status) {
+            case 'Draft':
+                return 'slds-badge';
+            case 'Activated':
+                return 'slds-badge slds-theme_warning';
+            case 'Shipped':
+                return 'slds-badge badge-status-shipped';
+            case 'Delivered':
+                return 'slds-badge slds-theme_success';
+            default:
+                return 'slds-badge';
+        }
+    }
+
+    handleOrderNumberClick(event) {        
+        this[NavigationMixin.Navigate]({
+        type: 'standard__recordPage',
+        attributes: {
+            recordId: event.target.dataset.id,
+            objectApiName: 'Order',
+            actionName: 'view'
+        },
+    });        
+    }
+
+    handleActivate(orderId) {        
+        activateOrder({ orderId: orderId })
+            .then(result => {
+                this.handleResponse(result);
+            })
+            .catch(error => {
+                this.showToast('Some error occurred', error.body.message, 'error');
+            });
+    }
+
+    handleMarkAsShipped(orderId) {        
+        markOrderAsShipped({ orderId: orderId })
+            .then(result => {
+                this.handleResponse(result);
+            })
+            .catch(error => {
+                this.showToast('Some error occurred', error.body.message, 'error');
+            });
+    }
+
+    handleResponse(response) {
+        if (response.responseStatus === 'Success') {
+            this.showToast('Success', response.responseMessage, response.responseStatus);
+            refreshApex(this.wiredOrders);
+        } else if (response.responseStatus === 'Error') {
+            this.showToast('Something went wrong', response.responseMessage, response.responseStatus);
+        }
+    }
+
+    handleDownloadInvoice(event) {
+        const contentDocumentId = event.target.dataset.id;
+        this.downloadInvoice(contentDocumentId);
+    }
+
+    downloadInvoice(fileId) {
+        const fileUrl = '/sfc/servlet.shepherd/document/download/' + fileId + '?operationContext=S1';
+        this[NavigationMixin.Navigate]({
+            type: 'standard__webPage',
+            attributes: {
+                url: fileUrl
+            }
+        }, false);
+    }
+
+    handlePreviewInvoice(fileId) {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__namedPage',
+            attributes: {
+                pageName: 'filePreview'
+            },
+            state: {
+                recordIds: fileId
+            }
+        });
+    }    
+
+    showToast(title, message, variant) {
+        this.dispatchEvent(
+            new ShowToastEvent({
+              title: title,
+              message: message,
+              variant: variant,
+            }),
+          );
+    }
+
+    handleCheckboxChange(event) {
+        const isChecked = event.target.checked;
+        const orderId = event.target.dataset.id;
+        const value = event.target.value;
+        if (isChecked) {
+            this.selectedOrders.set(orderId, value);
+        } else if (this.selectedOrders.has(orderId)) {
+                this.selectedOrders.delete(orderId); 
+        }        
+
+        this.updateButtonStatus();
+    }
+
+    handleActivateButtonSelected() {
+        if (window.confirm(`Do you confirm to activate ${this.selectedOrders.size} of Draft order(s)?`)) {
+            const orderIds = [... this.selectedOrders.keys()];            
+            activateOrders({ orderIds: orderIds})
+                .then(result => {
+                    this.handleResponse(result);
+                    refreshApex(this.wiredOrders);
+                })
+                .catch(error => {
+                    this.showToast('Some error occurred', error.body.message, 'error');
+                });
+        }
+    }
+
+    handleMarkAsShippedButtonSelected() {
+        if(window.confirm(`Do you confirm to mark as sent ${this.selectedOrders.length} of activated order(s)?`)) {
+            const orderIds = [... this.selectedOrders.keys()];
+            markOrdersAsShipped({ orderIds: orderIds })
+                .then(result => {
+                    this.handleResponse(result);
+                    refreshApex(this.wiredOrders);
+                })
+                .catch(error => {
+                    this.showToast('Some error occurred', error.body.message, 'error');
+                });
+        }
+    }
+
+    handleRefresh() {
+        refreshApex(this.wiredOrders);
+    }
+
+    updateButtonStatus() {
+        const selectedStatuses = Array.from(this.selectedOrders.values());
+        this.noDraftSelected = !(selectedStatuses.length && (selectedStatuses.every((status) => status === 'Draft')));        
+        this.noActivatedSelected = !(selectedStatuses.length > 0 && (selectedStatuses.every((status) => status === 'Activated')));
+    }
+}
+
+These requirements should be implemented:
+- Update LWC component with items for paging (previous, next, page size, current page). 
+-Customizable page size: select page size from predefined list: 10(default), 20, 50, 100. Keep the user selected value in the custom setting so that when the user opens again, the customized selected page size is restored. 
+Note getOrders controller method receives an object GetOrdersRequest request as you recomended.
+
+GPT:
+To implement pagination in a Lightning Web Component (LWC), you can add buttons for "Previous", "Next", a dropdown for page sizes, and a display for the current page. You can modify the `getOrders` function to accept pagination parameters.
+
+Here are the changes to the existing code:
+
+### Modifications to the HTML:
+
+Add the pagination controls in your existing `<template>`:
+
+```html
+<div class="slds-m-around_medium">
+  <div>
+    <button onclick={goToPreviousPage} disabled={isFirstPage}>Previous</button>
+    <button onclick={goToNextPage} disabled={isLastPage}>Next</button>
+    <span>Page: {currentPage} of {totalPages}</span>
+    <select onchange={handlePageSizeChange}>
+      <option value="10">10</option>
+      <option value="20">20</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+  </div>
+  <!-- ... existing table and other controls ... -->
+</div>
+```
+
+### Modifications to the JS:
+
+Add the new properties for pagination:
+
+```javascript
+// Existing imports ...
+import getPageSize from '@salesforce/apex/AccountOrdersController.getPageSize';
+import setPageSize from '@salesforce/apex/AccountOrdersController.setPageSize';
+
+export default class AccountRelatedOrders extends NavigationMixin(LightningElement) {
+  // ... existing properties ...
+  currentPage = 1;
+  totalPages = 1;
+  pageSize = 10; // default value
+  isFirstPage = true;
+  isLastPage = false;
+
+  connectedCallback() {
+    getPageSize()
+      .then(result => {
+        this.pageSize = result;
+      })
+      .catch(error => {
+        console.error('Failed to get page size:', error);
+      });
+  }
+
+  @wire(getOrders, { accountId: '$recordId', pageSize: '$pageSize', currentPage: '$currentPage' })
+  handleOrders(value) {
+    // ... existing code ...
+    this.totalPages = Math.ceil(data.totalRecords / this.pageSize);
+    this.isFirstPage = this.currentPage === 1;
+    this.isLastPage = this.currentPage >= this.totalPages;
+  }
+
+  // Add new methods for pagination
+  goToPreviousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage -= 1;
+    }
+  }
+
+  goToNextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage += 1;
+    }
+  }
+
+  handlePageSizeChange(event) {
+    this.pageSize = event.target.value;
+    setPageSize({ pageSize: this.pageSize })
+      .then(() => {
+        // Successfully set
+      })
+      .catch(error => {
+        console.error('Failed to set page size:', error);
+      });
+  }
+
+  // ... existing methods ...
+}
+```
+
+### Apex controller changes
+
+In your Apex class `AccountOrdersController`, you can add methods for getting and setting the page size in a custom setting. Also, update the `getOrders` method to receive the `pageSize` and `currentPage` parameters.
+
+```apex
+@AuraEnabled
+public static Integer getPageSize() {
+    // Retrieve the page size from custom setting and return.
+}
+
+@AuraEnabled
+public static void setPageSize(Integer pageSize) {
+    // Save the page size into custom setting.
+}
+
+@AuraEnabled
+public static List<Order> getOrders(String accountId, Integer pageSize, Integer currentPage) {
+    // Update SOQL to limit records based on pageSize and offset.
+}
+```
+
+This is just a basic example. You might have to adjust based on your exact needs.
+
+Me: 
+suggest please how can I update custom setting via apex
+
+GPT:
+To implement pagination and the user-customizable page size, you'll have to modify both your Apex controller and your Lightning Web Component (LWC).
+
+### Apex Controller
+
+1. Update the `getOrders` method to receive a `GetOrdersRequest` object that includes parameters for pagination (e.g., `pageNumber`, `pageSize`).
+
+2. Create or update
+
+Me:
+just a question regarding custom setting to update from controller, you have provided the code:
+public static void setPageSize(Integer pageSize) {
+    // Save the page size into custom setting.
+} 
+
+GPT:
+Certainly! To update a Custom Setting in Apex, you can treat it similarly to how you'd interact with a normal sObject. Here's a quick example for updating a Custom Setting:
+
+Let's assume you have a Custom
+
+Me:
+add please implementation
+
+GPT:
+Certainly! Let's assume you have a Custom Setting named `User_Settings__c` with a Custom Field named `Page_Size__c`. Here's how you would update the `Page_Size__c` value in Apex:
+
+```apex
+public class MyController {
+    // Method to set the page size in custom setting
+    public static void setPageSize(Integer pageSize) {
+        // Fetch the custom setting for the current user
+        User_Settings__c settings = User_Settings__c.getInstance(UserInfo.getUserId());
+        
+        // If custom setting does not exist for the user, create a new one
+        if (settings == null) {
+            settings = new User_Settings__c();
+            settings.SetupOwnerId = UserInfo.getUserId(); // SetupOwnerId should be the User or Profile Id
+        }
+        
+        // Update the Page Size
+        settings.Page_Size__c = pageSize;
+        
+        // Save the custom setting
+        upsert settings;
+    }
+}
+```
+
+In this example, the `getInstance()` method retrieves the custom setting record based on the User Id. If it does not exist, a new record is created.
+
+The `Page_Size__c` field is then updated with the new `pageSize` value provided to the method, and the record is saved using `upsert`.
+
+Now you can call this method to update the `Page_Size__c` in `User_Settings__c` Custom Setting.
+
+```apex
+MyController.setPageSize(20); // Set page size to 20
+```
+
+Me:
+please add the logic to have default page size set on page size select
+
+GPT:
+
+Certainly! You can modify the `setPageSize` method to handle the default value if no size is passed or selected. Here's the updated example with that logic:
+
+```apex
+public class MyController {
+    // Default Page Size
+    public static final Integer DEFAULT_PAGE_SIZE = 10;
+
+    // Method to set the page size in custom setting
+    public static void setPageSize(Integer pageSize) {
+        // Fetch the custom setting for the current user
+        User_Settings__c settings = User_Settings__c.getInstance(UserInfo.getUserId());
+
+        // If custom setting does not exist for the user, create a new one
+        if (settings == null) {
+            settings = new User_Settings__c();
+            settings.SetupOwnerId = UserInfo.getUserId(); // SetupOwnerId should be the User or Profile Id
+        }
+
+        // Update the Page Size or set it to the default value if null
+        settings.Page_Size__c = (pageSize != null) ? pageSize : DEFAULT_PAGE_SIZE;
+
+        // Save the custom setting
+        upsert settings;
+    }
+}
+```
+
+In this example, the `DEFAULT_PAGE_SIZE` constant holds the default page size. If the `pageSize` argument passed to `setPageSize` is `null`, the custom setting's `Page_Size__c` is set to this default value.
+
+You can call this function when the user selects a new page size, and it will also handle cases where the selection is null or not made:
+
+```apex
+MyController.setPageSize(20);  // Sets page size to 20
+MyController.setPageSize(null); // Sets page size to default (10 in this example)
+```
+
+This way, you can ensure that a default page size is always set.
+
+Me:
+
+I need LWC select to be set with default page size
+
+GPT:
+
+If you'd like to set the default page size for a Lightning Web Component (LWC) `select` element, you can use reactive properties in your component to control the selected value.
+
+Here's a simple example:
+
+### LWC Component HTML
+```html
+<template>
+    <label for="pageSize">Select Page Size:</label>
+    <select id="pageSize" name="pageSize" onchange={handlePageSizeChange}>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+    </select>
+</template>
+```
+
+### LWC Component JavaScript
+```javascript
+import { LightningElement, wire, track } from 'lwc';
+import setPageSize from '@salesforce/apex/MyController.setPageSize';
+
+export default class MyLwcComponent extends LightningElement {
+    @track selectedPageSize;
+
+    connectedCallback() {
+        // Fetch the current page size from the server or custom setting, and initialize selectedPageSize.
+        // For demonstration purposes, I'm directly setting it.
+        this.selectedPageSize = 10;  // Replace this with the value you fetch from the server/custom setting
+    }
+
+    handlePageSizeChange(event) {
+        this.selectedPageSize = event.target.value;
+
+        // Call Apex method to update custom setting
+        setPageSize({ pageSize: this.selectedPageSize })
+            .then(result => {
+                // handle successful update
+            })
+            .catch(error => {
+                // handle error
+            });
+    }
+}
+```
+
+In this example, the `selectedPageSize` property holds the current selected page size. When the component loads (`connectedCallback`), you can populate this value by fetching it from the server-side custom setting, which can be implemented using Apex.
+
+To set the `select` element with the default value from custom setting, you can modify the HTML as follows:
+
+```html
+<select id="pageSize" name="pageSize" onchange={handlePageSizeChange} value={selectedPageSize}>
+    <option value="5">5</option>
+    <option value="10">10</option>
+    <option value="20">20</option>
+    <option value="50">50</option>
+</select>
+```
+
+Now, when the `selectedPageSize` value changes, the `select` element will automatically update its selected value to match it.
+
+Me:
+
+approach with value={selectedPageSize} does not work
+
+GPT:
+
+My apologies for the confusion. The `value` attribute doesn't work on `select` tags in Lightning Web Components as it does in vanilla HTML. You will need to set the selected value programmatically.
+
+You can accomplish this in a couple of ways:
+
+1. **Using `lightning-combobox`:** This Salesforce-provided component supports the `value` attribute.
+
+    ```html
+    <template>
+        <lightning-combobox name="progress"
+                            label="Select Page Size"
+                            value={selectedPageSize}
+                            placeholder="--None--"
+                            options={pageSizeOptions}
+                            onchange={handlePageSizeChange}>
+        </lightning-combobox>
+    </template>
+    ```
+
+    ```javascript
+    import { LightningElement, track } from 'lwc';
+
+    export default class ComboboxBasic extends LightningElement {
+        selectedPageSize;
+        pageSizeOptions = [
+            { label: '5', value: '5' },
+            { label: '10', value: '10' },
+            { label: '20', value: '20' },
+            { label: '50', value: '50' },
+        ];
+
+        handlePageSizeChange(event) {
+            this.selectedPageSize = event.detail.value;
+            // Do something with the selected option
+        }
+    }
+    ```
+
+2. **Using Query Selectors:** If you have to use `select`, you can do the following:
+
+    ```javascript
+    renderedCallback() {
+        if (this.isSelectSet) {
+            return;
+        }
+        this.isSelectSet = true;
+
+        const selectElement = this.template.querySelector('select');
+        selectElement.value = this.selectedPageSize;
+    }
+    ```
+
+    Add a flag called `isSelectSet` to control this:
+
+    ```javascript
+    isSelectSet = false;
+    ```
+
+This will set the `select` element's value after it has been rendered on the page.
+
+Me:
+
+lightning-combobox is better but it does not show selected option after is's been chosen
+
+GPT:
+
+If the selected option is not being displayed properly in the `lightning-combobox`, there are a few potential reasons:
+
+1. **Initial Value:** The initial value for `selectedPageSize` might not match any of the `value` fields in the `pageSizeOptions` array.
+
+2. **Reactivity:** Ensure you are updating the value in a reactive way, otherwise, the change won't reflect in the UI. Make sure you are using `this.selectedPageSize` to update the value.
+
+3. **Event Handling:** Confirm that the `onchange` event handler (`handlePageSizeChange`) is implemented correctly.
+
+Here's a complete example:
+
+```html
+<!-- pageSizeSelector.html -->
+<template>
+    <lightning-combobox name="pageSize"
+                        label="Select Page Size"
+                        value={selectedPageSize}
+                        options={pageSizeOptions}
+                        onchange={handlePageSizeChange}>
+    </lightning-combobox>
+</template>
+```
+
+```javascript
+// pageSizeSelector.js
+import { LightningElement, track, api } from 'lwc';
+
+export default class PageSizeSelector extends LightningElement {
+    @api selectedPageSize = '10';  // Default value
+    pageSizeOptions = [
+        { label: '5', value: '5' },
+        { label: '10', value: '10' },
+        { label: '20', value: '20' },
+        { label: '50', value: '50' },
+    ];
+
+    handlePageSizeChange(event) {
+        this.selectedPageSize = event.detail.value;
+        // You can add additional logic here, e.g., dispatching an event
+    }
+}
+```
+
+If the selected value isn't reflecting correctly, consider these debugging steps:
+
+1. Console log the `selectedPageSize` value before and after updating it in the `handlePageSizeChange` method.
+2. Check for any JavaScript errors in the browser's developer console.
+3. Verify the `value` attribute on `lightning-combobox` and confirm that it's using the correct variable (`selectedPageSize`).
+
+Try this complete example and let me know how it goes. If the issue persists, we can dig deeper.
