@@ -1,7 +1,8 @@
 public with sharing class AccountOrdersController {
-    private static final String ERROR_INVALID_ACCOUN_ID = 'Invalid Account ID provided.';
+    private static final String ERROR_INVALID_ACCOUNT_ID = 'Invalid Accounts IDs provided.';
     private static final String ERROR_INVALID_ORDER_ID = 'Invalid Order ID provided.';
-    private static final String ERROR_IVALID_OPERATION_FOR_ORDER = 'Invalid Operation for Order #';
+    private static final String ERROR_INVALID_ORDERS_IDS = 'Invalid Orders IDs provided.';
+    private static final String ERROR_INVALID_OPERATION_FOR_ORDER = 'Invalid Operation for Order #';
     private static final String STATUS_OK = 'OK';
     private static final String STATUS_ERROR = 'ERROR';
 
@@ -12,7 +13,7 @@ public with sharing class AccountOrdersController {
     @AuraEnabled(cacheable=true)
     public static List<OrderDTO> getOrders(Id accountId) {
         if(accountId == null || String.isBlank(accountId)) {
-            throw new IllegalArgumentException(ERROR_INVALID_ACCOUN_ID);
+            throw new IllegalArgumentException(ERROR_INVALID_ACCOUNT_ID);
         }
         
         List<Order> orders = OrderSelector.getOrdersWithInvoiceInfo(accountId);
@@ -36,7 +37,7 @@ public with sharing class AccountOrdersController {
         Order ord = OrderSelector.getOrderStatusById(orderId);
         if(ord.Status != ORDER_STATUS_DRAFT) {
             response.put('status', STATUS_ERROR);
-            response.put('ErrorMessage', ERROR_IVALID_OPERATION_FOR_ORDER + orderId);
+            response.put('ErrorMessage', ERROR_INVALID_OPERATION_FOR_ORDER + orderId);
             return response;
         }
 
@@ -46,6 +47,7 @@ public with sharing class AccountOrdersController {
         response.put('status', STATUS_OK);
         return response;
     }
+
 
     @AuraEnabled
     public static Map<String, Object> markOrderAsShipped(Id orderId) {
@@ -58,7 +60,7 @@ public with sharing class AccountOrdersController {
         Order ord = OrderSelector.getOrderStatusById(orderId);
         if(ord.Status != ORDER_STATUS_ACTIVATED) {
             response.put('status', STATUS_ERROR);
-            response.put('ErrorMessage', ERROR_IVALID_OPERATION_FOR_ORDER + orderId);
+            response.put('ErrorMessage', ERROR_INVALID_OPERATION_FOR_ORDER + orderId);
             return response;
         }
 
@@ -67,6 +69,84 @@ public with sharing class AccountOrdersController {
 
         response.put('status', STATUS_OK);
         return response;
+    }
+
+    @AuraEnabled
+    public static List<Map<String, Object>> bulkActivateOrders(List<Id> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            throw new IllegalArgumentException(ERROR_INVALID_ORDERS_IDS);
+        }
+
+        List<Map<String, Object>> responses = new List<Map<String, Object>>();
+
+        List<Order> ordersToUpdate = OrderSelector.getOrdersByIds(orderIds);
+
+        for (Order ord : ordersToUpdate) {
+            if (ord.Status != ORDER_STATUS_DRAFT) {
+                Map<String, Object> response = new Map<String, Object>();
+                response.put('OrderId', ord.Id);
+                response.put('status', STATUS_ERROR);
+                response.put('ErrorMessage', ERROR_INVALID_OPERATION_FOR_ORDER + ord.Id);
+                responses.add(response);
+            } 
+            else {
+                ord.Status = ORDER_STATUS_ACTIVATED;
+            }
+        }
+
+        if (!ordersToUpdate.isEmpty()) {
+            update ordersToUpdate;
+        }
+
+        for (Order ord : ordersToUpdate) {
+            if (ord.Status == ORDER_STATUS_ACTIVATED) {
+                Map<String, Object> response = new Map<String, Object>();
+                response.put('OrderId', ord.Id);
+                response.put('status', STATUS_OK);
+                responses.add(response);
+            }
+        }
+
+        return responses;
+    }
+
+    @AuraEnabled
+    public static List<Map<String, Object>> bulkMarkOrdersAsShipped(List<Id> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            throw new IllegalArgumentException(ERROR_INVALID_ORDERS_IDS);
+        }
+    
+        List<Map<String, Object>> responses = new List<Map<String, Object>>();
+
+        List<Order> ordersToUpdate = OrderSelector.getOrdersByIds(orderIds);
+
+        for (Order ord : ordersToUpdate) {
+            if (ord.Status != ORDER_STATUS_ACTIVATED) {
+                Map<String, Object> response = new Map<String, Object>();
+                response.put('OrderId', ord.Id);
+                response.put('status', STATUS_ERROR);
+                response.put('ErrorMessage', ERROR_INVALID_OPERATION_FOR_ORDER + ord.Id);
+                responses.add(response);
+            } 
+            else {
+                ord.Status = ORDER_STATUS_SHIPPED;
+            }
+        }
+
+        if (!ordersToUpdate.isEmpty()) {
+            update ordersToUpdate;
+        }
+
+        for (Order ord : ordersToUpdate) {
+            if (ord.Status == ORDER_STATUS_SHIPPED) {
+                Map<String, Object> response = new Map<String, Object>();
+                response.put('OrderId', ord.Id);
+                response.put('status', STATUS_OK);
+                responses.add(response);
+            }
+        }
+    
+        return responses;
     }
 
     public class OrderDTO {

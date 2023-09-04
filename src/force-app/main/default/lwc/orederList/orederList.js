@@ -6,11 +6,17 @@ import { refreshApex } from "@salesforce/apex";
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
+import bulkActivateOrders from '@salesforce/apex/AccountOrdersController.bulkActivateOrders';
+import bulkMarkOrdersAsShipped from '@salesforce/apex/AccountOrdersController.bulkMarkOrdersAsShipped';
 
 export default class OrderList extends NavigationMixin(LightningElement) {
     @api recordId;
     orders = [];
     wiredOrdersValue;
+    selectedOrders = new Map();
+    isOnlyDraftOrdersSelected = true;
+    isOnlyActivatedOrdersSelected = true;
+
 
     @wire(getOrders, { accountId: '$recordId' })
     wiredOrders(value) {
@@ -133,7 +139,7 @@ export default class OrderList extends NavigationMixin(LightningElement) {
         activateOrder({ orderId: orderId })
             .then(result => {
                 this.showToast('Success', result, 'success');
-                refreshApex(this.wiredOrdersValue);
+                this.handleRefresh();
             })
             .catch(error => {
                 this.showToast('Error', error.body.message, 'error');
@@ -144,11 +150,15 @@ export default class OrderList extends NavigationMixin(LightningElement) {
         markOrderAsShipped({ orderId: orderId })
             .then(result => {
                 this.showToast('Success', result, 'success');
-                refreshApex(this.wiredOrdersValue);
+                this.handleRefresh();
             })
             .catch(error => {
                 this.showToast('Error', error.body.message, 'error');
             });
+    }
+
+    handleRefresh() {
+        refreshApex(this.wiredOrdersValue);
     }
 
     navigateToInvoicePreview(contentDocumentId) {
@@ -164,6 +174,65 @@ export default class OrderList extends NavigationMixin(LightningElement) {
     downloadInvoice(contentDocumentId) {
         window.open(`/sfc/servlet.shepherd/document/download/${contentDocumentId}`);
     }
+
+    handleCheckboxChange(event) {
+        const isChecked = event.target.checked;
+        const orderId = event.target.dataset.id;
+        const value = event.target.value;
+        if (isChecked) {
+            this.selectedOrders.set(orderId, value);
+        } 
+        else if (this.selectedOrders.has(orderId)) {
+            this.selectedOrders.delete(orderId); 
+        }        
+
+        this.updateButtonsStatus();
+    }
+
+    updateButtonsStatus() {
+        const selectedOrderStatuses = Array.from(this.selectedOrders.values());
+
+        if (!(selectedOrderStatuses.length > 0 && selectedOrderStatuses.every((status) => status === 'Draft'))) {
+            this.isOnlyDraftOrdersSelected = true;
+        } else {
+            this.isOnlyDraftOrdersSelected = false;
+        }
+          
+        if (!(selectedOrderStatuses.length > 0 && selectedOrderStatuses.every((status) => status === 'Activated'))) {
+            this.isOnlyActivatedOrdersSelected = true;
+        } else {
+            this.isOnlyActivatedOrdersSelected = false;
+        }
+    }
+
+    activateSelectedOrders() {
+        if (window.confirm(`Do you confirm to activate ${this.selectedOrders.size} of Draft order(s)?`)) {
+            const orderIds = [... this.selectedOrders.keys()];      
+            bulkActivateOrders({ orderIds: orderIds})
+                .then(result => {
+                    this.showToast('Success', result, 'success');
+                    this.handleRefresh();
+                })
+                .catch(error => {
+                    this.showToast('Error', error.body.message, 'error');
+                });
+        }
+    }
+
+    markSelectedOrdersAsShipped() {
+        if(window.confirm(`Do you confirm to mark as sent ${this.selectedOrders.length} of activated order(s)?`)) {
+            const orderIds = [... this.selectedOrders.keys()];
+            bulkMarkOrdersAsShipped({ orderIds: orderIds })
+                .then(result => {
+                    this.showToast('Success', result, 'success');
+                    this.handleRefresh();
+                })
+                .catch(error => {
+                    this.showToast('Error', error.body.message, 'error');
+                });
+        }
+    }
+
 
     showToast(title, message, variant) {
         const evt = new ShowToastEvent({

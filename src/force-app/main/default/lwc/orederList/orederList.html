@@ -1,8 +1,14 @@
 <template>
     <lightning-card title="Orders" icon-name="standard:orders">
-            <table class="slds-table slds-table_cell-buffer slds-table_bordered" aria-label="Orders List">
+            <div class="slds-page-header slds-m-bottom_small slds-m-horizontal_small">
+                <lightning-button class="slds-m-left_x-small" label="Activate" title="Activate" onclick={activateSelectedOrders} disabled={isOnlyDraftOrdersSelected}></lightning-button>
+                <lightning-button class="slds-m-left_x-small" label="Mark as Shipped" title="Mark as Shipped" onclick={markSelectedOrdersAsShipped} disabled={isOnlyActivatedOrdersSelected}></lightning-button>
+                <lightning-button class="slds-m-left_x-small" label="Refresh" title="Refresh" onclick={handleRefresh}></lightning-button>
+            </div>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered" aria-label="Orders List" aria-multiselectable="true">
                 <thead>
                     <tr>
+                        <th scope="col"></th> 
                         <th scope="col">
                             <div title="Order Number">Number</div>
                         </th>
@@ -26,6 +32,9 @@
                 <tbody>
                     <template for:each={orders} for:item="order">
                         <tr key={order.orderId}>
+                            <td>
+                                <input type="checkbox" data-id={order.orderId} value={order.status} onchange={handleCheckboxChange}>
+                            </td>
                             <td data-label="Order Number">
                                 <a data-id={order.orderId} name="redirectToOrder" onclick={handleRowAction}>{order.orderNumber}</a>
                             </td>
