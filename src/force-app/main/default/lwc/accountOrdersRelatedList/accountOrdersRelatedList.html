@@ -1,0 +1,13 @@
+<template>
+    <div class="slds-box related_list_themed_border_top">
+        <div class=slds-card>
+            <template if:true={ordersTableData}>
+                <div class="slds-card__header-title ">Orders</div>
+                <lightning-datatable data={ordersTableData}
+                                     key-field="id"
+                                     columns={ordersTableColumnsDef}
+                ></lightning-datatable>
+            </template>
+        </div>
+    </div>
+</template>
