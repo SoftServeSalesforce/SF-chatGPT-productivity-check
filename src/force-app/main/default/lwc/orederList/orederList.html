@@ -1,14 +1,5 @@
 <template>
     <lightning-card title="Orders" icon-name="standard:orders">
-            <!-- <lightning-datatable
-                key-field="Id"
-                data={orders}
-                columns={columns}
-                onrowaction={handleRowAction}
-                hide-checkbox-column
-                >
-            </lightning-datatable> -->
-
             <table class="slds-table slds-table_cell-buffer slds-table_bordered" aria-label="Orders List">
                 <thead>
                     <tr>
@@ -33,7 +24,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <template for:each={getOrdersWithStatusProceed} for:item="order">
+                    <template for:each={orders} for:item="order">
                         <tr key={order.orderId}>
                             <td data-label="Order Number">
                                 <a data-id={order.orderId} name="redirectToOrder" onclick={handleRowAction}>{order.orderNumber}</a>

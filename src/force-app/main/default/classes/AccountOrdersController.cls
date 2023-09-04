@@ -1,5 +1,6 @@
 public with sharing class AccountOrdersController {
-    private static final String ERROR_INVALID_ACOOUN_ID = 'Invalid Account ID provided.';
+    private static final String ERROR_INVALID_ACCOUN_ID = 'Invalid Account ID provided.';
+    private static final String ERROR_INVALID_ORDER_ID = 'Invalid Order ID provided.';
     private static final String ERROR_IVALID_OPERATION_FOR_ORDER = 'Invalid Operation for Order #';
     private static final String STATUS_OK = 'OK';
     private static final String STATUS_ERROR = 'ERROR';
@@ -11,7 +12,7 @@ public with sharing class AccountOrdersController {
     @AuraEnabled(cacheable=true)
     public static List<OrderDTO> getOrders(Id accountId) {
         if(accountId == null || String.isBlank(accountId)) {
-            throw new IllegalArgumentException(ERROR_INVALID_ACOOUN_ID);
+            throw new IllegalArgumentException(ERROR_INVALID_ACCOUN_ID);
         }
         
         List<Order> orders = OrderSelector.getOrdersWithInvoiceInfo(accountId);
@@ -26,6 +27,10 @@ public with sharing class AccountOrdersController {
 
     @AuraEnabled
     public static Map<String, Object> activateOrder(Id orderId) {
+        if(orderId == null || String.isBlank(orderId)) {
+            throw new IllegalArgumentException(ERROR_INVALID_ORDER_ID);
+        }
+
         Map<String, Object> response = new Map<String, Object>();
 
         Order ord = OrderSelector.getOrderStatusById(orderId);
@@ -44,6 +49,10 @@ public with sharing class AccountOrdersController {
 
     @AuraEnabled
     public static Map<String, Object> markOrderAsShipped(Id orderId) {
+        if(orderId == null || String.isBlank(orderId)) {
+            throw new IllegalArgumentException(ERROR_INVALID_ORDER_ID);
+        }
+
         Map<String, Object> response = new Map<String, Object>();
 
         Order ord = OrderSelector.getOrderStatusById(orderId);
@@ -86,7 +95,13 @@ public with sharing class AccountOrdersController {
             this.status = o.Status;
             this.startDate = o.EffectiveDate;
             this.amount = o.TotalAmount;
-            this.lastStatusChanged = o.LastStatusChanged__c;
+
+            if (o.LastStatusChanged__c != null) {
+                this.lastStatusChanged = o.LastStatusChanged__c;
+            }
+            else {
+                this.lastStatusChanged = o.CreatedDate;
+            }
 
             if(o.AttachedContentDocuments != null && !o.AttachedContentDocuments.isEmpty()) {
                 this.invoiceId = o.AttachedContentDocuments[0].Id;

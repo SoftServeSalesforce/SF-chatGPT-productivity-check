@@ -1,6 +1,7 @@
 import { LightningElement, wire, api } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { NavigationMixin } from 'lightning/navigation';
+import { refreshApex } from "@salesforce/apex";
 
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
@@ -9,24 +10,27 @@ import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrd
 export default class OrderList extends NavigationMixin(LightningElement) {
     @api recordId;
     orders = [];
+    wiredOrdersValue;
 
     @wire(getOrders, { accountId: '$recordId' })
-    wiredOrders({error, data}) {
+    wiredOrders(value) {
+        this.wiredOrdersValue = value;
+        const { data, error } = value; 
         if(data) {
-            this.orders = data;
+            this.orders = this.proceedOrders(data);;
         } else if(error) {
             this.showToast('Error', error.body.message, 'error');
         }
     }
 
-    get getOrdersWithStatusProceed() {
-        return this.orders.map(order => {
+    proceedOrders(data) {
+        return data.map(order => {
             return {
                 ...order,
                 isActivated: order.status == 'Activated',
                 isDraft: order.status == 'Draft',
                 activateValue: 'activate.' + order.orderId,
-                markShippedValue: 'markShipped.' + order.orderId,
+                markShippedValue: 'markAsShipped.' + order.orderId,
                 previewInvoiceValue: 'previewInvoice.' + order.contentDocumentId,
                 downloadInvoiceValue: 'downloadInvoice.' + order.contentDocumentId,
                 statusTime: this.getStatusTime(order.lastStatusChanged),
@@ -36,18 +40,17 @@ export default class OrderList extends NavigationMixin(LightningElement) {
     }
 
     getStatusStyle(status) {
-        console.log(status);
-        switch (status) {
+        switch(status) {
             case 'Draft':
-                return 'status-draft';
+                return '';
             case 'Activated':
-                return 'status-activated';
+                return 'slds-theme_warning';
             case 'Shipped':
-                return 'status-shipped';
+                return 'slds-theme_alt-inverse';
             case 'Delivered':
-                return 'status-delivered';
+                return 'slds-theme_success';
             default:
-                return 'status-draft';
+                return '';
         }
     }
 
@@ -67,15 +70,20 @@ export default class OrderList extends NavigationMixin(LightningElement) {
 
         if (duration < minute) {
             return `${Math.round(duration / 1000)} seconds`; 
-        } else if (duration < hour) {
+        } 
+        else if (duration < hour) {
             return `${Math.round(duration / minute)} minutes`;
-        } else if (duration < day) {
+        } 
+        else if (duration < day) {
             return `${Math.round(duration / hour)} hours`;
-        } else if (duration < month) {
+        } 
+        else if (duration < month) {
             return `${Math.round(duration / day)} days`;
-        } else if (duration < year) {
+        } 
+        else if (duration < year) {
             return `${Math.round(duration / month)} months`;
-        } else {
+        } 
+        else {
             return `${Math.round(duration / year)} years`;
         }
     }
@@ -125,6 +133,7 @@ export default class OrderList extends NavigationMixin(LightningElement) {
         activateOrder({ orderId: orderId })
             .then(result => {
                 this.showToast('Success', result, 'success');
+                refreshApex(this.wiredOrdersValue);
             })
             .catch(error => {
                 this.showToast('Error', error.body.message, 'error');
@@ -135,6 +144,7 @@ export default class OrderList extends NavigationMixin(LightningElement) {
         markOrderAsShipped({ orderId: orderId })
             .then(result => {
                 this.showToast('Success', result, 'success');
+                refreshApex(this.wiredOrdersValue);
             })
             .catch(error => {
                 this.showToast('Error', error.body.message, 'error');
