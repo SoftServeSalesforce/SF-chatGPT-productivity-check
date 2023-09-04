@@ -1,9 +1,8 @@
 /**
  * @description OrderSelector: Apex Class used to access "Order" SObject records.
- * @note: Uses inherited sharing to enforce the sharing rules of the class that calls it.
  * //TODO: Cover with Apex Tests.
  */
-public inherited sharing class OrderSelector {
+public with sharing class OrderSelector {
 
     public static final String SOQL_SELECT_TEMPLATE_FOR_ORDER = 'SELECT {0} FROM Order';
 

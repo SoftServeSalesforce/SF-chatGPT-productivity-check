@@ -1,9 +1,8 @@
 /**
  * @description OrderSelector: Apex Class used to access "ContentDocumentLink" SObject records.
- * @note: Uses inherited sharing to enforce the sharing rules of the class that calls it.
  * //TODO: Cover with Apex Tests.
  */
-public inherited sharing class ContentDocumentLinkSelector {
+public with sharing class ContentDocumentLinkSelector {
 
     @TestVisible
     private static ContentDocumentLinkSelector instance;
