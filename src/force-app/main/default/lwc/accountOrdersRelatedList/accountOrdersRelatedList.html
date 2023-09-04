@@ -1,4 +1,11 @@
 <template>
     <lightning-card title="Orders Related List">
+        <template if:true={result}>
+            <lightning-datatable  
+                 key-field="Id"
+                 data={result}
+                 columns={columns}>
+             </lightning-datatable>
+        </template>
     </lightning-card>
 </template>
