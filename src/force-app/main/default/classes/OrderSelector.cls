@@ -7,7 +7,7 @@ public with sharing class OrderSelector {
         FROM Order WHERE AccountId = :accountId];
     }
 
-    public static Order getOrderForUpdate(Id orderId) {
-        return [SELECT Id, Status FROM Order WHERE Id = :orderId FOR UPDATE];
+    public static List<Order> getOrdersForUpdate(List<Id> orderIds) {
+        return [SELECT Id, Status, OrderNumber FROM Order WHERE Id IN :orderIds FOR UPDATE];
     }
 }

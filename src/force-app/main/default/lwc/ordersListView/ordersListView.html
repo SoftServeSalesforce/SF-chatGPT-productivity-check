@@ -30,6 +30,11 @@
                 <thead>
                     <tr>
                         <th scope="col">
+                            <div title="Select/Deselect All">
+                                <input type="checkbox" aria-label="Select/Deselect All" onchange={handleSelectAll} name="select-all" id="select-all">
+                            </div>
+                        </th>
+                        <th scope="col">
                             <div title="Order Number">Number</div>
                         </th>
                         <th scope="col">
@@ -45,13 +50,22 @@
                             <div class="slds-truncate" title="Invoice">Invoice</div>
                         </th>
                         <th scope="col">
-                            <div class="slds-truncate" title="Actions"></div>
+                            <div title="Actions">
+                                <lightning-button-menu alternative-text="Actions" onselect={handleMenuBulkSelect} icon-name="utility:down" icon-size="small">
+                                        <lightning-menu-item value="activate" label="Activate" disabled={disableActivateSelected} is-draft={disableActivateSelected} draft-alternative-text="Invalid operation for selected orders"></lightning-menu-item>
+                                        <lightning-menu-item value="markShipped" label="Mark as Shipped" disabled={disableMarkShippedSelected} is-draft={disableMarkShippedSelected} draft-alternative-text="Invalid operation for selected orders"></lightning-menu-item>
+                                        <lightning-menu-item value="refresh" label="Refresh"></lightning-menu-item>
+                                </lightning-button-menu>
+                            </div>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     <template for:each={processedOrders} for:item="order">
                         <tr key={order.orderId}>
+                            <td data-label="Select/Deselect Order">
+                                <input data-id={order.orderId} aria-label="Select/Deselect" type="checkbox" name="select-order" onchange={handleSelect}>
+                            </td>
                             <td data-label="Order Number">
                                 <a data-id={order.orderId} onclick={navigateToOrderRecord}>{order.orderNumber}</a>
                             </td>
@@ -73,18 +87,21 @@
                                 </template>
                             </td>
                             <td data-label="Actions">
-                                <lightning-button-menu alternative-text="Actions" onselect={handleMenuSelect} icon-name="utility:down" icon-size="small">
-                                    <template if:true={order.isDraft}>
-                                        <lightning-menu-item value={order.activateValue} label="Activate"></lightning-menu-item>
-                                    </template>
-                                    <template if:true={order.isActivated}>
-                                        <lightning-menu-item value={order.markShippedValue} label="Mark as Shipped"></lightning-menu-item>
-                                    </template>
-                                    <template if:true={order.contentDocumentId}>
-                                        <lightning-menu-item value={order.previewInvoiceValue} label="Preview Invoice"></lightning-menu-item>
-                                        <lightning-menu-item value={order.downloadInvoiceValue} label="Download Invoice"></lightning-menu-item>
-                                    </template>
-                                </lightning-button-menu>
+                                <template if:true={order.actionsAvailable}>
+                                    <lightning-button-menu alternative-text="Actions" onselect={handleMenuSelect} icon-name="utility:down" icon-size="small">
+                                        <template if:true={order.isDraft}>
+                                            <lightning-menu-item value={order.activateValue} label="Activate"></lightning-menu-item>
+                                        </template>
+                                        <template if:true={order.isActivated}>
+                                            <lightning-menu-item value={order.markShippedValue} label="Mark as Shipped"></lightning-menu-item>
+                                        </template>
+                                        <template if:true={order.contentDocumentId}>
+                                            <lightning-menu-item value={order.previewInvoiceValue} label="Preview Invoice"></lightning-menu-item>
+                                            <lightning-menu-item value={order.downloadInvoiceValue} label="Download Invoice"></lightning-menu-item>
+                                        </template>
+                                    </lightning-button-menu>
+                                </template>
+                                
                             </td>
                         </tr>
                     </template>

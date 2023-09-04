@@ -1,22 +1,29 @@
-import { LightningElement, api, wire } from 'lwc';
+import { LightningElement, api, track, wire } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { refreshApex } from '@salesforce/apex';
 
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
-import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
-import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
+import activateOrders from '@salesforce/apex/AccountOrdersController.activateOrders';
+import markOrdersAsShipped from '@salesforce/apex/AccountOrdersController.markOrdersAsShipped';
+
+import LightningConfirm from 'lightning/confirm';
+
 
 export default class OrdersListView extends NavigationMixin(LightningElement) {
     @api recordId; // Assuming this component is on a record page and the recordId is the Account Id
-    orders = [];
+    @track orders = [];
+    @track selectedOrders = [];
+    wireResult;
     
     @wire(getOrders, { accountId: '$recordId' })
-    wiredOrders({ error, data }) {
-        if(data) {
-            this.orders = JSON.parse(JSON.stringify(data));
+    wiredOrders(response) {
+        this.wireResult = response;
+        if(response.data) {
+            this.orders = response.data;
             this.error = undefined;
-        } else if(error) {
-            this.error = error;
+        } else if(response.error) {
+            this.error = response.error;
             this.orders = undefined;
         }
     }
@@ -64,35 +71,86 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
                 break;
         }
     }
+
+    handleMenuBulkSelect(event) {
+        const action = event.detail.value;
+        const selectedIds = this.selectedOrders.map((order) => order.orderId);
+        switch (action) {
+            case 'activate':
+                this.handleActivateBulkWithConfirm(selectedIds);
+                break;
+            case 'markShipped':
+                this.handleMarkShippedBulkWithConfirm(selectedIds);
+                break;
+            case 'refresh':
+                refreshApex(this.wireResult);
+                break;
+            default:
+                console.error('Unknown action: ' + action);
+                break;
+        }
+    }
+
+    async handleActivateBulkWithConfirm(orderIds) {
+        let number = orderIds.length;
+        let message = `Do you confirm to activate ${number} of Draft order(s)?`;
+        let variant = 'warning';
+        let label = 'Confirm action';
+        let isConfirmed = await this.showConfirmation(message, variant, label);
+        if (!isConfirmed) {
+            return;
+        } 
+        this.activateOrdersWrap(orderIds);
+    }
+
+    async handleMarkShippedBulkWithConfirm(orderIds) {
+        let number = orderIds.length;
+        let message = `Do you confirm to mark shipped ${number} of Activated order(s)?`;
+        let variant = 'warning';
+        let label = 'Confirm action';
+        let isConfirmed = await this.showConfirmation(message, variant, label);
+        if (!isConfirmed) {
+            return;
+        } 
+        this.markOrdersAsShippedWrap(orderIds);
+    }
     
-    handleActivateOrder(orderId) {
-        activateOrder({ orderId: orderId })
+    activateOrdersWrap(orderIds) {
+        activateOrders({ orderIds: orderIds })
+        .then(result => {
+            if(result.status === 'OK') {
+                this.showToast('Success', 'Order activated successfully!', 'success');
+                refreshApex(this.wireResult);
+            } else {
+                this.showToast('Error', result.errorMessage, 'error');
+            }
+        })
+        .catch(error => {
+            this.showToast('Error', error.body.message, 'error');
+        });
+    }
+
+    markOrdersAsShippedWrap(orderIds) {
+        markOrdersAsShipped({ orderIds: orderIds })
             .then(result => {
                 if(result.status === 'OK') {
-                    this.showToast('Success', 'Order activated successfully!', 'success');
-                    // Refresh the orders list or specific order details as needed
+                    this.showToast('Success', 'Order(s) marked as shipped successfully!', 'success');
+                    refreshApex(this.wireResult);
                 } else {
-                    this.showToast('Error', result.ErrorMessage, 'error');
+                    this.showToast('Error', result.errorMessage, 'error');
                 }
             })
             .catch(error => {
                 this.showToast('Error', error.body.message, 'error');
             });
     }
+
+    handleActivateOrder(orderId) {
+        this.activateOrdersWrap([orderId]);
+    }
     
     handleMarkAsShipped(orderId) {
-        markOrderAsShipped({ orderId: orderId })
-            .then(result => {
-                if(result.status === 'OK') {
-                    this.showToast('Success', 'Order marked as shipped successfully!', 'success');
-                    // Refresh the orders list or specific order details as needed
-                } else {
-                    this.showToast('Error', result.ErrorMessage, 'error');
-                }
-            })
-            .catch(error => {
-                this.showToast('Error', error.body.message, 'error');
-            });
+        this.markOrdersAsShippedWrap([orderId]);
     }
     
     showToast(title, message, variant) {
@@ -131,6 +189,7 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
                 ...order,
                 isDraft: order.status === 'Draft',
                 isActivated: order.status === 'Activated',
+                actionsAvailable: order.status === 'Draft' || order.status === 'Activated' || order.contentDocumentId,
                 activateValue: 'activate_' + order.orderId,
                 markShippedValue: 'markShipped_' + order.orderId,
                 previewInvoiceValue: 'previewInvoice_' + order.contentDocumentId,
@@ -183,5 +242,62 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
             default:
                 return 'badge-draft';
         }
+    }
+
+    handleSelectAll(event) {
+        const checkboxes = this.template.querySelectorAll("*[name='select-order']");
+        const isChecked = event.target.checked;
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+        if (isChecked) {
+            this.selectedOrders = [...this.orders];
+            console.log(JSON.stringify(this.selectedOrders));
+            return;
+        }
+        this.selectedOrders = [];
+        console.log(JSON.stringify(this.selectedOrders));
+
+    }
+
+    handleSelect(event) {
+        const isChecked = event.target.checked;
+        const dataOrderId = event.target.dataset.id;
+        if(isChecked) {
+            let order = this.orders.find(({orderId}) => orderId === dataOrderId);
+            this.selectedOrders.push(order);
+            console.log(JSON.stringify(this.selectedOrders));
+
+            return;
+        }
+        this.selectedOrders = this.selectedOrders.filter(({orderId}) => orderId !== dataOrderId);
+
+        console.log(JSON.stringify(this.selectedOrders));
+    }
+
+
+    get disableActivateSelected() {
+        if (this.selectedOrders == null || this.selectedOrders.length == 0) {
+            return true;
+        }
+        let nonDraftOrders = this.selectedOrders.filter(({status}) => status !== 'Draft');
+        return nonDraftOrders.length != 0
+    }
+
+    get disableMarkShippedSelected() {
+        if (this.selectedOrders == null || this.selectedOrders.length == 0) {
+            return true;
+        }
+        let nonActiveOrders = this.selectedOrders.filter(({status}) => status !== 'Activated');
+        return nonActiveOrders.length != 0
+    }
+
+    async showConfirmation(message, variant, label) {
+        const result = await LightningConfirm.open({
+            message: message,
+            variant: variant,
+            label: label,
+        });
+        return result;
     }
 }

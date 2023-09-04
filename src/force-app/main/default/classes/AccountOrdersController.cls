@@ -5,6 +5,7 @@ public with sharing class AccountOrdersController {
     private static final String ORDER_STATUS_SHIPPED = 'Shipped';
     
     private static final String ERROR_ORDER_INVALID_OPERATION = 'Invalid Operation for Order #';
+    private static final String ERROR_EMPTY_INPUT = 'Please verify your input';
     private static final String STATUS_OK = 'OK';
     private static final String STATUS_ERROR = 'ERROR';
 
@@ -63,42 +64,42 @@ public with sharing class AccountOrdersController {
     }
 
     @AuraEnabled
-    public static Map<String, Object> activateOrder(Id orderId) {
+    public static Map<String, Object> activateOrders(List<Id> orderIds) {
         Map<String, Object> response = new Map<String, Object>();
         try {
-            Order ord = OrderSelector.getOrderForUpdate(orderId);
-            if(ord.Status != ORDER_STATUS_DRAFT) {
-                response.put('status', STATUS_ERROR);
-                response.put('ErrorMessage', ERROR_ORDER_INVALID_OPERATION + ord.Id);
-                return response;
-            }
-            ord.Status = ORDER_STATUS_ACTIVATED;
-            update ord;
+            validateAndUpdateOrdersByStatus(orderIds, ORDER_STATUS_DRAFT, ORDER_STATUS_ACTIVATED);
             response.put('status', STATUS_OK);
         } catch(Exception e) {
             response.put('status', STATUS_ERROR);
-            response.put('ErrorMessage', e.getMessage());
+            response.put('errorMessage', e.getMessage());
         }
         return response;
     }
     
     @AuraEnabled
-    public static Map<String, Object> markOrderAsShipped(Id orderId) {
+    public static Map<String, Object> markOrdersAsShipped(List<Id> orderIds) {
         Map<String, Object> response = new Map<String, Object>();
         try {
-            Order ord = OrderSelector.getOrderForUpdate(orderId);
-            if(ord.Status != ORDER_STATUS_ACTIVATED) {
-                response.put('status', STATUS_ERROR);
-                response.put('ErrorMessage', ERROR_ORDER_INVALID_OPERATION + ord.Id);
-                return response;
-            }
-            ord.Status = ORDER_STATUS_SHIPPED;
-            update ord;
+            validateAndUpdateOrdersByStatus(orderIds, ORDER_STATUS_ACTIVATED, ORDER_STATUS_SHIPPED);
             response.put('status', STATUS_OK);
         } catch(Exception e) {
             response.put('status', STATUS_ERROR);
-            response.put('ErrorMessage', e.getMessage());
+            response.put('errorMessage', e.getMessage());
         }
         return response;
+    }
+
+    private static void validateAndUpdateOrdersByStatus(List<Id> orderIds, String statusFrom, String newStatus) {
+        if (orderIds.isEmpty()) {
+            throw new OrderInvalidOperationException(ERROR_EMPTY_INPUT);
+        }
+        List<Order> orders = OrderSelector.getOrdersForUpdate(orderIds);
+        for(Order ord: orders) {
+            if(ord.Status != statusFrom) {
+                throw new OrderInvalidOperationException(ERROR_ORDER_INVALID_OPERATION + ord.OrderNumber);
+            }
+            ord.Status = newStatus;
+        }
+        update orders;
     }
 }
