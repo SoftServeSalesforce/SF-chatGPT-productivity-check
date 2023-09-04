@@ -105,7 +105,7 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
 
     async handleMarkShippedBulkWithConfirm(orderIds) {
         let number = orderIds.length;
-        let message = `Do you confirm to mark shipped ${number} of Activated order(s)?`;
+        let message = `Do you confirm to mark as sent ${number} of activated order(s)?`;
         let variant = 'warning';
         let label = 'Confirm action';
         let isConfirmed = await this.showConfirmation(message, variant, label);
