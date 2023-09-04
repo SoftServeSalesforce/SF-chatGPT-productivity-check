@@ -1,5 +1,6 @@
 import { LightningElement, wire, api } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+import getTotalOrdersCount from '@salesforce/apex/AccountOrdersController.getTotalOrdersCount';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
 import activateOrders from '@salesforce/apex/AccountOrdersController.activateOrders';
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
@@ -9,35 +10,49 @@ import setPageSize from '@salesforce/apex/AccountOrdersController.setPageSize';
 import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { refreshApex } from "@salesforce/apex";
+
 const SEPARATOR = '_';
 
 export default class AccountRelatedOrders extends NavigationMixin(LightningElement) {
     @api recordId; 
     wiredOrders;
+    wiredTotalOrdersCount;
     orders;
     error;
     selectedOrders = new Map();
     noDraftSelected = true;
     noActivatedSelected = true;
 
-    currentPage = 1;
-    totalPages = 1;    
+    currentPage = 1;      
     isFirstPage = true;
     isLastPage = false;
-    @api pageSize;    
+    pageSize =10;   
+    totalOrdersCount;
 
-    connectedCallback() {
+    renderedCallback() {
         getPageSize()
-            .then(result => {
-                console.log('getPageSize ' + result);
-            this.pageSize = result;
+            .then(result => {                
+                this.pageSize = result;
           })
           .catch(error => {
             console.error('Failed to get page size:', error);
-          });
-    }  
+          });        
+    }
+    
+    @wire(getTotalOrdersCount, { accountId: '$recordId' })
+    handleTotalPages(value) {        
+        this.wiredTotalOrdersCount = value; 
+        const { data, error } = value; 
+        if (data) {
+            this.totalOrdersCount = parseInt(data);
+            this.totalPages = Math.ceil(this.totalOrdersCount / this.pageSize);
+        } else if (error) {
+            this.error = error;
+            this.showToast('Error getting total orders count', error.body.message, 'error');
+        }
+    }        
 
-    @wire(getOrders, { accountId: '$recordId' })
+    @wire(getOrders, { accountId: '$recordId', pageSize:'$pageSize', currentPage:'$currentPage' })
     handleOrders(value) {        
         this.wiredOrders = value; 
         const { data, error } = value; 
@@ -58,11 +73,8 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
                     "hasInvoices": hasInvoices,
                     "orderActions": this.populateOrderActions(item.orderStatus, hasInvoices)
                 }
-            });
-
-            this.totalPages = 2;
-            this.isFirstPage = this.currentPage === 1;
-            this.isLastPage = this.currentPage >= this.totalPages;
+            });            
+            this.handlePaginationButtons();
             this.error = undefined;   
             
         } else if (error) {
@@ -71,27 +83,40 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
         }
     }
 
+    handlePaginationButtons() {
+        this.isFirstPage = this.currentPage === 1;
+        this.isLastPage = this.currentPage >= this.totalPages; 
+    }
+
     goToPreviousPage() {
         if (this.currentPage > 1) {
-          this.currentPage -= 1;
+            this.currentPage -= 1;
         }
-      }
+        this.handlePaginationButtons();
+        getOrders({ accountId: '$recordId', pageSize: '$pageSize', currentPage: '$currentPage' });
+    }
     
-      goToNextPage() {
+    goToNextPage() {
         if (this.currentPage < this.totalPages) {
           this.currentPage += 1;
         }
-      }
+        this.handlePaginationButtons();  
+        getOrders({ accountId: '$recordId', pageSize: '$pageSize', currentPage: '$currentPage' });
+    }
     
-      handlePageSizeChange(event) {
-        this.pageSize = event.target.value;
+    handlePageSizeChange(event) {
+        const updatePageSize = event.target.value;
+        this.pageSize = +updatePageSize;
+        console.log('handlePageSizeChange this.pageSize ' + this.pageSize);
         setPageSize({ pageSize: this.pageSize })
-          .then((result) => {
-            this.handleResponse(result);
+            .then((result) => {
+              this.totalPages = Math.ceil(this.totalOrdersCount / updatePageSize);
+              this.currentPage = 1;
+              this.handleResponse(result);              
           })
           .catch(error => {
             console.error('Failed to set page size:', error);
-          });
+          });          
       }
 
     getTimeInCurrentStatus(lastStatusChanged) {
@@ -307,6 +332,8 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
 
     get pageSizeOptions() {
         return [
+                 { label: '1', value: 1 },
+                 { label: '2', value: 2 },
                  { label: '10', value: 10 },
                  { label: '20', value: 20 },
                  { label: '50', value: 50 },

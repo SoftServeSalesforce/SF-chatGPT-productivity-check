@@ -6,11 +6,12 @@
                 <button onclick={goToPreviousPage} disabled={isFirstPage}>Previous</button>
                 <button onclick={goToNextPage} disabled={isLastPage}>Next</button>
                 <span>Page: {currentPage} of {totalPages}</span>
-                <lightning-combobox name="pageSize"
-                        label="Select Page Size"
+                <lightning-combobox name="pageSize" class="pagination-combobox"
+                        label="Select page size"                        
                         value={pageSize}
                         options={pageSizeOptions}
-                        onchange={handlePageSizeChange}>
+                        onchange={handlePageSizeChange}
+                        dropdown-alignment="auto">
     </lightning-combobox>
               </div>
             <div class="slds-m-bottom_medium">

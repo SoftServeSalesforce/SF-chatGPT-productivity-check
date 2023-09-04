@@ -1,19 +1,32 @@
 public with sharing class AccountOrdersController {   
     
     @AuraEnabled(cacheable=true)
-    public static List<OrderDTO> getOrders(Id accountId) {
-        System.debug('request ' + accountId);
-
-        // if(String.isBlank(request.accountId)) {
-        //     throw new AuraHandledException(Constants.INVALID_ACCOUNT_ID_MESSAGE);
-        // }
-
-        // Integer offsetSize = (request.pageNumber - 1) * request.pageSize;
-
-        try {
-            //List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(request.accountId, request.pageSize, offsetSize);
-            List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(accountId, 5, 1);
+    public static List<OrderDTO> getOrders(Id accountId, Integer pageSize, Integer currentPage) {        
+        if(String.isBlank(accountId)) {
+            throw new AuraHandledException(Constants.INVALID_ACCOUNT_ID_MESSAGE);
+        }
+        if(pageSize == null || pageSize <=0) {
+            pageSize = getPageSize();
+        }
+        if(currentPage == null || currentPage <=0) {
+            currentPage = 1;
+        }
+        Integer offsetSize = (currentPage - 1) * pageSize;
+        try {            
+            List<Order> accountRelatedOrders = OrderSelector.getOrdersWithAttachmentsByAccountId(accountId, pageSize, offsetSize);
             return populateOrderDTOs(accountRelatedOrders);
+        } catch(Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static Integer getTotalOrdersCount(Id accountId) {        
+        if(String.isBlank(accountId)) {
+            throw new AuraHandledException(Constants.INVALID_ACCOUNT_ID_MESSAGE);
+        }
+        try {            
+            return OrderSelector.getOrderCountByAccountId(accountId);
         } catch(Exception e) {
             throw new AuraHandledException(e.getMessage());
         }
@@ -22,7 +35,6 @@ public with sharing class AccountOrdersController {
     @AuraEnabled
     public static Integer getPageSize() {
         PaginationPageSize__c settings = PaginationPageSize__c.getInstance(UserInfo.getUserId());
-        System.debug('PaginationPageSize__c settings ' + settings);
         if(settings == null || settings?.Page_Size__c <= 0) {
             throw new AuraHandledException('Please setup default page size in custom settings');
         }
@@ -35,8 +47,7 @@ public with sharing class AccountOrdersController {
             throw new AuraHandledException('Invalid page size');
         }
 
-        PaginationPageSize__c settings = PaginationPageSize__c.getInstance(UserInfo.getUserId());        
-        System.debug('settings ' + settings);
+        PaginationPageSize__c settings = PaginationPageSize__c.getInstance(UserInfo.getUserId());    
         if (settings == null) {
             settings = new PaginationPageSize__c();
             settings.SetupOwnerId = UserInfo.getUserId();
@@ -46,14 +57,11 @@ public with sharing class AccountOrdersController {
 
         try{
             Database.UpsertResult upsertResult = Database.upsert(settings);
-            System.debug('Database.UpsertResult ' + upsertResult);
             return new OrderDMLSummaryResponse(Constants.ORDER_DML_RESPONSE_STATUS_SUCCESS, 'Default page size has been updated');
         } catch(DmlException e) {
             throw new AuraHandledException(e.getMessage());
         } 
-    }
-    
-    
+    }       
 
     @AuraEnabled
     public static OrderDMLSummaryResponse activateOrder(Id orderId) {

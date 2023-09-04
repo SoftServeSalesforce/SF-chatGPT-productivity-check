@@ -7,6 +7,10 @@ public with sharing class OrderSelector {
         FROM Order WHERE AccountId = :accountId];
     }
 
+    public static Integer getOrderCountByAccountId(Id accountId) {
+        return [SELECT COUNT() FROM Order WHERE AccountId = :accountId];
+    }
+
     public static Order getOrderById(Id orderId) {
         return [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
     }
