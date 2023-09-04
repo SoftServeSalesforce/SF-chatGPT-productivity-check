@@ -1,6 +1,5 @@
 import {api, LightningElement} from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders'
-import {ShowToastEvent} from "lightning/platformShowToastEvent";
 
 export default class AccountOrdersRelatedList extends LightningElement {
     @api recordId;
