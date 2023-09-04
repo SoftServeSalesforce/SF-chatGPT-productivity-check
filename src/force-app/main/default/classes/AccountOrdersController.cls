@@ -11,6 +11,10 @@ public with sharing class AccountOrdersController {
         return result;
     }
 
+    public static String activateOrder(OrderDTO source, String status){}
+    
+    public static String marOrderAsShipped(OrderDTO source, String status){}
+
     public class OrderDTO {
         @AuraEnabled public Id id{get;set;}
         @AuraEnabled public Id accountId{get; set;}
