@@ -3,28 +3,89 @@ public with sharing class AccountOrdersController {
     private static final String ERROR_INVALID_ORDER_ID = 'Invalid Order ID provided.';
     private static final String ERROR_INVALID_ORDERS_IDS = 'Invalid Orders IDs provided.';
     private static final String ERROR_INVALID_OPERATION_FOR_ORDER = 'Invalid Operation for Order #';
+    private static final String ERROR_INVALID_PAGE_SIZE = 'Invalid page size. Page size must be a positive integer greater than zero.';
+    private static final String ERROR_INVALID_PAGE_NUMBER = 'Invalid page number. Page number must be a positive integer greater than zero.';
+    private static final String ERROR_INVALID_PAGINATION_SETTINGS = 'No default page size in custom settings found.';
     private static final String STATUS_OK = 'OK';
     private static final String STATUS_ERROR = 'ERROR';
-
     private static final String ORDER_STATUS_ACTIVATED = 'Activated';
     private static final String ORDER_STATUS_SHIPPED = 'Shipped';
     private static final String ORDER_STATUS_DRAFT = 'Draft';
+    private static final Integer DEFAULT_PAGE_SIZE = 10;
 
     @AuraEnabled(cacheable=true)
-    public static List<OrderDTO> getOrders(Id accountId) {
+    public static List<OrderDTO> getOrders(Id accountId, Integer pageSize, Integer pageNumber) {
         if(accountId == null || String.isBlank(accountId)) {
             throw new IllegalArgumentException(ERROR_INVALID_ACCOUNT_ID);
         }
+        if (pageSize == null || pageSize <= 0) {
+            pageSize = getPageSize();
+        }
+        if (pageNumber == null || pageNumber <= 0) {
+            pageNumber = 1;
+        }
+
+        Integer offsetSize = (pageNumber - 1) * pageSize;
         
-        List<Order> orders = OrderSelector.getOrdersWithInvoiceInfo(accountId);
+        List<Order> orders = OrderSelector.getOrdersWithInvoiceInfo(accountId, pageSize, offsetSize);
         List<OrderDTO> orderDTOList = new List<OrderDTO>();
         
         for(Order o : orders) {
             orderDTOList.add(new OrderDTO(o));
         }
-        
+   
         return orderDTOList;
     }
+    
+    @AuraEnabled(cacheable=true)
+    public static Integer getTotalOrderCount(Id accountId) {
+        if(accountId == null || String.isBlank(accountId)) {
+            throw new IllegalArgumentException(ERROR_INVALID_ACCOUNT_ID);
+        }
+
+        Integer totalRecordsCount = OrderSelector.getOrderCountByAccountId(accountId);
+
+        return totalRecordsCount;
+    }
+
+    @AuraEnabled
+    public static Integer getPageSize() {
+        OrderListPaginationPageSize__c paginationSettings = OrderListPaginationPageSize__c.getInstance(UserInfo.getUserId());
+
+        if (paginationSettings == null || paginationSettings?.Page_Size__c <= 0) {
+            setPageSize(DEFAULT_PAGE_SIZE);
+        }
+        
+        return (Integer) paginationSettings.Page_Size__c;
+    }
+
+    @AuraEnabled
+    public static Map<String, Object> setPageSize(Integer pageSize) {
+        if (pageSize <= 0) {
+            throw new AuraHandledException(ERROR_INVALID_PAGE_SIZE);
+        }
+
+        Map<String, Object> response = new Map<String, Object>();
+
+        OrderListPaginationPageSize__c paginationSettings = OrderListPaginationPageSize__c.getInstance(UserInfo.getUserId()); 
+          
+        if (paginationSettings == null) {
+            paginationSettings = new OrderListPaginationPageSize__c();
+            paginationSettings.SetupOwnerId = UserInfo.getUserId();
+        }
+        
+        paginationSettings.Page_Size__c = pageSize; 
+    
+        try {
+            upsert paginationSettings;
+            response.put('status', STATUS_OK);
+            return response;
+        } catch (DmlException e) {
+            response.put('status', STATUS_ERROR);
+            response.put('ErrorMessage', ERROR_INVALID_PAGE_SIZE + pageSize);
+            return response;
+        }
+    } 
 
     @AuraEnabled
     public static Map<String, Object> activateOrder(Id orderId) {
@@ -47,7 +108,6 @@ public with sharing class AccountOrdersController {
         response.put('status', STATUS_OK);
         return response;
     }
-
 
     @AuraEnabled
     public static Map<String, Object> markOrderAsShipped(Id orderId) {

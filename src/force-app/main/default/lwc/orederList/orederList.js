@@ -8,6 +8,9 @@ import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrde
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
 import bulkActivateOrders from '@salesforce/apex/AccountOrdersController.bulkActivateOrders';
 import bulkMarkOrdersAsShipped from '@salesforce/apex/AccountOrdersController.bulkMarkOrdersAsShipped';
+import getTotalOrderCount from '@salesforce/apex/AccountOrdersController.getTotalOrderCount';
+import getPageSize from '@salesforce/apex/AccountOrdersController.getPageSize';
+import setPageSize from '@salesforce/apex/AccountOrdersController.setPageSize';
 
 export default class OrderList extends NavigationMixin(LightningElement) {
     @api recordId;
@@ -17,13 +20,45 @@ export default class OrderList extends NavigationMixin(LightningElement) {
     isOnlyDraftOrdersSelected = true;
     isOnlyActivatedOrdersSelected = true;
 
+    pageNumber = 1;
+    totalRecords = 0;
+    totalPages = 0;
+    pageSize = 10;    
+    isPrevDisabled = true;
+    isNextDisabled = false;
+    orderPaginationData;
 
-    @wire(getOrders, { accountId: '$recordId' })
+    renderedCallback() {
+        getPageSize()
+            .then(result => {        
+                this.pageSize = result;
+            })
+            .catch(error => {
+                this.showToast('Error', error.body.message, 'error');
+            });        
+    }
+
+    @wire(getTotalOrderCount, { accountId: '$recordId' })
+    handleOrderPagination(value) {   
+        this.orderPaginationData = value;
+        const { data, error } = value; 
+        if (data) {
+            this.totalRecords = parseInt(data);
+            this.totalPages = Math.ceil(this.totalRecords / this.pageSize);
+        } 
+        else if (error) {
+            this.error = error;
+            this.showToast('Error getting total orders count', error.body.message, 'error');
+        }
+    }   
+
+    @wire(getOrders, { accountId: '$recordId', pageSize:'$pageSize', pageNumber:'$pageNumber' })
     wiredOrders(value) {
         this.wiredOrdersValue = value;
         const { data, error } = value; 
         if(data) {
-            this.orders = this.proceedOrders(data);;
+            this.orders = this.proceedOrders(data);
+            this.handlePaginationButtons();
         } else if(error) {
             this.showToast('Error', error.body.message, 'error');
         }
@@ -44,6 +79,58 @@ export default class OrderList extends NavigationMixin(LightningElement) {
             };
         });
     }
+
+    get pageSizeOptions() {
+        const sizeOptions = [
+            { label: '10', value: 10 },
+            { label: '20', value: 20 },
+            { label: '50', value: 50 },
+            { label: '100', value: 100 }  
+        ];
+        
+        return sizeOptions;
+    }
+
+    handlePaginationButtons() {
+        this.isPrevDisabled = this.pageNumber === 1;
+        this.isNextDisabled = this.pageNumber >= this.totalPages; 
+    }
+
+    handlePagePrevAction() {
+        if (this.pageNumber > 1) {
+            this.pageNumber -= 1;
+        }
+
+        this.handlePaginationButtons();
+
+        getOrders({ accountId: '$recordId', pageSize: '$pageSize', pageNumber:'$pageNumber' });
+    }
+
+    handlePageNextAction() {
+        if (this.pageNumber < this.totalPages) {
+            this.pageNumber += 1;
+        }
+
+        this.handlePaginationButtons(); 
+
+        getOrders({ accountId: '$recordId', pageSize: '$pageSize', pageNumber:'$pageNumber' });
+    }
+
+    handlePageSizeChange(event) {
+        const newPageSize = event.target.value;
+
+        this.pageSize = newPageSize;
+        this.pageNumber = 1;
+
+        setPageSize({ pageSize: this.pageSize })
+            .then((result) => {
+                this.totalPages = Math.ceil(this.totalRecords / newPageSize);
+                this.pageNumber = 1;
+            })
+            .catch(error => {
+                this.showToast('Error', error.body.message, 'error');
+            });          
+      }
 
     getStatusStyle(status) {
         switch(status) {
@@ -232,7 +319,6 @@ export default class OrderList extends NavigationMixin(LightningElement) {
                 });
         }
     }
-
 
     showToast(title, message, variant) {
         const evt = new ShowToastEvent({

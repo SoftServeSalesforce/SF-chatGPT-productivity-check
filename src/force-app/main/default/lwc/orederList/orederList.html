@@ -73,5 +73,29 @@
                     </template>
                 </tbody>
             </table>
+            <div class="slds-align_absolute-center slds-m-around_medium"> 
+                <div class="slds-p-right_xx-small">
+                    <lightning-button label="Prev" disabled={isPrevDisabled} onclick={handlePagePrevAction} icon-name="utility:back" name="prev"></lightning-button>  
+                </div>
+                <span class="slds-badge slds-badge_lightest">
+                    Page {pageNumber} of {totalPages}
+                </span>
+                <div class="slds-p-left_xx-small">
+                    <lightning-button label="Next" disabled={isNextDisabled} onclick={handlePageNextAction} icon-name="utility:forward" icon-position="right" name="next"></lightning-button>
+                </div>      
+
+                <div class="slds-p-left_xx-small">
+                    <lightning-combobox 
+                        name="pageSize" 
+                        label="Select page size"
+                        class="pagination-combobox"                        
+                        value={pageSize}
+                        options={pageSizeOptions}
+                        onchange={handlePageSizeChange}
+                        dropdown-alignment="auto">
+                    </lightning-combobox>
+                </div>
+                
+            </div>  
     </lightning-card>
 </template>
