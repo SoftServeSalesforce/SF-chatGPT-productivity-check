@@ -1,9 +1,8 @@
 /**
  * @description OrderService: Order Service to capture Business logic.
- * @note: Uses inherited sharing to enforce the sharing rules of the class that calls it.
  * //TODO: Cover with Apex Tests.
  */
-public inherited sharing class OrderService {
+public with sharing class OrderService {
     @TestVisible
     private static OrderService instance;
 
