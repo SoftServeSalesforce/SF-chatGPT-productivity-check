@@ -2,18 +2,18 @@
     <lightning-card title="Account Related Orders">
         <template lwc:if={orders}>
           <div class="slds-m-around_medium">
-            <div>
-                <button onclick={goToPreviousPage} disabled={isFirstPage}>Previous</button>
-                <button onclick={goToNextPage} disabled={isLastPage}>Next</button>
-                <span>Page: {currentPage} of {totalPages}</span>
-                <lightning-combobox name="pageSize" class="pagination-combobox"
+            <div class="pagination">
+                <button class="slds-button slds-button_neutral" onclick={goToPreviousPage} disabled={isFirstPage}>Previous</button>
+                <button class="slds-button slds-button_neutral slds-m-left_small" onclick={goToNextPage} disabled={isLastPage}>Next</button>
+                <span  class="slds-m-left_small">Page: {currentPage} of {totalPages}</span>
+                <lightning-combobox name="pageSize" class="pagination-combobox slds-m-left_small"
                         label="Select page size"                        
                         value={pageSize}
                         options={pageSizeOptions}
                         onchange={handlePageSizeChange}
                         dropdown-alignment="auto">
-    </lightning-combobox>
-              </div>
+                </lightning-combobox>
+            </div>
             <div class="slds-m-bottom_medium">
                 <lightning-button variant="brand" label="Activate" title="Activate" onclick={handleActivateButtonSelected} disabled={noDraftSelected}></lightning-button>
                 <lightning-button variant="brand" label="Mark as Shipped" title="Mark as Shipped" onclick={handleMarkAsShippedButtonSelected} disabled={noActivatedSelected}></lightning-button>

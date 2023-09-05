@@ -107,7 +107,6 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
     handlePageSizeChange(event) {
         const updatePageSize = event.target.value;
         this.pageSize = +updatePageSize;
-        console.log('handlePageSizeChange this.pageSize ' + this.pageSize);
         setPageSize({ pageSize: this.pageSize })
             .then((result) => {
               this.totalPages = Math.ceil(this.totalOrdersCount / updatePageSize);
@@ -331,9 +330,7 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
     }
 
     get pageSizeOptions() {
-        return [
-                 { label: '1', value: 1 },
-                 { label: '2', value: 2 },
+        return [                
                  { label: '10', value: 10 },
                  { label: '20', value: 20 },
                  { label: '50', value: 50 },

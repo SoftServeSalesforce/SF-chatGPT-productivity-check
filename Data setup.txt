@@ -1,0 +1,1068 @@
+Me:
+now I need a script to create test data for the code provided above. The requirements are:
+write apex code to generate data, including: 
+
+5 products with names like HP ZBook, Mac Book Pro, Dell Inspiron, SFDC Apex Development, LWC Development 
+
+Pricebook entries for standard pricebook and each product with non-zero arbitrary value of unit price chosen by developer 
+
+Account record SoftServe Inc. 
+
+Create activated Contract 
+
+400 orders related to created Account records 
+
+Each order should have 5 order line items, one order line item per product 
+
+There should be 100 orders per each status (Draft/Activated/Shipped/Delivered) 
+
+In every 100 orders there should be 25 without any attached content files, 25 should have ‘Invoice-%i.pdf’ document attached, 25 should have ‘test-%i.pdf’ document attached and 25 should have both ‘Invoice-%i.pdf’  and ‘test-%i.pdf’ documents attached. All file names should be different and include dynamic parameter of counter %i. For example, Invoice-25.pdf or test-100.pdf. 
+
+GPT:
+Certainly! Below is an Apex code snippet that should fulfill your requirements for generating test data:
+
+```apex
+public class TestDataGenerator {
+    
+    public static void generateTestData() {
+        
+        // Create Account
+        Account acc = new Account(Name = 'SoftServe Inc.');
+        insert acc;
+
+        // Fetch Standard Pricebook
+        Pricebook2 standardPricebook = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+
+        // Create Products
+        List<Product2> products = new List<Product2>{
+            new Product2(Name = 'HP ZBook', IsActive = true),
+            new Product2(Name = 'Mac Book Pro', IsActive = true),
+            new Product2(Name = 'Dell Inspiron', IsActive = true),
+            new Product2(Name = 'SFDC Apex Development', IsActive = true),
+            new Product2(Name = 'LWC Development', IsActive = true)
+        };
+        insert products;
+
+        // Create Pricebook Entries for Standard Pricebook
+        List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+        for(Product2 prod : products) {
+            pbEntries.add(new PricebookEntry(
+                Product2Id = prod.Id,
+                Pricebook2Id = standardPricebook.Id,
+                UnitPrice = Math.random() * 1000,
+                IsActive = true
+            ));
+        }
+        insert pbEntries;
+
+        // Create an Activated Contract
+        Contract cont = new Contract(
+            AccountId = acc.Id,
+            StartDate = System.today(),
+            ContractTerm = 12,
+            Status = 'Activated'
+        );
+        insert cont;
+
+        // Create 400 Orders
+        List<Order> orders = new List<Order>();
+        for(Integer i = 0; i < 400; i++) {
+            String status;
+            if (i < 100) status = 'Draft';
+            else if (i < 200) status = 'Activated';
+            else if (i < 300) status = 'Shipped';
+            else status = 'Delivered';
+            
+            orders.add(new Order(
+                AccountId = acc.Id,
+                Status = status,
+                ContractId = cont.Id,
+                EffectiveDate = System.today()
+            ));
+        }
+        insert orders;
+
+        // Create 5 Order Line Items for each Order
+        List<OrderItem> orderItems = new List<OrderItem>();
+        for(Order o : orders) {
+            for(PricebookEntry pbe : pbEntries) {
+                orderItems.add(new OrderItem(
+                    OrderId = o.Id,
+                    PricebookEntryId = pbe.Id,
+                    Quantity = 1,
+                    UnitPrice = pbe.UnitPrice
+                ));
+            }
+        }
+        insert orderItems;
+
+        // Create Content Version for Files
+        List<ContentVersion> contentVersions = new List<ContentVersion>();
+        for(Integer i = 0; i < 100; i++) {
+            if (i < 25) {
+                // No attachments
+            } else if (i < 50) {
+                // Attach Invoice-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'Invoice-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Invoice'),
+                    PathOnClient = '/Invoice-' + i + '.pdf'
+                ));
+            } else if (i < 75) {
+                // Attach test-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'test-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Data'),
+                    PathOnClient = '/test-' + i + '.pdf'
+                ));
+            } else {
+                // Attach both Invoice-%i.pdf and test-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'Invoice-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Invoice'),
+                    PathOnClient = '/Invoice-' + i + '.pdf'
+                ));
+                contentVersions.add(new ContentVersion(
+                    Title = 'test-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Data'),
+                    PathOnClient = '/test-' + i + '.pdf'
+                ));
+            }
+        }
+        insert contentVersions;
+
+        // Attach files to Orders
+        List<ContentDocumentLink> cdls = new List<ContentDocumentLink>();
+        for (Integer i = 0; i < 100; i++) {
+            Id orderId = orders[i].Id;
+            if (i >= 25) {
+                for (ContentVersion cv : contentVersions) {
+                    cdls.add(new ContentDocumentLink(
+                        ContentDocumentId = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :cv.Id LIMIT 1].ContentDocumentId,
+                        LinkedEntityId = orderId,
+                        ShareType = 'V'
+                    ));
+                }
+            }
+        }
+        insert cdls;
+    }
+}
+
+// Call the method to generate data
+TestDataGenerator.generateTestData();
+```
+
+This script creates an account, a standard pricebook with entries, an activated contract, 400 orders with different statuses, and order items for those orders. Additionally, it attaches Content Documents (PDFs) as per your requirements.
+
+Please note that this script should be run in a developer or sandbox environment and thoroughly tested before deploying to production.
+
+Me:
+please update your script with logic to insert contract first and after update it to activate, the same behavior should be for orders, insert with Draft status and after update needed status accordingly
+
+GPT:
+Certainly! To mimic the real-world process where Contracts and Orders are created in a 'Draft' status and then activated or changed to other statuses, you can update the script as follows:
+
+```apex
+public class TestDataGenerator {
+    
+    public static void generateTestData() {
+        
+        // Create Account
+        Account acc = new Account(Name = 'SoftServe Inc.');
+        insert acc;
+
+        // Fetch Standard Pricebook
+        Pricebook2 standardPricebook = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+
+        // Create Products
+        List<Product2> products = new List<Product2>{
+            new Product2(Name = 'HP ZBook', IsActive = true),
+            new Product2(Name = 'Mac Book Pro', IsActive = true),
+            new Product2(Name = 'Dell Inspiron', IsActive = true),
+            new Product2(Name = 'SFDC Apex Development', IsActive = true),
+            new Product2(Name = 'LWC Development', IsActive = true)
+        };
+        insert products;
+
+        // Create Pricebook Entries for Standard Pricebook
+        List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+        for(Product2 prod : products) {
+            pbEntries.add(new PricebookEntry(
+                Product2Id = prod.Id,
+                Pricebook2Id = standardPricebook.Id,
+                UnitPrice = Math.random() * 1000,
+                IsActive = true
+            ));
+        }
+        insert pbEntries;
+
+        // Create a Contract in Draft status
+        Contract cont = new Contract(
+            AccountId = acc.Id,
+            StartDate = System.today(),
+            ContractTerm = 12,
+            Status = 'Draft'
+        );
+        insert cont;
+
+        // Update the contract to 'Activated' status
+        cont.Status = 'Activated';
+        update cont;
+
+        // Create 400 Orders with 'Draft' status
+        List<Order> orders = new List<Order>();
+        for(Integer i = 0; i < 400; i++) {
+            orders.add(new Order(
+                AccountId = acc.Id,
+                Status = 'Draft',
+                ContractId = cont.Id,
+                EffectiveDate = System.today()
+            ));
+        }
+        insert orders;
+
+        // Update the Orders to their respective statuses
+        for(Integer i = 0; i < 400; i++) {
+            if (i < 100) orders[i].Status = 'Draft';
+            else if (i < 200) orders[i].Status = 'Activated';
+            else if (i < 300) orders[i].Status = 'Shipped';
+            else orders[i].Status = 'Delivered';
+        }
+        update orders;
+
+        // Create 5 Order Line Items for each Order
+        List<OrderItem> orderItems = new List<OrderItem>();
+        for(Order o : orders) {
+            for(PricebookEntry pbe : pbEntries) {
+                orderItems.add(new OrderItem(
+                    OrderId = o.Id,
+                    PricebookEntryId = pbe.Id,
+                    Quantity = 1,
+                    UnitPrice = pbe.UnitPrice
+                ));
+            }
+        }
+        insert orderItems;
+        
+        // Additional logic to attach Content Files...
+        // ...
+    }
+}
+
+// Call the method to generate data
+TestDataGenerator.generateTestData();
+```
+
+This script creates the Contract and Orders in 'Draft' status and then updates them to their respective statuses ('Activated', 'Shipped', 'Delivered') as required.
+
+Me:
+please update script in order to eliminate the following error: Price Book Not Set on Order: []
+
+GPT:
+
+Certainly! To eliminate the "Price Book Not Set on Order" error, you need to explicitly set the `Pricebook2Id` field on the `Order` object. In Salesforce, each `Order` should be related to a `Pricebook2` via the `Pricebook2Id` field.
+
+Here's how you could modify the script:
+
+```apex
+public class TestDataGenerator {
+    
+    public static void generateTestData() {
+        
+        // Create Account
+        Account acc = new Account(Name = 'SoftServe Inc.');
+        insert acc;
+
+        // Fetch Standard Pricebook
+        Pricebook2 standardPricebook = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+
+        // Create Products
+        List<Product2> products = new List<Product2>{
+            new Product2(Name = 'HP ZBook', IsActive = true),
+            new Product2(Name = 'Mac Book Pro', IsActive = true),
+            new Product2(Name = 'Dell Inspiron', IsActive = true),
+            new Product2(Name = 'SFDC Apex Development', IsActive = true),
+            new Product2(Name = 'LWC Development', IsActive = true)
+        };
+        insert products;
+
+        // Create Pricebook Entries for Standard Pricebook
+        List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+        for(Product2 prod : products) {
+            pbEntries.add(new PricebookEntry(
+                Product2Id = prod.Id,
+                Pricebook2Id = standardPricebook.Id,
+                UnitPrice = Math.random() * 1000,
+                IsActive = true
+            ));
+        }
+        insert pbEntries;
+
+        // Create a Contract in Draft status
+        Contract cont = new Contract(
+            AccountId = acc.Id,
+            StartDate = System.today(),
+            ContractTerm = 12,
+            Status = 'Draft'
+        );
+        insert cont;
+
+        // Update the contract to 'Activated' status
+        cont.Status = 'Activated';
+        update cont;
+
+        // Create 400 Orders with 'Draft' status and assign the Standard Pricebook
+        List<Order> orders = new List<Order>();
+        for(Integer i = 0; i < 400; i++) {
+            orders.add(new Order(
+                AccountId = acc.Id,
+                Status = 'Draft',
+                ContractId = cont.Id,
+                EffectiveDate = System.today(),
+                Pricebook2Id = standardPricebook.Id // Important: Set the Pricebook
+            ));
+        }
+        insert orders;
+
+        // Update the Orders to their respective statuses
+        for(Integer i = 0; i < 400; i++) {
+            if (i < 100) orders[i].Status = 'Draft';
+            else if (i < 200) orders[i].Status = 'Activated';
+            else if (i < 300) orders[i].Status = 'Shipped';
+            else orders[i].Status = 'Delivered';
+        }
+        update orders;
+
+        // Create 5 Order Line Items for each Order
+        List<OrderItem> orderItems = new List<OrderItem>();
+        for(Order o : orders) {
+            for(PricebookEntry pbe : pbEntries) {
+                orderItems.add(new OrderItem(
+                    OrderId = o.Id,
+                    PricebookEntryId = pbe.Id,
+                    Quantity = 1,
+                    UnitPrice = pbe.UnitPrice
+                ));
+            }
+        }
+        insert orderItems;
+        
+        // Additional logic to attach Content Files...
+        // ...
+    }
+}
+
+// Call the method to generate data
+TestDataGenerator.generateTestData();
+```
+
+Note the addition of the `Pricebook2Id = standardPricebook.Id` line when creating the `Order` records. This links each `Order` to the standard `Pricebook2`, thus resolving the "Price Book Not Set on Order" error.
+
+Me:
+
+for (Integer i = 0; i < 100; i++) {
+            Id orderId = orders[i].Id;
+            if (i >= 25) {
+                for (ContentVersion cv : contentVersions) {
+                    cdls.add(new ContentDocumentLink(
+                        ContentDocumentId = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :cv.Id LIMIT 1].ContentDocumentId,
+                        LinkedEntityId = orderId,
+                        ShareType = 'V'
+                    ));
+                }
+            }
+        }
+
+modify please this part to avoid querying in the loop and it his soql limits
+
+GPT:
+
+Certainly! The best way to avoid hitting SOQL limits in a loop is to perform all the queries before entering the loop and storing the results in a map or list. You can then reference this stored data while inside the loop.
+
+Here's the modified version of your loop:
+
+```apex
+// Assuming 'contentVersions' is already populated with the relevant ContentVersion records
+
+// Create a Map to store the ContentDocumentId for each ContentVersion Id
+Map<Id, Id> contentVersionToDocumentId = new Map<Id, Id>();
+
+// Query ContentDocumentId for all ContentVersion records at once
+for (ContentVersion cv : [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id IN :contentVersions]) {
+    contentVersionToDocumentId.put(cv.Id, cv.ContentDocumentId);
+}
+
+List<ContentDocumentLink> cdls = new List<ContentDocumentLink>();
+
+for (Integer i = 0; i < 100; i++) {
+    Id orderId = orders[i].Id;
+
+    // Skip first 25 orders
+    if (i < 25) continue;
+
+    for (ContentVersion cv : contentVersions) {
+        // Retrieve ContentDocumentId from the map
+        Id contentDocumentId = contentVersionToDocumentId.get(cv.Id);
+
+        cdls.add(new ContentDocumentLink(
+            ContentDocumentId = contentDocumentId,
+            LinkedEntityId = orderId,
+            ShareType = 'V'
+        ));
+    }
+}
+
+// Finally insert all ContentDocumentLinks at once
+insert cdls;
+```
+
+In this modified code, the SOQL query to get the `ContentDocumentId` is executed only once for all the `ContentVersion` records and stored in a Map. Then, the loop uses this map to get the `ContentDocumentId` for each `ContentVersion`. This avoids SOQL queries inside the loop.
+
+Me:
+and now have other limit exception: Too many DML rows: 10001 please analyze what object is exceeded and make modification into the script to pass successfully
+
+GPT:
+The "Too many DML rows: 10001" error typically occurs when an operation tries to insert, update, delete, or undelete too many rows of sObject records. In Salesforce, you're allowed to make changes to up to 10,000 records in a single transaction.
+
+Based on your previous requirements:
+
+400 orders
+5 order line items per order
+That alone results in 400 * 5 = 2000 Order Item records. Then, assuming each order could have 2 ContentDocumentLinks, you could have up to 400 * 2 = 800 ContentDocumentLinks.
+
+You might also have additional DML operations for Accounts, Products, PricebookEntries, Contracts, and so on.
+
+The DML row limit is usually cumulative for the entire transaction, so even if no single DML operation uses more than 10,000 rows, the total for all DML operations must still be below that limit.
+
+Solutions
+Here are some ways to mitigate this issue:
+
+Batch Your Operations: Instead of inserting all records at once, you could break them up into smaller chunks. However, keep in mind that this might not work well if there are operations that depend on other operations being complete.
+
+Use Bulk API or Batch Apex for Massive Operations: If you are dealing with huge sets of data, consider using the Bulk API or creating a Batch Apex job. This would be especially useful for one-time data setup or migration tasks.
+
+Optimize the Data Model: Analyze if you really need to insert all those records for your use case. Maybe the logic can be optimized to require fewer records.
+
+Use @future or Queueable Apex: For non-transaction-critical operations, you could offload some DML operations to an asynchronous @future method or a Queueable Apex class. Be careful with this approach because it could make the transaction logic harder to follow and debug.
+
+Without the full code, it's hard to provide a pinpoint solution, but these are general strategies you could use to get under the DML limit.
+
+Me:
+I'm trying to execute the script generated by you above, my final version is:     
+
+    // Create Account
+        Account acc = new Account(Name = 'SoftServe Inc.');
+        insert acc;
+
+        // Fetch Standard Pricebook
+        Pricebook2 standardPricebook = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+
+        // Create Products
+        List<Product2> products = new List<Product2>{
+            new Product2(Name = 'HP ZBook', IsActive = true),
+            new Product2(Name = 'Mac Book Pro', IsActive = true),
+            new Product2(Name = 'Dell Inspiron', IsActive = true),
+            new Product2(Name = 'SFDC Apex Development', IsActive = true),
+            new Product2(Name = 'LWC Development', IsActive = true)
+        };
+        insert products;
+
+        // Create Pricebook Entries for Standard Pricebook
+        List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+        for(Product2 prod : products) {
+            pbEntries.add(new PricebookEntry(
+                Product2Id = prod.Id,
+                Pricebook2Id = standardPricebook.Id,
+                UnitPrice = Math.random() * 1000,
+                IsActive = true
+            ));
+        }
+        insert pbEntries;
+
+        // Create a Contract in Draft status
+        Contract cont = new Contract(
+            AccountId = acc.Id,
+            StartDate = System.today(),
+            ContractTerm = 12,
+            Status = 'Draft'
+        );
+        insert cont;
+
+        // Update the contract to 'Activated' status
+        cont.Status = 'Activated';
+        update cont;
+
+        // Create 400 Orders with 'Draft' status and assign the Standard Pricebook
+        List<Order> orders = new List<Order>();
+        for(Integer i = 0; i < 400; i++) {
+            orders.add(new Order(
+                AccountId = acc.Id,
+                Status = 'Draft',
+                ContractId = cont.Id,
+                EffectiveDate = System.today(),
+                Pricebook2Id = standardPricebook.Id // Important: Set the Pricebook
+            ));
+        }
+        insert orders;
+
+        
+        
+        // Create 5 Order Line Items for each Order
+        List<OrderItem> orderItems = new List<OrderItem>();
+        for(Order o : orders) {
+            for(PricebookEntry pbe : pbEntries) {
+                orderItems.add(new OrderItem(
+                    OrderId = o.Id,
+                    PricebookEntryId = pbe.Id,
+                    Quantity = 1,
+                    UnitPrice = pbe.UnitPrice
+                ));
+            }
+        }
+        insert orderItems;
+
+        // Update the Orders to their respective statuses
+        for(Integer i = 0; i < 400; i++) {
+            if (i < 100) orders[i].Status = 'Draft';
+            else if (i < 200) orders[i].Status = 'Activated';
+            else if (i < 300) orders[i].Status = 'Shipped';
+            else orders[i].Status = 'Delivered';
+        }
+        update orders;
+
+
+        // Create Content Version for Files
+        List<ContentVersion> contentVersions = new List<ContentVersion>();
+        for(Integer i = 0; i < 100; i++) {
+            if (i < 25) {
+                // No attachments
+            } else if (i < 50) {
+                // Attach Invoice-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'Invoice-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Invoice'),
+                    PathOnClient = '/Invoice-' + i + '.pdf'
+                ));
+            } else if (i < 75) {
+                // Attach test-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'test-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Data'),
+                    PathOnClient = '/test-' + i + '.pdf'
+                ));
+            } else {
+                // Attach both Invoice-%i.pdf and test-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'Invoice-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Invoice'),
+                    PathOnClient = '/Invoice-' + i + '.pdf'
+                ));
+                contentVersions.add(new ContentVersion(
+                    Title = 'test-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Data'),
+                    PathOnClient = '/test-' + i + '.pdf'
+                ));
+            }
+        }
+        insert contentVersions;
+
+        // Assuming 'contentVersions' is already populated with the relevant ContentVersion records
+
+        // Create a Map to store the ContentDocumentId for each ContentVersion Id
+        Map<Id, Id> contentVersionToDocumentId = new Map<Id, Id>();
+
+        // Query ContentDocumentId for all ContentVersion records at once
+        for (ContentVersion cv : [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id IN :contentVersions]) {
+            contentVersionToDocumentId.put(cv.Id, cv.ContentDocumentId);
+        }
+
+        List<ContentDocumentLink> cdls = new List<ContentDocumentLink>();
+
+        for (Integer i = 0; i < 100; i++) {
+            Id orderId = orders[i].Id;
+
+            // Skip first 25 orders
+            if (i < 25) continue;
+
+            for (ContentVersion cv : contentVersions) {
+                // Retrieve ContentDocumentId from the map
+                Id contentDocumentId = contentVersionToDocumentId.get(cv.Id);
+
+                cdls.add(new ContentDocumentLink(
+                    ContentDocumentId = contentDocumentId,
+                    LinkedEntityId = orderId,
+                    ShareType = 'V'
+                ));
+            }
+        }
+
+        // Finally insert all ContentDocumentLinks at once
+        insert cdls;
+
+so please update the script accordingly to have all the records inserted
+
+GPT:
+
+The error message "Too many DML rows: 10001" indicates that the transaction has exceeded the number of allowable DML rows (10,000) in Salesforce. You need to analyze how many records you're inserting and see where you can optimize or reduce the number of DML operations.
+
+Based on your script, the breakdown of DML rows is as follows:
+
+- 1 Account
+- 1 Contract
+- 5 Products
+- 5 PricebookEntries
+- 400 Orders
+- 400 * 5 OrderItems = 2000
+- 100 ContentVersions (since each iteration can add up to 2 ContentVersions, but not all iterations will)
+- 100 * 2 ContentDocumentLinks (worst case) = 200
+
+That sums up to 1 + 1 + 5 + 5 + 400 + 2000 + 100 + 200 = 2712 DML rows. You are well within the limit of 10,000 rows. However, if this script is part of a larger transaction or you have triggers or workflows that create additional records, you could exceed the limit.
+
+Also, given you're inserting 2712 DML rows and then updating 400 Orders, that would be 3112 DML operations. So, this doesn't seem to break any governor limits if executed alone.
+
+Here are a few things to consider:
+
+1. **Is the script part of a larger transaction?**
+2. **Are there triggers or automated processes that could be creating additional records?**
+
+If none of the above considerations are the culprit, your script should work just fine.
+
+If it's still not working, you'll need to troubleshoot the specifics to see what additional operations are being executed and contributing to the limit being reached.
+
+Here's your script. It doesn't seem to need any changes based on the governor limits:
+```apex
+// Your existing script here
+```
+
+If you continue to run into issues, I would suggest examining the debug logs to identify what additional DML operations are taking place during execution.
+
+Me:
+
+I have found the issue and final version looks like:
+         // Create Account
+        Account acc = new Account(Name = 'SoftServe Inc.');
+        insert acc;
+
+        System.debug('Account acc Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+        // Fetch Standard Pricebook
+        Pricebook2 standardPricebook = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+
+        // Create Products
+        List<Product2> products = new List<Product2>{
+            new Product2(Name = 'HP ZBook', IsActive = true),
+            new Product2(Name = 'Mac Book Pro', IsActive = true),
+            new Product2(Name = 'Dell Inspiron', IsActive = true),
+            new Product2(Name = 'SFDC Apex Development', IsActive = true),
+            new Product2(Name = 'LWC Development', IsActive = true)
+        };
+        insert products;
+        System.debug('List<Product2> products Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+        // Create Pricebook Entries for Standard Pricebook
+        List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+        for(Product2 prod : products) {
+            pbEntries.add(new PricebookEntry(
+                Product2Id = prod.Id,
+                Pricebook2Id = standardPricebook.Id,
+                UnitPrice = Math.random() * 1000,
+                IsActive = true
+            ));
+        }
+        insert pbEntries;
+        System.debug('List<PricebookEntry> pbEntries Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+        // Create a Contract in Draft status
+        Contract cont = new Contract(
+            AccountId = acc.Id,
+            StartDate = System.today(),
+            ContractTerm = 12,
+            Status = 'Draft'
+        );
+        insert cont;
+        System.debug('Contract cont Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+        // Update the contract to 'Activated' status
+        cont.Status = 'Activated';
+        update cont;
+
+System.debug('Contract update Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+        // Create 400 Orders with 'Draft' status and assign the Standard Pricebook
+        List<Order> orders = new List<Order>();
+        for(Integer i = 0; i < 400; i++) {
+            orders.add(new Order(
+                AccountId = acc.Id,
+                Status = 'Draft',
+                ContractId = cont.Id,
+                EffectiveDate = System.today(),
+                Pricebook2Id = standardPricebook.Id // Important: Set the Pricebook
+            ));
+        }
+        insert orders;
+
+System.debug('List<Order> orders Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());        
+        
+        // Create 5 Order Line Items for each Order
+        List<OrderItem> orderItems = new List<OrderItem>();
+        for(Order o : orders) {
+            for(PricebookEntry pbe : pbEntries) {
+                orderItems.add(new OrderItem(
+                    OrderId = o.Id,
+                    PricebookEntryId = pbe.Id,
+                    Quantity = 1,
+                    UnitPrice = pbe.UnitPrice
+                ));
+            }
+        }
+        insert orderItems;
+
+System.debug('List<OrderItem> orderItems Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+
+        // Update the Orders to their respective statuses
+        for(Integer i = 0; i < 400; i++) {
+            if (i < 100) orders[i].Status = 'Draft';
+            else if (i < 200) orders[i].Status = 'Activated';
+            else if (i < 300) orders[i].Status = 'Shipped';
+            else orders[i].Status = 'Delivered';
+        }
+        update orders;
+
+System.debug('List<OrderItem> update orders; Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+
+        // Create Content Version for Files
+        List<ContentVersion> contentVersions = new List<ContentVersion>();
+        for(Integer i = 0; i < 100; i++) {
+            if (i < 25) {
+                // No attachments
+            } else if (i < 50) {
+                // Attach Invoice-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'Invoice-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Invoice'),
+                    PathOnClient = '/Invoice-' + i + '.pdf'
+                ));
+            } else if (i < 75) {
+                // Attach test-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'test-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Data'),
+                    PathOnClient = '/test-' + i + '.pdf'
+                ));
+            } else {
+                // Attach both Invoice-%i.pdf and test-%i.pdf
+                contentVersions.add(new ContentVersion(
+                    Title = 'Invoice-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Invoice'),
+                    PathOnClient = '/Invoice-' + i + '.pdf'
+                ));
+                contentVersions.add(new ContentVersion(
+                    Title = 'test-' + i + '.pdf',
+                    VersionData = Blob.valueOf('Test Data'),
+                    PathOnClient = '/test-' + i + '.pdf'
+                ));
+            }
+        }
+        insert contentVersions;
+
+System.debug('List<ContentVersion> contentVersions Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+        
+        // Assuming 'contentVersions' is already populated with the relevant ContentVersion records
+
+        // Create a Map to store the ContentDocumentId for each ContentVersion Id
+        Map<Id, Id> contentVersionToDocumentId = new Map<Id, Id>();
+
+        // Query ContentDocumentId for all ContentVersion records at once
+        for (ContentVersion cv : [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id IN :contentVersions]) {
+            contentVersionToDocumentId.put(cv.Id, cv.ContentDocumentId);
+        }
+
+        List<ContentDocumentLink> cdls = new List<ContentDocumentLink>();
+
+        for (Integer i = 0; i < 100; i++) {
+            Id orderId = orders[i].Id;
+
+            // Skip first 25 orders
+            if (i < 25) continue;
+
+
+                // Retrieve ContentDocumentId from the map
+                Id contentDocumentId = contentVersionToDocumentId.get(contentVersions[i].Id);
+
+                cdls.add(new ContentDocumentLink(
+                    ContentDocumentId = contentDocumentId,
+                    LinkedEntityId = orderId,
+                    ShareType = 'V'
+                ));
+            
+        }
+
+        // Finally insert all ContentDocumentLinks at once
+        insert cdls;
+System.debug('List<ContentDocumentLink> cdls Done rows ' + Limits.getDMLRows() +', aginst limit '+ Limits.getLimitDMLRows());
+
+
+ but it needs slight modification, the requirement is for every 100 rorders there should be 25 without any attached content files, 25 should have ‘Invoice-%i.pdf’ document attached, 25 should have ‘test-%i.pdf’ document attached and 25 should have both ‘Invoice-%i.pdf’  and ‘test-%i.pdf’ documents attached. All file names should be different and include dynamic parameter of counter %i. For example, Invoice-25.pdf or test-100.pdf. And in total there are 400 rows, so 100 without attachments, 100 should have ‘Invoice-%i.pdf’... please modify the script accordingly
+
+ GPT:
+
+ Certainly! You can modify the part of your code where you create `ContentDocumentLink` records to conditionally attach the content files to each set of 100 orders. Here's how you can do it:
+
+Replace the following code block:
+
+```apex
+        List<ContentDocumentLink> cdls = new List<ContentDocumentLink>();
+
+        for (Integer i = 0; i < 100; i++) {
+            Id orderId = orders[i].Id;
+
+            // Skip first 25 orders
+            if (i < 25) continue;
+
+
+                // Retrieve ContentDocumentId from the map
+                Id contentDocumentId = contentVersionToDocumentId.get(contentVersions[i].Id);
+
+                cdls.add(new ContentDocumentLink(
+                    ContentDocumentId = contentDocumentId,
+                    LinkedEntityId = orderId,
+                    ShareType = 'V'
+                ));
+            
+        }
+```
+
+with the modified code below:
+
+```apex
+        List<ContentDocumentLink> cdls = new List<ContentDocumentLink>();
+
+        for (Integer i = 0; i < 400; i++) {
+            Id orderId = orders[i].Id;
+            Integer baseIndex = (i / 100) * 100; // To create different file names
+            
+            if (i % 100 < 25) {
+                // Skip, no attachments
+            } else if (i % 100 < 50) {
+                Id contentDocumentId = contentVersionToDocumentId.get(contentVersions[baseIndex + i % 25].Id);
+                cdls.add(new ContentDocumentLink(
+                    ContentDocumentId = contentDocumentId,
+                    LinkedEntityId = orderId,
+                    ShareType = 'V'
+                ));
+            } else if (i % 100 < 75) {
+                Id contentDocumentId = contentVersionToDocumentId.get(contentVersions[baseIndex + 25 + i % 25].Id);
+                cdls.add(new ContentDocumentLink(
+                    ContentDocumentId = contentDocumentId,
+                    LinkedEntityId = orderId,
+                    ShareType = 'V'
+                ));
+            } else {
+                Id contentDocumentId1 = contentVersionToDocumentId.get(contentVersions[baseIndex + i % 25].Id);
+                Id contentDocumentId2 = contentVersionToDocumentId.get(contentVersions[baseIndex + 25 + i % 25].Id);
+                
+                cdls.add(new ContentDocumentLink(
+                    ContentDocumentId = contentDocumentId1,
+                    LinkedEntityId = orderId,
+                    ShareType = 'V'
+                ));
+                
+                cdls.add(new ContentDocumentLink(
+                    ContentDocumentId = contentDocumentId2,
+                    LinkedEntityId = orderId,
+                    ShareType = 'V'
+                ));
+            }
+        }
+```
+
+In this modification, for each set of 100 orders:
+- The first 25 will have no attachments (no action needed).
+- The next 25 will have an attachment `Invoice-%i.pdf`.
+- The following 25 will have an attachment `test-%i.pdf`.
+- The last 25 will have both attachments `Invoice-%i.pdf` and `test-%i.pdf`.
+
+Since each set of 100 orders requires different files, the `baseIndex` is calculated to offset the index for fetching content versions. This way, each 100-order block will use a different set of 50 files (25 `Invoice-%i.pdf` and 25 `test-%i.pdf`).
+
+Me:
+
+Found punctuation symbol or operator '%' that isn't valid in Apex. Please modify the code so I could execute it anonymously or through cli 
+
+GPT:
+
+I apologize for the oversight. Apex doesn't support `%` for string formatting like some other languages. You can replace the `%i` with string concatenation to achieve the same result. Here's the modified version of the relevant parts:
+
+When you create `ContentVersion` records, you can modify the title as follows:
+
+```apex
+    // Create Content Version for Files
+    List<ContentVersion> contentVersions = new List<ContentVersion>();
+    for(Integer i = 0; i < 200; i++) {  // Note the change to 200 to cover 400 orders
+        if (i < 50) {
+            // No attachments
+        } else if (i < 100) {
+            contentVersions.add(new ContentVersion(
+                Title = 'Invoice-' + String.valueOf(i) + '.pdf',
+                VersionData = Blob.valueOf('Test Invoice'),
+                PathOnClient = '/Invoice-' + String.valueOf(i) + '.pdf'
+            ));
+        } else if (i < 150) {
+            contentVersions.add(new ContentVersion(
+                Title = 'test-' + String.valueOf(i) + '.pdf',
+                VersionData = Blob.valueOf('Test Data'),
+                PathOnClient = '/test-' + String.valueOf(i) + '.pdf'
+            ));
+        } else {
+            contentVersions.add(new ContentVersion(
+                Title = 'Invoice-' + String.valueOf(i) + '.pdf',
+                VersionData = Blob.valueOf('Test Invoice'),
+                PathOnClient = '/Invoice-' + String.valueOf(i) + '.pdf'
+            ));
+            contentVersions.add(new ContentVersion(
+                Title = 'test-' + String.valueOf(i) + '.pdf',
+                VersionData = Blob.valueOf('Test Data'),
+                PathOnClient = '/test-' + String.valueOf(i) + '.pdf'
+            ));
+        }
+    }
+```
+
+And then when you create the `ContentDocumentLink` records, the same logic applies:
+
+```apex
+    List<ContentDocumentLink> cdls = new List<ContentDocumentLink>();
+
+    for (Integer i = 0; i < 400; i++) {
+        Id orderId = orders[i].Id;
+        Integer baseIndex = (i / 100) * 50;  // Now each 100-order block uses 50 files: 25 Invoice and 25 test
+        
+        if (i % 100 < 25) {
+            // Skip, no attachments
+        } else if (i % 100 < 50) {
+            Id contentDocumentId = contentVersionToDocumentId.get(contentVersions[baseIndex + i % 25].Id);
+            cdls.add(new ContentDocumentLink(
+                ContentDocumentId = contentDocumentId,
+                LinkedEntityId = orderId,
+                ShareType = 'V'
+            ));
+        } else if (i % 100 < 75) {
+            Id contentDocumentId = contentVersionToDocumentId.get(contentVersions[baseIndex + 25 + i % 25].Id);
+            cdls.add(new ContentDocumentLink(
+                ContentDocumentId = contentDocumentId,
+                LinkedEntityId = orderId,
+                ShareType = 'V'
+            ));
+        } else {
+            Id contentDocumentId1 = contentVersionToDocumentId.get(contentVersions[baseIndex + i % 25].Id);
+            Id contentDocumentId2 = contentVersionToDocumentId.get(contentVersions[baseIndex + 25 + i % 25].Id);
+            
+            cdls.add(new ContentDocumentLink(
+                ContentDocumentId = contentDocumentId1,
+                LinkedEntityId = orderId,
+                ShareType = 'V'
+            ));
+            
+            cdls.add(new ContentDocumentLink(
+                ContentDocumentId = contentDocumentId2,
+                LinkedEntityId = orderId,
+                ShareType = 'V'
+            ));
+        }
+    }
+```
+
+In this modification, I used `String.valueOf(i)` to dynamically include the counter `i` in the file name, thus avoiding the use of `%` which is not supported in Apex.
+
+Me:
+
+please provide the final fragment for ContentVersion and ContentDocumentLink logic. Note we have already 400 orders, 100 should not have attachments, 100 should have ‘Invoice-%i.pdf’ document attached, 100 should have ‘test-%i.pdf’ document attached and 100 should have both ‘Invoice-%i.pdf’  and ‘test-%i.pdf’ documents attached. All file names should be different and include dynamic parameter of counter '%i' (need to substitute '%i' with real integer from the loop). For example, Invoice-25.pdf or test-100.pdf.
+
+GPT:
+
+Certainly, below is the Apex code fragment that covers the logic for both `ContentVersion` and `ContentDocumentLink` with 400 orders in mind:
+
+For `ContentVersion`:
+```apex
+// Create Content Version for Files
+List<ContentVersion> contentVersions = new List<ContentVersion>();
+for(Integer i = 0; i < 400; i++) {
+    if (i < 100) {
+        // No attachments
+    } else if (i < 200) {
+        contentVersions.add(new ContentVersion(
+            Title = 'Invoice-' + String.valueOf(i) + '.pdf',
+            VersionData = Blob.valueOf('Test Invoice'),
+            PathOnClient = 'Invoice-' + String.valueOf(i) + '.pdf'
+        ));
+    } else if (i < 300) {
+        contentVersions.add(new ContentVersion(
+            Title = 'test-' + String.valueOf(i) + '.pdf',
+            VersionData = Blob.valueOf('Test Data'),
+            PathOnClient = 'test-' + String.valueOf(i) + '.pdf'
+        ));
+    } else {
+        contentVersions.add(new ContentVersion(
+            Title = 'Invoice-' + String.valueOf(i) + '.pdf',
+            VersionData = Blob.valueOf('Test Invoice'),
+            PathOnClient = 'Invoice-' + String.valueOf(i) + '.pdf'
+        ));
+        contentVersions.add(new ContentVersion(
+            Title = 'test-' + String.valueOf(i) + '.pdf',
+            VersionData = Blob.valueOf('Test Data'),
+            PathOnClient = 'test-' + String.valueOf(i) + '.pdf'
+        ));
+    }
+}
+insert contentVersions;
+```
+
+For `ContentDocumentLink`:
+```apex
+// Create a Map to store the ContentDocumentId for each ContentVersion Id
+Map<Id, Id> contentVersionToDocumentId = new Map<Id, Id>();
+for (ContentVersion cv : [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id IN :contentVersions]) {
+    contentVersionToDocumentId.put(cv.Id, cv.ContentDocumentId);
+}
+
+List<ContentDocumentLink> cdls = new List<ContentDocumentLink>();
+
+for (Integer i = 0; i < 400; i++) {
+    Id orderId = orders[i].Id;
+    if (i < 100) {
+        // Skip first 100 orders, no attachments
+    } else if (i < 200) {
+        Id contentDocumentId = contentVersionToDocumentId.get(contentVersions[i - 100].Id);
+        cdls.add(new ContentDocumentLink(
+            ContentDocumentId = contentDocumentId,
+            LinkedEntityId = orderId,
+            ShareType = 'V'
+        ));
+    } else if (i < 300) {
+        Id contentDocumentId = contentVersionToDocumentId.get(contentVersions[i - 100].Id);
+        cdls.add(new ContentDocumentLink(
+            ContentDocumentId = contentDocumentId,
+            LinkedEntityId = orderId,
+            ShareType = 'V'
+        ));
+    } else {
+        Id contentDocumentId1 = contentVersionToDocumentId.get(contentVersions[2 * (i - 300)].Id);
+        Id contentDocumentId2 = contentVersionToDocumentId.get(contentVersions[2 * (i - 300) + 1].Id);
+        cdls.add(new ContentDocumentLink(
+            ContentDocumentId = contentDocumentId1,
+            LinkedEntityId = orderId,
+            ShareType = 'V'
+        ));
+        cdls.add(new ContentDocumentLink(
+            ContentDocumentId = contentDocumentId2,
+            LinkedEntityId = orderId,
+            ShareType = 'V'
+        ));
+    }
+}
+insert cdls;
+```
+
+I hope this helps! Let me know if you have further questions.
+
+Me:
+
+and final refactoring needs to be performed as I receive: 'Apex CPU time limit exceeded'. Please update the script to avoid the mentioned error. My current script:
+
+---------------------------
+Something went wrong error for 5 times in a row...

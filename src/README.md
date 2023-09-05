@@ -1,3 +1,16 @@
+Application Desctiption:
+The application helps to work with Account related orders on the Account record page.
+The page has embedded LWC component accountRelatedOrders which retrieves related to account orders with attachments with latest salesforce file attached to order with name that starts with 'Invoice'.
+The functionality allows user to set order status to 'Activated' via Activate row action, set status to 'Shipped' via Mark as shipped row action. 
+User can download file within download icon click in the table row or within row action select Download. Preview attachment via ro action Preview.
+For mass order processing have 'Activate' and 'Mark as Shipped' buttons, user need to select orders via checkbox for these actions. Only 'Draft' orders allowed to activate and 'Activated' to mask as shipped.
+Table is reactive, so any updates instantly reflected.
+
+
+# Testing
+To setup test data - use command through CLI: sfdx force:apex:execute -f scripts\apex\generateData.apex
+After successfull execution of the script Account named 'SoftServe Inc.' could be used for testing purposes.
+
 # Salesforce DX Project: Next Steps
 
 Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.

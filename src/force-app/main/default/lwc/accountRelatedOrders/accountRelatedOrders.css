@@ -5,3 +5,9 @@
 .pagination-combobox{
     width: 100px;
 }
+
+div .pagination{
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; 
+}
