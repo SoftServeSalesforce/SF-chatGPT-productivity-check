@@ -23,7 +23,17 @@ jobs:
       - name: Run Apex Tests
         run: |
           cd src
-          sf apex run test
+          sfdx apex run test -l RunLocalTests --loglevel=trace -y -c -r json -d ./tests/apex -w 999999
+
+      - name: "Run LWC Jest tests"
+        run: |
+          cd src
+          echo "Installing npm by command 'npm install'"
+          npm install
+          echo "Installing jest by command 'npm install @salesforce/sfdx-lwc-jest --save-dev'"
+          npm install @salesforce/sfdx-lwc-jest --save-dev
+          echo "Running Jest unit tests"
+          npm run test:unit
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
