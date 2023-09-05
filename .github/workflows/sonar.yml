@@ -8,12 +8,118 @@ jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
+    outputs:
+      apex-tests: ${{ steps.apex.outputs.text }}
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Install SFDX
+        run: |
+          node --version
+          npm install -g sfdx-cli
+          export SFDX_DISABLE_DNS_CHECK=true
+          echo "Version of SFDX CLI is: $(sfdx --version)"
+      
+      - name: "Run LWC Jest tests"
+        run: |
+          cd src
+          echo "Installing npm by command 'npm install'"
+          npm install
+          echo "Installing jest by command 'npm install @salesforce/sfdx-lwc-jest --save-dev'"
+          npm install @salesforce/sfdx-lwc-jest --save-dev
+          echo "Running Jest unit tests"
+          npm run test:unit:coverage
+
+      - name: Authorize DevHub
+        run: |
+          echo ${{secrets.SF_ORG_DH}} > ./DEVHUB_SFDX_URL.txt
+          sfdx auth:sfdxurl:store -f ./DEVHUB_SFDX_URL.txt -a dh -d
+
+      - name: Create Scratch Org
+        run: |
+          cd src
+          sfdx force:org:create -v dh -f config/project-scratch-def.json -a scratch-org -s -d 1
+      
+      - name: Deploy source metadata
+        run: |
+          cd src
+          sfdx force:source:push
+      
+      - name: Run Apex Tests
+        run: |
+          cd src
+          echo $(sfdx apex run test -l RunLocalTests --loglevel=trace -y -c -r json -d ./tests/apex -w 999999) > tests.json
+
+      - name: "Process Apex tests results"
+        id: "apex"
+        run: |
+          message=$(cat tests.json | jq '.message' -r)
+          if [[ null == "$message" ]]
+          then
+            echo "No message"
+          else
+            message="message: $message"
+            echo $message
+            echo "text=$message" >> $GITHUB_OUTPUT
+            exit 0;
+          fi
+
+          outcome=$(cat tests.json | jq '.result .summary .outcome' -r)
+          coverage=$(cat tests.json | jq '.result .summary .testRunCoverage' -r)
+          cov=$(echo $coverage |tr -d '%')
+          failures=$(cat tests.json | jq '.result .tests [] | select( .Outcome | contains("Fail")) | .FullName, .Outcome, .Message' -r)
+          message="Integrity verification Apex tests run result: $outcome. Total coverage: $coverage."
+          if [ -z "$failures" ]
+          then
+            echo "No Failures"
+          else
+            failures="${failures//'%'/'%25'}"
+            failures="${failures//$'\n'/'%0A'}"
+            failures="${failures//$'\r'/'%0D'}"
+            message="$message Failures: $failures"
+          fi
+
+          echo $(cat tests.json | jq '.result .tests [] | select( .Outcome | contains("Fail")) .Outcome')
+          echo $(cat tests.json | jq '.result .tests [] | select( .Outcome | contains("Fail")) .MethodName')
+          echo $(cat tests.json | jq '.result .tests [] | select( .Outcome | contains("Fail")) .Name')
+          echo $(cat tests.json | jq '.result .tests [] | select( .Outcome | contains("Fail")) .ApexClass.Name')
+          echo $(cat tests.json | jq '.result .tests [] | select( .Outcome | contains("Fail")) .FullName')
+          echo $(cat tests.json | jq '.result .tests [] | select( .Outcome | contains("Fail")) | .FullName, .Outcome, .Message')
+
+          anyCompilationFailures=$(cat tests.json | jq '.result .tests [] | select( .Outcome | contains("CompileFail")) | .FullName, .Outcome, .Message')
+          if [ -z "$anyCompilationFailures" ]
+          then
+            echo "No Compilation Failures"
+          else
+            echo "Complilation Failures: $anyCompilationFailures "
+            message="Complilation Failures: $anyCompilationFailures $message"
+            echo "text=$message" >> $GITHUB_OUTPUT
+            exit 0;
+          fi
+          echo "text=$message" >> $GITHUB_OUTPUT
+
+      - name: "Delete scratch org"
+        run: |
+          sfdx org:delete:scratch -p -o scratch-org
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  fail-if-unit-tests-fail:
+    runs-on: ubuntu-latest
+    needs: sonarcloud
+    name: Fail workflow if unit tests fail
+    steps:
+      - name: Verify
+        run: |
+          apexTests="${{needs.sonarcloud.outputs.apex-tests}}"
+          echo "$apexTests"
+          if [[ "$apexTests" == *"failures"* || "$apexTests" == *"Failures"* ]]; then
+            echo "failures present in apexTests results"
+            exit 1;
+          fi

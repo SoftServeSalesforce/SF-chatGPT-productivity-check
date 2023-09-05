@@ -96,7 +96,7 @@ public with sharing class AccountOrdersController {
         Map<String, Object> response = new Map<String, Object>();
 
         Order ord = OrderSelector.getOrderStatusById(orderId);
-        if(ord.Status != ORDER_STATUS_DRAFT) {
+        if (ord.Status != ORDER_STATUS_DRAFT) {
             response.put('status', STATUS_ERROR);
             response.put('ErrorMessage', ERROR_INVALID_OPERATION_FOR_ORDER + orderId);
             return response;
