@@ -25,7 +25,6 @@ public with sharing class OrderSelector {
                 SELECT Status, OrderNumber
                 FROM Order
                 WHERE Id IN :orderIdsSet
-                FOR UPDATE
         ];
     }
 

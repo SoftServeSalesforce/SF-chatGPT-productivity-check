@@ -1,15 +1,15 @@
 .badge-gray{
-    --slds-c-badge-color-background: gray;
+    --slds-c-badge-color-background: #b0b0b0;
 }
 
 .badge-orange{
-    --slds-c-badge-color-background: orange;
+    --slds-c-badge-color-background: #ffbe50;
 }
 
 .badge-blue{
-    --slds-c-badge-color-background: blue;
+    --slds-c-badge-color-background: #5a80ff;
 }
 
 .badge-green{
-    --slds-c-badge-color-background: green;
+    --slds-c-badge-color-background: #4cff4c;
 }
