@@ -51,6 +51,9 @@ public with sharing class AccountOrdersController {
                     return new OrderActionResponse(false, 'Invalid Operation for Order #' + orders[0].OrderNumber);
                 }
             }
+            when else {
+                return new OrderActionResponse(false, 'Invalid Operation for Order #' + orders[0].OrderNumber);
+            }
         }
         try {
             update orders[0];
