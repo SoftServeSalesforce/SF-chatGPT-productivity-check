@@ -19,13 +19,15 @@ public with sharing class ContentDocumentLinkService {
 
     public Map<Id, ContentDocumentLink> getTheMostRecentInvoicesByParentId(Set<Id> parentRecordsIds) {
         Map<Id, ContentDocumentLink> result = new Map<Id, ContentDocumentLink>();
-        List<ContentDocumentLink> cdls = ContentDocumentLinkSelector.getInstance().getAttachedInvoicesOrderedByCDLMD(parentRecordsIds);
-        for (ContentDocumentLink cdl : cdls) {
-            if (result.containsKey(cdl.LinkedEntityId)) {
-                //Recent ivoice already added.
-                continue;
+        if (null != parentRecordsIds && !parentRecordsIds.isEmpty()) {
+            List<ContentDocumentLink> cdls = ContentDocumentLinkSelector.getInstance().getAttachedInvoicesOrderedByCDLMD(parentRecordsIds);
+            for (ContentDocumentLink cdl : cdls) {
+                if (result.containsKey(cdl.LinkedEntityId)) {
+                    //Recent ivoice already added.
+                    continue;
+                }
+                result.put(cdl.LinkedEntityId, cdl);
             }
-            result.put(cdl.LinkedEntityId, cdl);
         }
         return result;
     }
