@@ -3,11 +3,15 @@ final String DRAFT_STATUS = 'Draft';
          final String SHIPPED_STATUS = 'Shipped';
          final String DELIVERED_STATUS = 'Delivered';
          Date today = System.today();
-         final Integer UNIT_PRICE = 2;
+         final Decimal UNIT_PRICE = 2;
 
         Account acc = new Account(Name = 'SoftServe Inc.');
         insert acc;
 
+        PaginationPageSize__c settings = new PaginationPageSize__c();        
+        settings.Page_Size__c = 10; 
+        insert settings;
+        
         Pricebook2 standardPricebook = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
 
         List<Product2> products = new List<Product2>{

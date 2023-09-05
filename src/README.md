@@ -1,4 +1,5 @@
-Application Desctiption:
+# Application Desctiption:
+
 The application helps to work with Account related orders on the Account record page.
 The page has embedded LWC component accountRelatedOrders which retrieves related to account orders with attachments with latest salesforce file attached to order with name that starts with 'Invoice'.
 The functionality allows user to set order status to 'Activated' via Activate row action, set status to 'Shipped' via Mark as shipped row action. 
@@ -8,8 +9,10 @@ Table is reactive, so any updates instantly reflected.
 
 
 # Testing
+
 To setup test data - use command through CLI: sfdx force:apex:execute -f scripts\apex\generateData.apex
 After successfull execution of the script Account named 'SoftServe Inc.' could be used for testing purposes.
+
 
 # Salesforce DX Project: Next Steps
 

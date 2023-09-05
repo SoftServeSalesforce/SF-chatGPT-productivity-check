@@ -286,8 +286,7 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
             this.selectedOrders.set(orderId, value);
         } else if (this.selectedOrders.has(orderId)) {
                 this.selectedOrders.delete(orderId); 
-        }        
-
+        }
         this.updateButtonStatus();
     }
 
@@ -297,6 +296,8 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
             activateOrders({ orderIds: orderIds})
                 .then(result => {
                     this.handleResponse(result);
+                    this.selectedOrders.clear();
+                    this.updateButtonStatus();
                     refreshApex(this.wiredOrders);
                 })
                 .catch(error => {
@@ -311,6 +312,8 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
             markOrdersAsShipped({ orderIds: orderIds })
                 .then(result => {
                     this.handleResponse(result);
+                    this.selectedOrders.clear();
+                    this.updateButtonStatus();
                     refreshApex(this.wiredOrders);
                 })
                 .catch(error => {
@@ -330,7 +333,7 @@ export default class AccountRelatedOrders extends NavigationMixin(LightningEleme
     }
 
     get pageSizeOptions() {
-        return [                
+        return [
                  { label: '10', value: 10 },
                  { label: '20', value: 20 },
                  { label: '50', value: 50 },
