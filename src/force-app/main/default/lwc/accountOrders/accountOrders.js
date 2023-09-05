@@ -8,58 +8,71 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 export default class AccountOrders extends NavigationMixin(LightningElement) {
     @api recordId;
     @track orders;
+    isLoading = false;
 
-    columns = [
-        { label: 'Number', fieldName: 'OrderURL', type: 'url', typeAttributes: { label: { fieldName: 'OrderNumber' }, target: '_blank' } },
-        { label: 'Start Date', fieldName: 'EffectiveDate', type: 'date' },
-        { label: 'Status', fieldName: 'Status', type: 'text' },
-        { label: 'Amount', fieldName: 'TotalAmount', type: 'currency' },
-        { label: 'Invoice', name: 'download_button', fieldName: 'ContentDocumentId', type: 'button-icon', 
-            typeAttributes: { 
-                iconName: 'utility:download', disabled: {fieldName: 'isInvoiceDisabled'}
-            } 
-        },
-        { type: 'action', typeAttributes: { rowActions: this.rowActions } }
-    ];
-
-    get rowActions() {
-        return (record, doneCallback) => {
-            const actions = [];
-            if (record.Status === 'Draft') {
-                actions.push({ label: 'Activate', name: 'activate' });
-            }
-            if (record.Status === 'Activated') {
-                actions.push({ label: 'Mark as Shipped', name: 'mark_as_shipped' });
-            }
-            if (!record.isInvoiceDisabled) {
-                actions.push({ label: 'Preview Invoice', name: 'preview_invoice' });
-                actions.push({ label: 'Download Invoice', name: 'download_invoice' });
-            }
-            setTimeout(() => {
-                doneCallback(actions);
-            }, 0);
-        };
-    }
-
-    @wire(getOrders, { accountId: '$recordId' })
-    wiredOrders({ error, data }) {
-        if (data) {
-            this.orders = data.map(row => {
-                let rowData = { ...row };
-                rowData.OrderURL = `/lightning/r/Order/${rowData.Id}/view`;
-                rowData.isInvoiceDisabled = rowData.ContentDocumentId ? false : true;
-
-                return rowData;
-            });
-            this.error = undefined;
-        } else if (error) {
-            console.error('Error received: ', error);
+    getRowActions(status, isInvoiceDisabled) {
+        const actions = [];
+        if (status === 'Draft') {
+            actions.push({ label: 'Activate', value: 'activate' });
         }
+        if (status === 'Activated') {
+            actions.push({ label: 'Mark as Shipped', value: 'mark_as_shipped' });
+        }
+        if (!isInvoiceDisabled) {
+            actions.push({ label: 'Preview Invoice', value: 'preview_invoice' });
+            actions.push({ label: 'Download Invoice', value: 'download_invoice' });
+        }
+
+        return actions;
     }
 
-    activateOrder(row) {
-        activateOrder({ orderId: row.Id })
+    connectedCallback() {
+        this.refreshView();
+    }
+
+    refreshView() {
+        this.isLoading = true;
+        getOrders({accountId: this.recordId})
+            .then(data => {
+                this.orders = data.map(row => {
+                    let rowData = { ...row };
+                    rowData.OrderURL = `/lightning/r/Order/${rowData.Id}/view`;
+                    rowData.isInvoiceDisabled = rowData.ContentDocumentId ? false : true;
+    
+                    const statusTime = new Date(row.LastStatusChanged);
+                    const currentTime = new Date();
+    
+                    rowData.statusTime = this.calculateTimeDifference(statusTime, currentTime);
+                    rowData.statusClassName = this.getStatusClass(rowData.Status);
+                    rowData.actionOptions = this.getRowActions(rowData.Status, rowData.isInvoiceDisabled);
+
+                    return rowData;
+                });
+                this.error = undefined;
+                this.isLoading = false;               
+            })
+            .catch(error => {
+                console.error('Error received: ', error);
+            });
+    }
+
+    getStatusClass(status) {
+        if (status === 'Draft') {
+            return 'status-draft';
+        } else if (status === 'Activated') {
+            return 'status-activated';
+        } else if (status === 'Shipped') {
+            return 'status-shipped';
+        } else if (status === 'Delivered') {
+            return 'status-delivered';
+        }
+        return '';
+    }
+
+    handleActivateOrder(itemId) {
+        activateOrder({ orderId: itemId })
             .then(result => {
+                this.refreshView.call(this);
                 this.showToast(result.status, result.ErrorMessage);
             })
             .catch(() => {
@@ -67,9 +80,10 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
             });
     }
 
-    markAsShipped(row) {
-        markOrderAsShipped({ orderId: row.Id })
+    handleMarkAsShipped(itemId) {
+        markOrderAsShipped({ orderId: itemId })
             .then(result => {
+                this.refreshView.call(this);
                 this.showToast(result.status, result.ErrorMessage);
             })
             .catch(() => {
@@ -88,42 +102,64 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
         );
     }
 
-    previewInvoice(row) {
-        const fileId = row.ContentDocumentId;
+    navigateToPage(fileId) {
         this[NavigationMixin.Navigate]({
             type: 'standard__recordPage',
             attributes: {
-                pageName: 'filePreview',
                 recordId: fileId,
                 actionName: 'view'
             }
         });
     }
 
-    handleInvoiceDownload(row) {
-        const downloadUrl = row.InvoiceUrl;
-        window.open(downloadUrl);
-    }    
+    formatTimeDifference(timeDifferenceInSeconds) {
+        if (timeDifferenceInSeconds < 3600) {
+            return Math.floor(timeDifferenceInSeconds / 60) + ' minutes in ';
+        } else if (timeDifferenceInSeconds < 86400) {
+            return Math.floor(timeDifferenceInSeconds / 3600) + ' hours in ';
+        } else if (timeDifferenceInSeconds < 2592000) {
+            return Math.floor(timeDifferenceInSeconds / 86400) + ' days in ';
+        } else if (timeDifferenceInSeconds < 31536000) {
+            return Math.floor(timeDifferenceInSeconds / 2592000) + ' months in';
+        } else {
+            return Math.floor(timeDifferenceInSeconds / 31536000) + ' years in ';
+        }
+    }
+    
+    calculateTimeDifference(startDate, endDate) {
+        const timeDifferenceInSeconds = Math.floor((endDate - startDate) / 1000);
+        return this.formatTimeDifference(timeDifferenceInSeconds);
+    }
 
-    handleRowAction(event) {
-        const actionName = event.detail.action.name;
-        const row = event.detail.row;
+    downloadInvoice(downloadUrl) {
+        window.open(downloadUrl);
+    }
+    
+    handleClickOnOrder(event) {
+        const orderId = event.currentTarget.dataset.id;
+        this.navigateToPage(orderId);
+    }
+
+    handleActionChange(event) {
+        const actionName = event.detail.value;
+        const itemId = event.target.getAttribute('data-order-id');
+        let invoiceId;
+        let invoiceUrl;
 
         switch (actionName) {
             case 'activate':
-                this.activateOrder(row);
+                this.handleActivateOrder(itemId);
                 break;
             case 'mark_as_shipped':
-                this.markAsShipped(row);
+                this.handleMarkAsShipped(itemId);
                 break;
             case 'preview_invoice':
-                this.previewInvoice(row);
+                invoiceId = event.target.getAttribute('data-invoice-id');
+                this.navigateToPage(invoiceId);
                 break;
-            case 'download_invoice':
-                this.handleInvoiceDownload(row);
-                break;
-            default:
-                this.handleInvoiceDownload(row);
+                case 'download_invoice':
+                invoiceUrl = event.target.getAttribute('data-invoice-url');
+                this.downloadInvoice(invoiceUrl);
                 break;
         }
     }
