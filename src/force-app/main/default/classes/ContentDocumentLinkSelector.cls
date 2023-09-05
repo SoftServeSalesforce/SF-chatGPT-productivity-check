@@ -7,10 +7,6 @@ public with sharing class ContentDocumentLinkSelector {
     @TestVisible
     private static ContentDocumentLinkSelector instance;
 
-    /**
-     * @description getInstance: Public access to the Class.
-     * @return: Selector instance.
-     */
     public static ContentDocumentLinkSelector getInstance() {
         if (instance == null) {
             instance = new ContentDocumentLinkSelector();

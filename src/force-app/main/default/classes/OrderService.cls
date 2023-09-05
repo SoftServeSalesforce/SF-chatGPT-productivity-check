@@ -6,10 +6,6 @@ public with sharing class OrderService {
     @TestVisible
     private static OrderService instance;
 
-    /**
-     * @description getInstance: Public access to the Class.
-     * @return: Order Service instance.
-     */
     public static OrderService getInstance() {
         if (instance == null) {
             instance = new OrderService();

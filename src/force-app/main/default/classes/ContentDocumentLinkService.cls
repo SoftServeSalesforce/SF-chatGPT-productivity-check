@@ -6,10 +6,6 @@ public with sharing class ContentDocumentLinkService {
     @TestVisible
     private static ContentDocumentLinkService instance;
 
-    /**
-     * @description getInstance: Public access to the Class.
-     * @return: Selector instance.
-     */
     public static ContentDocumentLinkService getInstance() {
         if (instance == null) {
             instance = new ContentDocumentLinkService();

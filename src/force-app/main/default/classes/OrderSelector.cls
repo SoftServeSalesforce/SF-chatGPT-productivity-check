@@ -7,10 +7,6 @@ public with sharing class OrderSelector {
     @TestVisible
     private static OrderSelector instance;
 
-    /**
-     * @description getInstance: Public access to the Class.
-     * @return: Selector instance.
-     */
     public static OrderSelector getInstance() {
         if (instance == null) {
             instance = new OrderSelector();
