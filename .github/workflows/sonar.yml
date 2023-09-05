@@ -21,6 +21,16 @@ jobs:
           npm install -g sfdx-cli
           export SFDX_DISABLE_DNS_CHECK=true
           echo "Version of SFDX CLI is: $(sfdx --version)"
+      
+      - name: "Run LWC Jest tests"
+        run: |
+          cd src
+          echo "Installing npm by command 'npm install'"
+          npm install
+          echo "Installing jest by command 'npm install @salesforce/sfdx-lwc-jest --save-dev'"
+          npm install @salesforce/sfdx-lwc-jest --save-dev
+          echo "Running Jest unit tests"
+          npm run test:unit
 
       - name: Authorize DevHub
         run: |
