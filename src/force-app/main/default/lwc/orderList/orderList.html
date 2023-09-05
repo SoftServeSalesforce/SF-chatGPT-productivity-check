@@ -1,0 +1,16 @@
+<template>
+    <template lwc:if={loading}>
+        <lightning-spinner 
+            alternative-text="Loading" 
+            size="large">
+        </lightning-spinner>
+    </template>
+    <template lwc:else>
+        <c-order-datatable
+            key-field="orderId"
+            data={data}
+            columns={columns}
+            onrowaction={handleRowAction}>
+    </c-order-datatable>
+    </template>
+</template>
