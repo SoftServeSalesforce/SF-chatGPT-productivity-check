@@ -19,33 +19,28 @@ public inherited sharing class OrderService {
     }
 
     /**
-     * @description buildOrders: Helper method used to rebuild Order records
-     * with given Ids.
-     * @param orderIds: Scope.
-     * @return: Order records instances.
-     */
-    public List<Order> buildOrders(Set<Id> orderIds) {
-        List<Order> result = new List<Order>();
-        for (Id oId : orderIds) {
-            result.add(
-                new Order(
-                    Id = oId
-                )
-            );
-        }
-        return result;
-    }
-
-    /**
      * @description setOrdersStatusToActived: Helper method used to apply
      * changes necessary to move given Order records to "Activated" Status.
      * @param orders: Orders to progress to "Activated" Status.
      * @note: Does not execute any DML operations.
      */
-    public void setOrdersStatusToActived(List<Order> orders) {
+    public void setOrdersStatusToActived(List<Id> orderIds) {
+        List<Order> orders = OrderSelector.getInstance().getOrdersById(
+            new Set<Id> (orderIds)
+        );
         for (Order o : orders) {
-            o.Status = Constants.ORDER_STATUS_ACTIVATED;
+            if (Constants.ORDER_STATUS_DRAFT.equalsIgnoreCase(o.Status)) {
+                o.Status = Constants.ORDER_STATUS_ACTIVATED;
+            } else {
+                throw new IllegalArgumentException(
+                    String.format(
+                        Constants.EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_ACTIVATED,
+                        new List<String> { String.valueOf(o.OrderNumber), String.valueOf(Order.Status) }
+                    )
+                );
+            }
         }
+        update orders;
     }
 
     /**
@@ -54,9 +49,22 @@ public inherited sharing class OrderService {
      * @param orders: Orders to progress to "Shipped" Status.
      * @note: Does not execute any DML operations.
      */
-    public void setOrdersStatusToShipped(List<Order> orders) {
+    public void setOrdersStatusToShipped(List<Id> orderIds) {
+        List<Order> orders = OrderSelector.getInstance().getOrdersById(
+            new Set<Id> (orderIds)
+        );
         for (Order o : orders) {
-            o.Status = Constants.ORDER_STATUS_SHIPPED;
+            if (Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(o.Status)) {
+                o.Status = Constants.ORDER_STATUS_SHIPPED;
+            } else {
+                throw new IllegalArgumentException(
+                    String.format(
+                        Constants.EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_SHIPPED,
+                        new List<String> { String.valueOf(o.OrderNumber), String.valueOf(Order.Status) }
+                    )
+                );
+            }
         }
+        update orders;
     }
 }

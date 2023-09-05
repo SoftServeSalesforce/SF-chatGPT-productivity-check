@@ -24,6 +24,7 @@ public with sharing class ContentDocumentLinkSelector {
             FROM ContentDocumentLink
             WHERE LinkedEntityId IN :parentRecordsIds
                 AND ContentDocument.Title LIKE :Constants.SOQL_STARTS_WITH_INVOICE
+            WITH SECURITY_ENFORCED
             ORDER BY ContentDocument.LastModifiedDate DESC
         ];
     }

@@ -172,6 +172,7 @@ export default class AccountOrders extends LightningElement {
                 return order.recordId === recordId
             });
             message = TOAST_MESSAGE_ERROR_TEMPLATE.replace('{0}', o?.orderNumber);
+            console.error(message, result.errorMessage);
         }
         return message;
     }

@@ -4,13 +4,6 @@
  */
 public with sharing class AccountOrdersController {
 
-    private static Set<SobjectField> ORDER_FIELDS = new Set<SObjectField> {
-        Order.OrderNumber,
-        Order.EffectiveDate,
-        Order.Status,
-        Order.TotalAmount
-    };
-
     /**
      * @description getOrders: Methdo used to get "Order" SObject records with
      * given "accountId" value specified as "AccountId" Lookup Field value
@@ -30,7 +23,7 @@ public with sharing class AccountOrdersController {
             }
             //Get data.
             List<OrderDTO> result = new List<OrderDTO>();
-            Map<Id, Order> ordersById = new Map<Id, Order>(OrderSelector.getInstance().getOrdersByParentAccountId(ORDER_FIELDS, accountId));
+            Map<Id, Order> ordersById = new Map<Id, Order>(OrderSelector.getInstance().getOrdersByParentAccountId(accountId));
             Map<Id, ContentDocumentLink> invoicesByOrderId = ContentDocumentLinkService.getInstance().getTheMostRecentInvoicesByParentId(ordersById.keySet());
             for (Id oId : ordersById.keySet()) {
                 OrderDTO odto = new OrderDTO();
@@ -54,10 +47,7 @@ public with sharing class AccountOrdersController {
     public static OrderUpdateResultDTO moveOrdersToActivatedStatus(List<Id> orderIds) {
         OrderUpdateResultDTO our = new OrderUpdateResultDTO();
         try {
-            OrderService service = OrderService.getInstance();
-            List<Order> orders = service.buildOrders(new Set<Id>(orderIds));
-            service.setOrdersStatusToActived(orders);
-            update orders;
+            OrderService.getInstance().setOrdersStatusToActived(orderIds);
             our.status = Constants.ORDER_UPDATE_STATUS_OK;
         } catch (Exception e) {
             our.status = Constants.ORDER_UPDATE_STATUS_ERROR;
@@ -75,10 +65,7 @@ public with sharing class AccountOrdersController {
     public static OrderUpdateResultDTO moveOrdersToShippedStatus(List<Id> orderIds) {
         OrderUpdateResultDTO our = new OrderUpdateResultDTO();
         try {
-            OrderService service = OrderService.getInstance();
-            List<Order> orders = service.buildOrders(new Set<Id>(orderIds));
-            service.setOrdersStatusToShipped(orders);
-            update orders;
+            OrderService.getInstance().setOrdersStatusToShipped(orderIds);
             our.status = Constants.ORDER_UPDATE_STATUS_OK;
         } catch (Exception e) {
             our.status = Constants.ORDER_UPDATE_STATUS_ERROR;
