@@ -52,7 +52,10 @@
                                             value={o.startDate}></lightning-formatted-date-time>
                                     </td>
                                     <td data-label="Status">
-                                        <div class="slds-truncate" title="Status">{o.status}</div>
+                                        <template lwc:if={o.timeInCurrentStatus}>
+                                            <span class="slds-p-right_xx-small">{o.timeInCurrentStatus} in</span>
+                                        </template>
+                                        <lightning-badge label={o.status} class={o.status}></lightning-badge>
                                     </td>
                                     <td data-label="Amount">
                                         <lightning-formatted-number value={o.amount} format-style="currency"

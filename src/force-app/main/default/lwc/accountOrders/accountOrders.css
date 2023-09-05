@@ -1,6 +1,6 @@
 :host {
     --table-header-row-height: 1.563rem;
-    --table-body-row-height: 1.922rem;
+    --table-body-row-height: 2.188rem;
     --table-rows-count-in-preview-mode: 5;
     --table-rows-count-in-show-all-mode: 15;
 }
@@ -53,4 +53,19 @@ tr th:last-of-type {
 .slds-card__footer {
     border-top: 0px !important;
     margin-top: 0px !important;
+}
+
+.slds-badge.Activated {
+    --slds-c-badge-color-background: #fe9339;
+    --slds-c-badge-text-color: #181818;
+}
+
+.slds-badge.Shipped {
+    --slds-c-badge-color-background: #0176d3;
+    --slds-c-badge-text-color: #fff;
+}
+
+.slds-badge.Delivered {
+    --slds-c-badge-color-background: #2e844a;
+    --slds-c-badge-text-color: #fff;
 }

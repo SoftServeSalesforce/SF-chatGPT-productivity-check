@@ -1,8 +1,10 @@
 import { LightningElement, track, api, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { loadScript } from 'lightning/platformResourceLoader';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import moveOrdersToActivatedStatus from '@salesforce/apex/AccountOrdersController.moveOrdersToActivatedStatus';
 import moveOrdersToShippedStatus from '@salesforce/apex/AccountOrdersController.moveOrdersToShippedStatus';
+import MOMENT_JS from '@salesforce/resourceUrl/momentjs';
 
 const PREVIEW_ROWS_COUNT = 5;
 const CARD_STATE_PREVIEW = 'preview';
@@ -50,6 +52,7 @@ export default class AccountOrders extends LightningElement {
     _totalOrders = 0;
 
     async connectedCallback() {
+        await loadScript(this, MOMENT_JS);
         await this._getOrders();
     }
 
@@ -189,14 +192,17 @@ export default class AccountOrders extends LightningElement {
         try {
             this._isLoadingOrders = true;
             //Deep clone so it is possible to create new properties as necessary.
-            let response = await getOrders({ accountId: this.recordId });
+            let response = JSON.parse(JSON.stringify(await getOrders({ accountId: this.recordId })));
             this._totalOrders = response.length;
             //Drop records which cannot be shown at preview state (if necessary).
             const trunc = CARD_STATE_PREVIEW === this._cardState && PREVIEW_ROWS_COUNT <= this._totalOrders;
-            this.orders = {
-                data: trunc ? response.slice(0, PREVIEW_ROWS_COUNT) : response,
-                error: undefined
-            };
+            response = trunc ? response.slice(0, PREVIEW_ROWS_COUNT) : response;
+            //Calculate time from now in Current Status (non-Apex based solution because of possible maintenance issues).
+            for (let i = response.length; i--;) {
+                response[i].timeInCurrentStatus
+                    = response[i].lastStatusChanged ? moment().from(response[i].lastStatusChanged, true) : undefined;
+            }
+            this.orders = { data: response, error: undefined };
         } catch (error) {
             this.orders = { data: undefined, error: error };
         } finally {

@@ -26,7 +26,7 @@ public with sharing class OrderSelector {
      */
     public List<Order> getOrdersByParentAccountId(Id accountId) {
         return [
-            SELECT Id, OrderNumber, EffectiveDate, Status, TotalAmount
+            SELECT Id, OrderNumber, EffectiveDate, Status, TotalAmount, LastStatusChanged__c
             FROM Order
             WHERE AccountId = :accountId
             WITH SECURITY_ENFORCED
@@ -34,6 +34,12 @@ public with sharing class OrderSelector {
         ];
     }
 
+    /**
+     * @description getOrdersById: Method used to query records 
+     * of the "Order" SObject with given value specified for "Id" field.
+     * @param orderIds: Scope.
+     * @return: Orders with given Ids.
+     */
     public List<Order> getOrdersById(Set<Id> orderIds) {
         return [
             SELECT Id, OrderNumber, Status

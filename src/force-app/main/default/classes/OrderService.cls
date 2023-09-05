@@ -21,8 +21,7 @@ public inherited sharing class OrderService {
     /**
      * @description setOrdersStatusToActived: Helper method used to apply
      * changes necessary to move given Order records to "Activated" Status.
-     * @param orders: Orders to progress to "Activated" Status.
-     * @note: Does not execute any DML operations.
+     * @param orderIds: Ids of the Order records to progress to "Activated" Status.
      */
     public void setOrdersStatusToActived(List<Id> orderIds) {
         List<Order> orders = OrderSelector.getInstance().getOrdersById(
@@ -46,8 +45,7 @@ public inherited sharing class OrderService {
     /**
      * @description setOrdersStatusToShipped: Helper method used to apply 
      * changes necessary to move given Order records to "Shipped" Status.
-     * @param orders: Orders to progress to "Shipped" Status.
-     * @note: Does not execute any DML operations.
+     * @param orderIds: Ids of the Order records to progress to "Shipped" Status.
      */
     public void setOrdersStatusToShipped(List<Id> orderIds) {
         List<Order> orders = OrderSelector.getInstance().getOrdersById(
@@ -66,5 +64,23 @@ public inherited sharing class OrderService {
             }
         }
         update orders;
+    }
+
+    /**
+     * @description captureLastStatusChange: Method used to update "LastStatusChanged__c"
+     * field on Status change.
+     * @param newOrders: A list of the new versions of the Order records.
+     * @param oldOrders: A map of IDs to the old versions of the Order records.
+     * @note: Does not execute any DML operations, so should be executed from
+     * Trigger's BEFORE insert/update context.
+     */
+    public void captureLastStatusChange(List<Order> newOrders, Map<Id, Order> oldOrders) {
+        for (Order o : newOrders) {
+            String newStatus = o.Status;
+            String oldStatus = null == oldOrders ? '' : oldOrders.get(o.Id).Status;
+            if (!newStatus.equalsIgnoreCase(oldStatus)) {
+                o.LastStatusChanged__c = Datetime.now();
+            }
+        }
     }
 }

@@ -90,6 +90,8 @@ public with sharing class AccountOrdersController {
         @AuraEnabled
         public String status;
         @AuraEnabled
+        public Datetime lastStatusChanged;
+        @AuraEnabled
         public Decimal amount;
         @AuraEnabled
         public Boolean canBeActivated;
@@ -114,6 +116,7 @@ public with sharing class AccountOrdersController {
             this.orderNumber = o.OrderNumber;
             this.startDate = o.EffectiveDate;
             this.status = o.Status;
+            this.lastStatusChanged = o.LastStatusChanged__c;
             this.amount = o.TotalAmount;
             this.initCanBeActivatedFlag();
             this.initCanBeShippedFlag();
