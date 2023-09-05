@@ -20,11 +20,6 @@ jobs:
           export SFDX_DISABLE_DNS_CHECK=true
           echo "Version of SFDX CLI is: $(sfdx --version)"
       
-      - name: Run Apex Tests
-        run: |
-          cd src
-          sfdx apex run test -l RunLocalTests --loglevel=trace -y -c -r json -d ./tests/apex -w 999999
-
       - name: "Run LWC Jest tests"
         run: |
           cd src
@@ -34,6 +29,28 @@ jobs:
           npm install @salesforce/sfdx-lwc-jest --save-dev
           echo "Running Jest unit tests"
           npm run test:unit
+
+      - name: Authorize DevHub
+        run: |
+          echo ${{secrets.SF_ORG_DH}} > ./DEVHUB_SFDX_URL.txt
+          sfdx auth:sfdxurl:store -f ./DEVHUB_SFDX_URL.txt -a dh -d
+
+      - name: Create Scratch Org
+        run: |
+          sfdx force:org:create -v dh -f src/project-scratch-def.json -a scratch-org -s -d 1
+      
+      - name: Deploy source metadata
+        run: |
+          sfdx force:source:push
+      
+      - name: Run Apex Tests
+        run: |
+          cd src
+          sfdx apex run test -l RunLocalTests --loglevel=trace -y -c -r json -d ./tests/apex -w 999999
+
+      - name: "Delete scratch org"
+        run: |
+          sfdx org:delete:scratch -p -o scratch-org
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
