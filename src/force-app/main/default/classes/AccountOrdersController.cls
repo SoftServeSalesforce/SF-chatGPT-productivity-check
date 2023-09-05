@@ -4,6 +4,7 @@ public with sharing class AccountOrdersController {
     private static final String ORDER_STATUS_ACTIVATED = 'Activated';
     private static final String ORDER_STATUS_SHIPPED = 'Shipped';
     
+    private static final String ERROR_INVALID_ACCOUNT_ID = 'Account Id cannot be null';
     private static final String ERROR_ORDER_INVALID_OPERATION = 'Invalid Operation for Order #';
     private static final String ERROR_EMPTY_INPUT = 'Please verify your input';
     private static final String STATUS_OK = 'OK';
@@ -49,9 +50,14 @@ public with sharing class AccountOrdersController {
     }
     
     @AuraEnabled(cacheable=true)
-    public static List<OrderDTO> getOrders(Id accountId) {
+    public static List<OrderDTO> getOrders(Id accountId, Integer recordsAmount, Integer currentPage) {
+        if (String.isBlank(accountId)) {
+            throw new AuraHandledException(ERROR_INVALID_ACCOUNT_ID);
+        }
+
         try {
-            List<Order> orderList = OrderSelector.getOrdersByAccountId(accountId);
+
+            List<Order> orderList = OrderSelector.getOrdersByAccountId(accountId, recordsAmount, recordsAmount * currentPage);
             List<OrderDTO> orderDTOList = new List<OrderDTO>();
             for(Order o : orderList) {
                 orderDTOList.add(new OrderDTO(o));

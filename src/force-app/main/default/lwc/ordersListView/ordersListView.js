@@ -14,9 +14,21 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
     @api recordId; // Assuming this component is on a record page and the recordId is the Account Id
     @track orders = [];
     @track selectedOrders = [];
+    recordsAmountOnPage = '10';
+    currentPage = 0;
+    availableRecordAmounts = [
+        { value: '10', label: '10' },
+        { value: '20', label: '20' },
+        { value: '50', label: '50' },
+        { value: '100', label: '100' },
+    ];
     wireResult;
+
+    connectedCallback() {
+        this.recordsAmountOnPage = localStorage.getItem('recordsAmountOnPage') || '10';
+    }
     
-    @wire(getOrders, { accountId: '$recordId' })
+    @wire(getOrders, { accountId: '$recordId', recordsAmount: '$recordsAmountOnPage', currentPage: '$currentPage' })
     wiredOrders(response) {
         this.wireResult = response;
         if(response.data) {
@@ -290,6 +302,42 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
         }
         let nonActiveOrders = this.selectedOrders.filter(({status}) => status !== 'Activated');
         return nonActiveOrders.length != 0
+    }
+
+    get displayCurrentPage() {
+        return `${this.currentPage + 1}`;
+    }
+
+    get displayedRecordsAmount() {
+        return this.orders?.length | 0;
+    }
+
+
+    handleRecordsAmountChange(event) {
+        this.recordsAmountOnPage = event.detail.value;
+        localStorage.setItem('recordsAmountOnPage', this.recordsAmountOnPage);
+    }
+
+    handleNextPage() {
+        if(this.orders.length < this.recordsAmountOnPage) {
+            return;
+        }
+        this.currentPage += 1;
+    }
+    
+    handlePrevPage() {
+        this.currentPage -= 1;
+        if(this.currentPage < 0) {
+            this.currentPage = 0;
+        }
+    }
+
+    get nextPageDisabled() {
+        return this.orders.length < this.recordsAmountOnPage;
+    }
+
+    get prevPageDisabled() {
+        return this.currentPage == 0;
     }
 
     async showConfirmation(message, variant, label) {

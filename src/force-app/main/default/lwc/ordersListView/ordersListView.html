@@ -1,5 +1,6 @@
 <template>
-        <div class="slds-page-header slds-page-header_object-home">
+    <lightning-card>
+        <div class="slds-page-header slds-page-header_object-home slds-truncate">
             <div class="slds-media">
                 <div class="slds-media__figure">
                     <span class="slds-icon_container slds-icon-standard-order" title="Orders">
@@ -25,7 +26,7 @@
                 </div>
             </div>
         </div>
-        <div class="slds-p-around_medium">
+        <div>
             <table class="slds-table slds-table_cell-buffer slds-table_bordered" aria-label="Orders List">
                 <thead>
                     <tr>
@@ -107,5 +108,30 @@
                     </template>
                 </tbody>
             </table>
+            
+                <div class="slds-grid slds-grid_align-space slds-grid_vertical-align-center">
+
+                    <div class="slds-col">
+                        <lightning-button label="Previous" icon-name="utility:back" onclick={handlePrevPage} disabled={prevPageDisabled}></lightning-button>
+                    </div>
+                    
+                    <div class="slds-col">
+                        <p class="slds-badge">Records on page: {displayedRecordsAmount}</p>
+                    </div>
+                    <div class="slds-col">
+                        <lightning-combobox label="Select records per page" name="amountOfRecords" value={recordsAmountOnPage} onchange={handleRecordsAmountChange} options={availableRecordAmounts}></lightning-combobox>
+                    </div>
+
+                    <div class="slds-col">
+                        <div class="slds-badge">Current page: {displayCurrentPage}</div>
+                    </div>
+
+                    <div class="slds-col">
+                        <lightning-button label="Next" icon-name="utility:forward" icon-position="end" onclick={handleNextPage} disabled={nextPageDisabled}></lightning-button>
+                    </div>
+                </div>
+
         </div>
+    </lightning-card>
+
 </template>
