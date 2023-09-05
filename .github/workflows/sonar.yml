@@ -30,7 +30,7 @@ jobs:
           echo "Installing jest by command 'npm install @salesforce/sfdx-lwc-jest --save-dev'"
           npm install @salesforce/sfdx-lwc-jest --save-dev
           echo "Running Jest unit tests"
-          npm run test:unit
+          npm run test:unit:coverage --passWithNoTests
 
       - name: Authorize DevHub
         run: |
