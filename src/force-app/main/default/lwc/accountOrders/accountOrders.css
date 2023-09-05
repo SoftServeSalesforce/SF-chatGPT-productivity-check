@@ -1,0 +1,16 @@
+/* Status specific background colors */
+.status-draft {
+    background-color: gray;
+}
+.status-activated {
+    background-color: orange;
+}
+.status-shipped {
+    background-color: blue;
+}
+.status-delivered {
+    background-color: green;
+}
+.action-dropdown {
+    width: 100%;
+}

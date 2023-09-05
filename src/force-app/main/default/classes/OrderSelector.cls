@@ -25,7 +25,7 @@ public with sharing class OrderSelector {
 
     public List<Order> selectOrdersByAccountId(Id accountId) {
         return [
-            SELECT Id, Status, EffectiveDate, OrderNumber, TotalAmount,
+            SELECT Id, Status, EffectiveDate, OrderNumber, TotalAmount, LastStatusChanged__c,
                    (SELECT ContentDocumentId
                     FROM AttachedContentDocuments 
                     WHERE ContentDocument.Title LIKE 'Invoice%' 

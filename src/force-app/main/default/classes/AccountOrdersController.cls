@@ -4,7 +4,7 @@ public with sharing class AccountOrdersController {
 
 
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<OrderDTO> getOrders(Id accountId) {
         OrderSelector orderSelector = OrderSelector.newInstance();
 
@@ -87,6 +87,8 @@ public with sharing class AccountOrdersController {
         public Id ContentDocumentId { get; set;}
         @AuraEnabled
         public String InvoiceUrl { get; set; }
+        @AuraEnabled
+        public Datetime LastStatusChanged { get; set; }
 
         public OrderDTO(Order ord) {
             this.Id = ord.Id;
@@ -94,6 +96,7 @@ public with sharing class AccountOrdersController {
             this.Status = ord.Status;
             this.TotalAmount = ord.TotalAmount;
             this.EffectiveDate = ord.EffectiveDate;
+            this.LastStatusChanged = ord.LastStatusChanged__c;
             if (ord.AttachedContentDocuments != null && !ord.AttachedContentDocuments.isEmpty()) {
                 List<AttachedContentDocument> subq = (List<AttachedContentDocument>) ord.AttachedContentDocuments;
                 this.ContentDocumentId = subq[0].ContentDocumentId;

@@ -1,10 +1,50 @@
 <template>
     <lightning-card title="Account Orders">
-        <lightning-datatable
-            key-field="Id"
-            data={orders}
-            columns={columns}
-            onrowaction={handleRowAction}>
-        </lightning-datatable>
+        <template lwc:if={isLoading}>
+            <div>
+              <lightning-spinner alternative-text="Loading" size="large"></lightning-spinner>
+            </div>
+        </template>
+        <template lwc:else>
+            <table class="slds-table slds-table_bordered slds-table_fixed-layout">
+                <thead>
+                    <tr>
+                        <th>Order Number</th>
+                        <th>Start Date</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={orders} for:item="item">
+                        <tr key={item.Id}>
+                            <td>
+                                <a onclick={handleClickOnOrder}
+                                    data-id={item.Id}>
+                                    {item.OrderNumber}
+                                </a>
+                            </td>
+                            <td>{item.EffectiveDate}</td>
+                            <td>
+                                <span>{item.statusTime}</span>
+                                <span class={item.statusClassName}>{item.Status}</span>
+                            </td>
+                            <td>{item.TotalAmount}</td>
+                            <td>
+                                <lightning-combobox
+                                    class="action-dropdown"
+                                    data-order-id={item.Id}
+                                    data-invoice-id ={item.ContentDocumentId}
+                                    data-invoice-url={item.InvoiceUrl}
+                                    options={item.actionOptions}
+                                    onchange={handleActionChange}>
+                                </lightning-combobox>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>    
+        </template>
     </lightning-card>
 </template>
