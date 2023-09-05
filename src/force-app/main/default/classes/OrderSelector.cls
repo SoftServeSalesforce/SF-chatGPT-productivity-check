@@ -5,7 +5,7 @@ public with sharing class OrderSelector {
             return new Order[]{};
         }
         return [
-                SELECT OrderNumber, EffectiveDate, Status, TotalAmount, (
+                SELECT OrderNumber, EffectiveDate, Status, TotalAmount, LastStatusChanged__c, (
                         SELECT Id, ContentDocument.Title, ContentDocumentId
                         FROM ContentDocumentLinks
                         WHERE ContentDocument.Title LIKE 'invoice%'

@@ -19,7 +19,14 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
             }
         },
         {type: 'date', fieldName: 'startDate', label: 'Date'},
-        {type: 'text', fieldName: 'status', label: 'Status'},
+        {
+            label: 'Status',
+            type: 'customStatusType',
+            typeAttributes: {
+                duration: {fieldName: 'duration'},
+                status: {fieldName: 'status'}
+            }
+        },
         {
             type: 'currency', fieldName: 'amount', label: 'Amount',
             typeAttributes: {currencyCode: 'USD'}
@@ -138,12 +145,17 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
             this.ordersTableData = data.map((record) => ({
                 ...record,
                 orderUrl: '/' + record.id,
-                disableDownload: !record.contentDocumentId
+                disableDownload: !record.contentDocumentId,
+                duration: this.getDurationUntilNow(record.lastStatusChangedTimestamp)
             }));
         } else if (error) {
             this.showToast('Error loading orders', 'error', 'Error');
             this.ordersTableData = [];
         }
+    }
+
+    getDurationUntilNow(timestamp){
+        return timestamp ? Date.now() - Date.parse(timestamp) : undefined;
     }
 
     showToast(message, variant, title) {

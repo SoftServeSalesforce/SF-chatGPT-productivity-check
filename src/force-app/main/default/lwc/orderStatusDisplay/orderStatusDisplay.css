@@ -1,0 +1,15 @@
+.badge-gray{
+    --slds-c-badge-color-background: gray;
+}
+
+.badge-orange{
+    --slds-c-badge-color-background: orange;
+}
+
+.badge-blue{
+    --slds-c-badge-color-background: blue;
+}
+
+.badge-green{
+    --slds-c-badge-color-background: green;
+}

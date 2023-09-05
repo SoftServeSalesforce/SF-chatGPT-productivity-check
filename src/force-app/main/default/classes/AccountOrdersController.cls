@@ -1,6 +1,7 @@
 public with sharing class AccountOrdersController {
 
     private static final String ORDER_STATUS_DRAFT = 'Draft';
+    private static final String INVALID_OPERATION_FOR_ORDER = 'Invalid Operation for Order #';
 
     private enum OrderAction { ACTIVATE_ORDER, MARK_SHIPPED }
     private static final String ORDER_STATUS_ACTIVE = 'Activated';
@@ -41,18 +42,18 @@ public with sharing class AccountOrdersController {
                 if (orders[0].Status == ORDER_STATUS_DRAFT) {
                     orders[0].Status = ORDER_STATUS_ACTIVE;
                 } else {
-                    return new OrderActionResponse(false, 'Invalid Operation for Order #' + orders[0].OrderNumber);
+                    return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + orders[0].OrderNumber);
                 }
             }
             when MARK_SHIPPED {
                 if (orders[0].Status == ORDER_STATUS_ACTIVE) {
                     orders[0].Status = ORDER_STATUS_SHIPPED;
                 } else {
-                    return new OrderActionResponse(false, 'Invalid Operation for Order #' + orders[0].OrderNumber);
+                    return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + orders[0].OrderNumber);
                 }
             }
             when else {
-                return new OrderActionResponse(false, 'Invalid Operation for Order #' + orders[0].OrderNumber);
+                return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + orders[0].OrderNumber);
             }
         }
         try {
@@ -87,6 +88,8 @@ public with sharing class AccountOrdersController {
         public Decimal amount { get; private set; }
         @AuraEnabled
         public Id contentDocumentId { get; private set; }
+        @AuraEnabled
+        public Datetime lastStatusChangedTimestamp { get; private set; }
 
         public OrderDTO(Order order) {
             if (null == order) {
@@ -97,7 +100,8 @@ public with sharing class AccountOrdersController {
             this.startDate = order.EffectiveDate;
             this.status = order.Status;
             this.amount = order.TotalAmount;
-            if (order.ContentDocumentLinks.size() > 0) {
+            this.lastStatusChangedTimestamp = order.LastStatusChanged__c;
+            if (!order.ContentDocumentLinks.isEmpty()) {
                 this.contentDocumentId = order.ContentDocumentLinks[0].ContentDocumentId;
             }
         }

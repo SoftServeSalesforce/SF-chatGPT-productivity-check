@@ -2,12 +2,12 @@
     <div class="slds-box related_list">
         <lightning-card title={componentTitle} icon-name="standard:orders">
             <template if:true={hasOrders}>
-                <lightning-datatable data={ordersTableData}
+                <c-orders-data-table data={ordersTableData}
                                      key-field="id"
                                      columns={ordersTableColumnsDef}
                                      onrowaction={handleRowAction}
                                      hide-checkbox-column="true"
-                ></lightning-datatable>
+                ></c-orders-data-table>
             </template>
         </lightning-card>
     </div>
