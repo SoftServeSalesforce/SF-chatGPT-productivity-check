@@ -6,6 +6,8 @@ import { refreshApex } from '@salesforce/apex';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import activateOrders from '@salesforce/apex/AccountOrdersController.activateOrders';
 import markOrdersAsShipped from '@salesforce/apex/AccountOrdersController.markOrdersAsShipped';
+import getAmountOfRecords from '@salesforce/apex/AccountOrdersController.getAmountOfRecords';
+import savePageSettings from '@salesforce/apex/AccountOrdersController.savePageSettings';
 
 import LightningConfirm from 'lightning/confirm';
 
@@ -24,8 +26,13 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
     ];
     wireResult;
 
-    connectedCallback() {
-        this.recordsAmountOnPage = localStorage.getItem('recordsAmountOnPage') || '10';
+    @wire(getAmountOfRecords, {}) 
+    wiredGetamountOfRecords(response) {
+        if(response.data) {
+            this.recordsAmountOnPage = `${response.data.amountOfRecordsOnPage}`;
+        } else if (response.error) {
+            console.error(response.error);
+        }
     }
     
     @wire(getOrders, { accountId: '$recordId', recordsAmount: '$recordsAmountOnPage', currentPage: '$currentPage' })
@@ -155,6 +162,16 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
             .catch(error => {
                 this.showToast('Error', error.body.message, 'error');
             });
+    }
+
+    savePageSettingsWrap(amountOfRecords) {
+        savePageSettings({recordsAmountPerPage: amountOfRecords})
+            .then(result => {
+                //Saved
+            })
+            .catch(error => {
+                console.error(error);
+            })
     }
 
     handleActivateOrder(orderId) {
@@ -315,7 +332,7 @@ export default class OrdersListView extends NavigationMixin(LightningElement) {
 
     handleRecordsAmountChange(event) {
         this.recordsAmountOnPage = event.detail.value;
-        localStorage.setItem('recordsAmountOnPage', this.recordsAmountOnPage);
+        this.savePageSettingsWrap(this.recordsAmountOnPage);
     }
 
     handleNextPage() {

@@ -5,11 +5,26 @@ public with sharing class AccountOrdersController {
     private static final String ORDER_STATUS_SHIPPED = 'Shipped';
     
     private static final String ERROR_INVALID_ACCOUNT_ID = 'Account Id cannot be null';
+    private static final String ERROR_INVALID_AMOUNT_OF_RECORDS = 'Amount of records should be in range from 1 to 100';
+    private static final String ERROR_INVALID_PAGE = 'Page cannot be negative or blank';
     private static final String ERROR_ORDER_INVALID_OPERATION = 'Invalid Operation for Order #';
     private static final String ERROR_EMPTY_INPUT = 'Please verify your input';
+    private static final String ERROR_CANT_SAVE_SETTINGS = 'Exception fired when tried to save settings: ';
     private static final String STATUS_OK = 'OK';
     private static final String STATUS_ERROR = 'ERROR';
 
+    public class PageSettingsDTO {
+        @AuraEnabled
+        public Integer amountOfRecordsOnPage ;
+
+        public PageSettingsDTO(PaginationSettings__c settings) {
+            if(settings.RecordsAmountOnPage__c == null) {
+                this.amountOfRecordsOnPage = 10;
+                return;
+            }
+            this.amountOfRecordsOnPage = (Integer) settings.RecordsAmountOnPage__c;
+        }
+    }
     
     // Wrapper class for Order SObject
     public class OrderDTO {
@@ -55,6 +70,14 @@ public with sharing class AccountOrdersController {
             throw new AuraHandledException(ERROR_INVALID_ACCOUNT_ID);
         }
 
+        if (recordsAmount == null || recordsAmount < 1 || recordsAmount > 100) {
+            throw new AuraHandledException(ERROR_INVALID_AMOUNT_OF_RECORDS);
+        }
+
+        if (currentPage == null || currentPage < 0) {
+            throw new AuraHandledException(ERROR_INVALID_PAGE);
+        }
+
         try {
 
             List<Order> orderList = OrderSelector.getOrdersByAccountId(accountId, recordsAmount, recordsAmount * currentPage);
@@ -94,6 +117,28 @@ public with sharing class AccountOrdersController {
         }
         return response;
     }
+
+    @AuraEnabled(cacheable=true)
+    public static PageSettingsDTO getAmountOfRecords() {
+        Id userId = UserInfo.getUserId();
+        PaginationSettings__c pageSettings = PaginationSettings__c.getInstance(userId);
+        return new PageSettingsDTO(pageSettings);
+    }
+
+    @AuraEnabled
+    public static void savePageSettings(Integer recordsAmountPerPage) {
+        if (recordsAmountPerPage == null || recordsAmountPerPage < 1 || recordsAmountPerPage > 100) {
+            throw new AuraHandledException(ERROR_INVALID_AMOUNT_OF_RECORDS);
+        }
+        try {
+            Id userId = UserInfo.getUserId();
+            PaginationSettings__c pageSettings = PaginationSettings__c.getInstance(userId);
+            pageSettings.RecordsAmountOnPage__c = recordsAmountPerPage;
+            upsert pageSettings;
+        } catch (Exception e) {
+            throw new AuraHandledException(ERROR_CANT_SAVE_SETTINGS + e.getMessage());
+        }
+    } 
 
     private static void validateAndUpdateOrdersByStatus(List<Id> orderIds, String statusFrom, String newStatus) {
         if (orderIds.isEmpty()) {
