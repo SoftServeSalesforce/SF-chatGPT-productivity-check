@@ -1,13 +1,14 @@
 <template>
-    <div class="slds-box related_list_themed_border_top">
-        <div class=slds-card>
-            <template if:true={ordersTableData}>
-                <div class="slds-card__header-title ">Orders</div>
+    <div class="slds-box related_list">
+        <lightning-card title={componentTitle} icon-name="standard:orders">
+            <template if:true={hasOrders}>
                 <lightning-datatable data={ordersTableData}
                                      key-field="id"
                                      columns={ordersTableColumnsDef}
+                                     onrowaction={handleRowAction}
+                                     hide-checkbox-column="true"
                 ></lightning-datatable>
             </template>
-        </div>
+        </lightning-card>
     </div>
 </template>

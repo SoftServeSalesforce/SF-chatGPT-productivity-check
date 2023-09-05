@@ -50,6 +50,12 @@
         </itemInstances>
         <itemInstances>
             <componentInstance>
+                <componentName>accountOrdersRelatedList</componentName>
+                <identifier>c_accountOrdersRelatedList</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
                 <componentInstanceProperties>
                     <name>relatedListComponentOverride</name>
                     <value>NONE</value>
