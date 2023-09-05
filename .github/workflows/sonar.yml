@@ -27,10 +27,12 @@ jobs:
 
       - name: Create Scratch Org
         run: |
-          sfdx force:org:create -v dh -f src/project-scratch-def.json -a scratch-org -s -d 1
+          cd src
+          sfdx force:org:create -v dh -f config/project-scratch-def.json -a scratch-org -s -d 1
       
       - name: Deploy source metadata
         run: |
+          cd src
           sfdx force:source:push
       
       - name: Run Apex Tests
