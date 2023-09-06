@@ -2,7 +2,7 @@
  * @description Constants: Apex Class to store constants.
  */
 public with sharing class Constants {
-    //TODO: Migrate exceptions to Custom Labels so it is possible to translate them if needed.
+    public static final String EXCEPTION_UNSUPPORTED_TRIGGER_OPERATION_TYPE = 'Unsupported trigger operation type!';
     public static final String EXCEPTION_ACCOUNTID_CANNOT_BE_BLANK = '"accountId" cannot be blank!';
     public static final String EXCEPTION_ACCOUNTID_IS_NOT_VALID = '"accountId" is not valid!';
     public static final String EXCEPTION_ORDER_CANNOT_BE_NULL = '"order" cannot be null!';

@@ -1,6 +1,5 @@
 /**
  * @description AccountOrdersController: Apex Class used as a controller for 'AccountOrders' LWC.
- * //TODO: Cover with Apex Tests.
  */
 public with sharing class AccountOrdersController {
 

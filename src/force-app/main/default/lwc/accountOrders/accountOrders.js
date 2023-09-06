@@ -1,4 +1,4 @@
-import { LightningElement, track, api, wire } from 'lwc';
+import { LightningElement, track, api } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { loadScript } from 'lightning/platformResourceLoader';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';

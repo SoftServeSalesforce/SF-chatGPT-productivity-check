@@ -1,6 +1,5 @@
 /**
  * @description OrderService: Order Service to capture Business logic.
- * //TODO: Cover with Apex Tests.
  */
 public with sharing class OrderService {
     @TestVisible

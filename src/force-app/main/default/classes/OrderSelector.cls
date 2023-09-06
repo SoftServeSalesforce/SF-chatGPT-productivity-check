@@ -1,6 +1,5 @@
 /**
  * @description OrderSelector: Apex Class used to access "Order" SObject records.
- * //TODO: Cover with Apex Tests.
  */
 public with sharing class OrderSelector {
 
