@@ -17,6 +17,16 @@ The `sfdx-project.json` file contains useful configuration information for your 
 - [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_intro.htm)
 - [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
 
-## Project start
+## Application Description
+Usage-ready LWC component controlled by Apex, designed to view related Account Orders with custom actions available. Enhanced status view for better managing over orders. Preview and download orders directly on the page. Availability of header actions to quickly manage multiple orders. Component supports pagination with an automatic save of selected records amount view individually for each user. For Invoice component checks for attached files on Order - only files starting with Invoice* and Latest creation date are displayed and available for download. 
 
-## Part 2 start
+## Quick Demo Setup
+After deploying component with tests runs, from src folder run
+```
+sf force apex execute -f scripts/apex/generateData.apex
+```
+if you using latest SFDX or for older SFDX versions:
+```
+sfdx force:apex:execute -f scripts/apex/generateData.apex
+```
+Now go to the Sales app in Salesforce org, open Accounts and find the SoftServe Inc. account. After opening an account on the related tab you can see a new component displaying orders. Each Order has 5 Order items. There are Orders with PDFs attached to them, evenly distributed per Order status. There are 100 Orders without attachments, 100 with test pdf attached, 100 with Invoice pdf and 100 with both. Test pdf files are not visible on the component itself, we want only the Invoice to be actually on the component.
