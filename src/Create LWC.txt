@@ -1,0 +1,88 @@
+
+Create LWC component that displays list of orders in table view.  
+The component must load data via apex controller created on previous steps with following fields: 
+
+Number (link to order record) 
+
+Date (Start Date) 
+
+Status (text) 
+
+Amount (currency in USD) 
+
+ChatGPT
+To create a Lightning Web Component (LWC) that displays a list of orders in a table view, you'll need to follow these steps:
+
+Create the Apex Controller:
+First, ensure that you have already created an Apex controller that retrieves the required order data from your Salesforce org. If you haven't done this, create an Apex class that queries the necessary fields (Number, Date, Status, and Amount) from the Order object.
+
+Here's a basic example of how your Apex controller might look:
+
+apex
+Copy code
+public with sharing class OrderController {
+    @AuraEnabled(cacheable=true)
+    public static List<Order> getOrders() {
+        return [SELECT Id, Number__c, Start_Date__c, Status__c, Amount__c FROM Order];
+    }
+}
+Create the LWC Component:
+Now, you can create the Lightning Web Component to display the list of orders in a table. Here's an example LWC code for this:
+
+ordersTable.html:
+
+html
+Copy code
+<template>
+    <lightning-card title="Order List">
+        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+            <thead>
+                <tr>
+                    <th scope="col">Number</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Amount (USD)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Loop through the orders data and display in the table -->
+                <template for:each={orders} for:item="order">
+                    <tr key={order.Id}>
+                        <td data-label="Number">
+                            <a href={order.Id}>{order.Number__c}</a>
+                        </td>
+                        <td data-label="Date">{order.Start_Date__c}</td>
+                        <td data-label="Status">{order.Status__c}</td>
+                        <td data-label="Amount (USD)">{order.Amount__c}</td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </lightning-card>
+</template>
+ordersTable.js:
+
+javascript
+Copy code
+import { LightningElement, wire } from 'lwc';
+import getOrders from '@salesforce/apex/OrderController.getOrders';
+
+export default class OrdersTable extends LightningElement {
+    orders;
+
+    @wire(getOrders)
+    wiredOrders({ error, data }) {
+        if (data) {
+            this.orders = data;
+        } else if (error) {
+            // Handle error
+        }
+    }
+}
+Add the Lightning Web Component to a Salesforce Lightning Page:
+After you've created the LWC, you can add it to a Lightning Page in Salesforce by customizing the Lightning App Builder.
+
+Test the Component:
+Once added to a Lightning Page, you can navigate to that page to view the list of orders displayed in the table.
+
+This LWC component fetches data from the Apex controller and displays it in a table format, with links to the Order records, Date, Status, and Amount (in USD) columns.
