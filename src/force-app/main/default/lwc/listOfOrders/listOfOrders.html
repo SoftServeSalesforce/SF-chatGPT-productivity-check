@@ -19,7 +19,7 @@
                             <a href={order.orderId}>{order.orderNumber}</a>
                         </td>
                         <td data-label="Date">{order.orderDate}</td>
-                        <td data-label="Status">{order.orderStatus}</td>
+                        <td data-label="Status"><div class={statusCssClass}>{order.orderStatusStyled}</div></td>
                         <td data-label="Amount (USD)">{order.orderAmount}</td>
                         <td data-label="Invoice">
                             <template if:true={order.hasInvoice}>

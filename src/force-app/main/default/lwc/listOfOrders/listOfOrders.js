@@ -15,10 +15,49 @@ export default class OrdersTable extends LightningElement {
                 ...order,
                 isActive: order.orderStatus === 'Active',
                 isDraft: order.orderStatus === 'Draft',
-                hasInvoice: order.latestInvoiceFileName != ''
+                hasInvoice: order.latestInvoiceFileName != '',
+                orderStatusStyled: styleStatusText(order.orderStatus),
+                statusCssClass: getStatusCssClass(order.orderStatus)
             }));
         } else if (error) {
             // Handle error
+        }
+    }
+
+    getStatusCssClass(status) {
+        switch (status) {
+            case 'Draft':
+                return 'draft-status';
+            case 'Activated':
+                return 'activated-status';
+            case 'Shipped':
+                return 'shipped-status';
+            case 'Delivered':
+                return 'delivered-status';
+            default:
+                return '';
+        }
+    }
+
+    styleStatusText(status) {
+        const now = new Date();
+        const orderDate = new Date(order.orderDate);
+        const timeDiff = now - orderDate;
+        const years = Math.floor(timeDiff / (365 * 24 * 60 * 60 * 1000));
+        const months = Math.floor(timeDiff / (30 * 24 * 60 * 60 * 1000));
+        const days = Math.floor(timeDiff / (24 * 60 * 60 * 1000));
+        const hours = Math.floor(timeDiff / (60 * 60 * 1000));
+        const minutes = Math.floor(timeDiff / (60 * 1000));
+
+        switch (order.orderStatus) {
+            case 'Draft':
+                return `${years} years ${months} months ${days} days ${hours} hours ${minutes} minutes in Draft`;
+            case 'Activated':
+                return `${years} years ${months} months ${days} days ${hours} hours ${minutes} minutes in Activated`;
+            case 'Shipped':
+                return `${years} years ${months} months ${days} days ${hours} hours ${minutes} minutes in Shipped`;
+            default:
+                return '';
         }
     }
 

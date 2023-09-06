@@ -1,0 +1,246 @@
+LastStatusChanged__c custom Datetime field. 
+
+Add trigger logic that updates the field on order status change. 
+
+ChatGPT
+To create a trigger in Salesforce that updates a custom Datetime field (LastStatusChanged__c) when the order status changes, you can follow these steps:
+
+Log in to your Salesforce account and navigate to the Setup area.
+
+In the Quick Find box, type "Apex Triggers" and select it.
+
+Click the "New Trigger" button to create a new trigger. You will need to select the object for which you want to create the trigger. Assuming you want to create this trigger for the "Order" object, select "Order" from the dropdown list.
+
+Give your trigger a name and specify the object on which it should operate (e.g., "OrderStatusTrigger").
+
+In the trigger code editor, write the Apex trigger code to update the LastStatusChanged__c field whenever the order status changes. Here's an example trigger code:
+
+apex
+Copy code
+trigger OrderStatusTrigger on Order (before update) {
+    for (Order updatedOrder : Trigger.new) {
+        Order oldOrder = Trigger.oldMap.get(updatedOrder.Id);
+        
+        if (updatedOrder.Status != oldOrder.Status) {
+            updatedOrder.LastStatusChanged__c = System.now();
+        }
+    }
+}
+In this code:
+
+We create a trigger named OrderStatusTrigger that operates on the Order object and fires before an update.
+Inside the trigger, we loop through the updated records (orders) using Trigger.new.
+We use Trigger.oldMap to get the old values of the orders.
+We compare the old status with the new status, and if they are different, we update the LastStatusChanged__c field with the current timestamp using System.now().
+Save the trigger code.
+
+After saving, make sure to activate the trigger by clicking the "Activate" button on the trigger detail page.
+
+Now, whenever an order's status changes, the LastStatusChanged__c field will be updated with the current timestamp. Make sure to test the trigger thoroughly in a sandbox environment before deploying it to your production Salesforce organization.
+
+
+
+
+User
+given this lwc: <template>
+    <lightning-card title="Order List">
+        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+            <thead>
+                <tr>
+                    <th scope="col">Number</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Amount (USD)</th>
+                    <th scope="col">Invoice</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Loop through the orders data and display in the table -->
+                <template for:each={orders} for:item="order">
+                    <tr key={order.Id}>
+                        <td data-label="Number">
+                            <a href={order.orderId}>{order.orderNumber}</a>
+                        </td>
+                        <td data-label="Date">{order.orderDate}</td>
+                        <td data-label="Status">{order.orderStatus}</td>
+                        <td data-label="Amount (USD)">{order.orderAmount}</td>
+                        <td data-label="Invoice">
+                            <template if:true={order.hasInvoice}>
+                                <a href={order.cdURL} target="_blank">
+                                    <lightning-icon icon-name="utility:download" size="small"></lightning-icon>
+                                </a>
+                            </template>
+                        </td>
+                        <td data-label="Actions">
+                            <template if:true={order.isDraft}>
+                                <lightning-button-icon
+                                    icon-name="utility:check"
+                                    title="Activate"
+                                    alternative-text="Activate"
+                                    onclick={activateOrder}
+                                    data-number={order.orderNumber}
+                                ></lightning-button-icon>
+                            </template>
+                            <template if:true={order.isActive}>
+                                <lightning-button-icon
+                                    icon-name="utility:shipping_label"
+                                    title="Mark as Shipped"
+                                    alternative-text="Mark as Shipped"
+                                    onclick={markAsShipped}
+                                    data-number={order.orderNumber}
+                                ></lightning-button-icon>
+                            </template>
+                            <template if:true={order.hasInvoice}>
+                                <lightning-button-icon
+                                    icon-name="utility:preview"
+                                    title="Preview Invoice"
+                                    alternative-text="Preview Invoice"
+                                    onclick={previewInvoice}
+                                    data-invoiceid={order.invoiceId}
+                                ></lightning-button-icon>
+                                <lightning-button-icon
+                                    icon-name="utility:download"
+                                    title="Download Invoice"
+                                    alternative-text="Download Invoice"
+                                    onclick={downloadInvoice}
+                                    data-url={order.cdURL}
+                                ></lightning-button-icon>
+                            </template>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </lightning-card>
+</template>
+please: Update LWC with new view for status column:  
+
+Text: <number> <years (1-..)|months (1-11)|days (1-30)|hours (1-23)|minutes(0-59)> in <status> 
+E.g.: 1 year in Draft, 8 months in Activated, 3 minutes in Shipped 
+
+Color: Draft/Activated/Shipped/Delivered - gray/orange/blue/green. 
+
+Styling:  
+ChatGPT
+To update the LWC to display the status column in the format you described with the specified colors and styling, you can modify the template section of your LWC component as follows:
+
+html
+Copy code
+<template>
+    <lightning-card title="Order List">
+        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+            <thead>
+                <tr>
+                    <th scope="col">Number</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Amount (USD)</th>
+                    <th scope="col">Invoice</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Loop through the orders data and display in the table -->
+                <template for:each={orders} for:item="order">
+                    <tr key={order.Id}>
+                        <td data-label="Number">
+                            <a href={order.orderId}>{order.orderNumber}</a>
+                        </td>
+                        <td data-label="Date">{order.orderDate}</td>
+                        <td data-label="Status">
+                            <div class={getStatusStyle(order.orderStatus)}>{getStatusText(order)}</div>
+                        </td>
+                        <td data-label="Amount (USD)">{order.orderAmount}</td>
+                        <td data-label="Invoice">
+                            <template if:true={order.hasInvoice}>
+                                <a href={order.cdURL} target="_blank">
+                                    <lightning-icon icon-name="utility:download" size="small"></lightning-icon>
+                                </a>
+                            </template>
+                        </td>
+                        <td data-label="Actions">
+                            <!-- Add your action buttons here -->
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </lightning-card>
+</template>
+In this updated template:
+
+We added a getStatusStyle method to determine the CSS class for the status column based on the order status.
+
+We added a getStatusText method to generate the status text in the desired format.
+
+We applied the CSS class to the status column to change the color based on the order status.
+
+Now, let's define the JavaScript code for the LWC component to implement these methods and handle the status formatting:
+
+javascript
+Copy code
+import { LightningElement } from 'lwc';
+
+export default class OrderList extends LightningElement {
+    orders = [
+        // Your order data here
+    ];
+
+    getStatusStyle(status) {
+        switch (status) {
+            case 'Draft':
+                return 'draft-status';
+            case 'Activated':
+                return 'activated-status';
+            case 'Shipped':
+                return 'shipped-status';
+            case 'Delivered':
+                return 'delivered-status';
+            default:
+                return '';
+        }
+    }
+
+    getStatusText(order) {
+        const now = new Date();
+        const orderDate = new Date(order.orderDate);
+        const timeDiff = now - orderDate;
+        const years = Math.floor(timeDiff / (365 * 24 * 60 * 60 * 1000));
+        const months = Math.floor(timeDiff / (30 * 24 * 60 * 60 * 1000));
+        const days = Math.floor(timeDiff / (24 * 60 * 60 * 1000));
+        const hours = Math.floor(timeDiff / (60 * 60 * 1000));
+        const minutes = Math.floor(timeDiff / (60 * 1000));
+
+        switch (order.orderStatus) {
+            case 'Draft':
+                return `${years} years ${months} months ${days} days ${hours} hours ${minutes} minutes in Draft`;
+            case 'Activated':
+                return `${years} years ${months} months ${days} days ${hours} hours ${minutes} minutes in Activated`;
+            case 'Shipped':
+                return `${years} years ${months} months ${days} days ${hours} hours ${minutes} minutes in Shipped`;
+            default:
+                return '';
+        }
+    }
+}
+Now, you'll need to define CSS styles to apply the desired colors and styling. Add the following CSS to your component's CSS file:
+
+css
+Copy code
+.draft-status {
+    color: gray;
+}
+
+.activated-status {
+    color: orange;
+}
+
+.shipped-status {
+    color: blue;
+}
+
+.delivered-status {
+    color: green;
+}
+With these changes, your LWC component will display the status column in the format you specified, with the appropriate colors and styling based on the order status.
