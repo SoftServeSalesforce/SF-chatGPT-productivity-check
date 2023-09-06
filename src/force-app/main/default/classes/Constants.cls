@@ -8,6 +8,9 @@ public with sharing class Constants {
     public static final String EXCEPTION_ORDER_CANNOT_BE_NULL = '"order" cannot be null!';
     public static final String EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_ACTIVATED = 'Order #{0} cannot be activated as it is at {1} Status.';
     public static final String EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_SHIPPED = 'Order #{0} cannot be shipped as it is at {1} Status.';
+    public static final String EXCEPTION_ORDERID_CANNOT_BE_NULL = '"orderIds" cannot be null!';
+    public static final String EXCEPTION_ORDERID_CANNOT_BE_EMPTY = '"orderIds" cannot be empty!';
+    public static final String EXCEPTION_ORDERID_SHOULD_CONTAIN_ONLY_VALID_ORDER_IDS = '"orderIds" should contain only valid Order Ids!';
     //SOQL-related constants.
 
     public static final String ORDER_STATUS_DRAFT = 'Draft';
@@ -19,5 +22,10 @@ public with sharing class Constants {
 
     public static final String SOQL_STARTS_WITH_INVOICE = 'Invoice%';
 
-    public static final String CONTENT_DOCUMENT_VERSION_DOWNLOAD_LINK_TEMPLATE = Url.getSalesforceBaseUrl().toExternalForm() + '/sfc/servlet.shepherd/version/download/';
+    public static final String CONTENT_DOCUMENT_VERSION_DOWNLOAD_LINK_TEMPLATE
+        = Url.getSalesforceBaseUrl().toExternalForm()
+        + '/sfc/servlet.shepherd/version/download/';
+    public static final String CONTENT_DOCUMENT_VERSION_PREVIEW_LINK_TEMPLATE
+        = Url.getSalesforceBaseUrl().toExternalForm()
+        + '/sfc/servlet.shepherd/version/renditionDownload?rendition=THUMB720BY480&versionId=';
 }

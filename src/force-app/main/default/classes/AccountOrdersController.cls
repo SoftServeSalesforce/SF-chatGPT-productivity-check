@@ -46,6 +46,7 @@ public with sharing class AccountOrdersController {
     public static OrderUpdateResultDTO moveOrdersToActivatedStatus(List<Id> orderIds) {
         OrderUpdateResultDTO our = new OrderUpdateResultDTO();
         try {
+            validateStatusChangeRequest(orderIds);
             OrderService.getInstance().setOrdersStatusToActived(orderIds);
             our.status = Constants.ORDER_UPDATE_STATUS_OK;
         } catch (Exception e) {
@@ -64,6 +65,7 @@ public with sharing class AccountOrdersController {
     public static OrderUpdateResultDTO moveOrdersToShippedStatus(List<Id> orderIds) {
         OrderUpdateResultDTO our = new OrderUpdateResultDTO();
         try {
+            validateStatusChangeRequest(orderIds);
             OrderService.getInstance().setOrdersStatusToShipped(orderIds);
             our.status = Constants.ORDER_UPDATE_STATUS_OK;
         } catch (Exception e) {
@@ -71,6 +73,25 @@ public with sharing class AccountOrdersController {
             our.errorMessage = e.getMessage();
         }
         return our;
+    }
+
+    /**
+     * @description validateStatusChangeRequest: Helper method to ensure that only valid
+     * data is passed on Order Status Change request.
+     * @param orderIds: Scope.
+     */
+    private static void validateStatusChangeRequest(List<Id> orderIds) {
+        if (null == orderIds) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_ACCOUNTID_CANNOT_BE_BLANK);
+        }
+        if (orderIds.isEmpty()) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_ORDERID_CANNOT_BE_EMPTY);
+        }
+        for (Id oId : orderIds) {
+            if (null == oId || Order.SObjectType != oId.getSobjectType()) {
+                throw new IllegalArgumentException(Constants.EXCEPTION_ORDERID_SHOULD_CONTAIN_ONLY_VALID_ORDER_IDS);
+            }
+        }
     }
 
     /**
@@ -128,7 +149,9 @@ public with sharing class AccountOrdersController {
                 return;
             }
             this.hasInvoice = true;
-            this.invoicePreviewURL = '/' + cdl.ContentDocumentId;
+            this.invoicePreviewURL
+                = Constants.CONTENT_DOCUMENT_VERSION_PREVIEW_LINK_TEMPLATE
+                + cdl.ContentDocument.LatestPublishedVersionId;
             this.invoiceDownloadURL
                 = Constants.CONTENT_DOCUMENT_VERSION_DOWNLOAD_LINK_TEMPLATE
                 + cdl.ContentDocument.LatestPublishedVersionId;

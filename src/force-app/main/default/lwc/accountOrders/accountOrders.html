@@ -38,6 +38,9 @@
                                     <div class="slds-truncate" title="Amount">Amount</div>
                                 </th>
                                 <th scope="col">
+                                    <div class="slds-truncate" title="Invoice">Invoice</div>
+                                    </th>
+                                    <th scope="col">
                                     <div class="slds-truncate slds-assistive-text" title="Actions">Actions</div>
                                 </th>
                             </tr>
@@ -61,6 +64,14 @@
                                     <td data-label="Amount">
                                         <lightning-formatted-number value={o.amount} format-style="currency"
                                             currency-code="USD"></lightning-formatted-number>
+                                    </td>
+                                    <td data-label="Invoice">
+                                        <template lwc:if={o.hasInvoice}>
+                                            <a href={o.invoiceDownloadURL}>
+                                                <lightning-icon icon-name="utility:download" size="x-small" alternative-text="Download invoice"
+                                                    title="Download Invoice"></lightning-icon>
+                                            </a>
+                                        </template>
                                     </td>
                                     <td data-label="Actions">
                                         <template lwc:if={o.showActionsMenu}>
