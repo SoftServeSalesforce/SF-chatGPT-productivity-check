@@ -1,17 +1,26 @@
 public with sharing class AccountOrdersController {
-
+    @TestVisible
     private static final String ORDER_STATUS_DRAFT = 'Draft';
+    @TestVisible
     private static final String ORDER_STATUS_ACTIVATED = 'Activated';
+    @TestVisible
     private static final String ORDER_STATUS_SHIPPED = 'Shipped';
     
     private static final String ERROR_INVALID_ACCOUNT_ID = 'Account Id cannot be null';
     private static final String ERROR_INVALID_AMOUNT_OF_RECORDS = 'Amount of records should be in range from 1 to 100';
     private static final String ERROR_INVALID_PAGE = 'Page cannot be negative or blank';
+    @TestVisible
     private static final String ERROR_ORDER_INVALID_OPERATION = 'Invalid Operation for Order #';
     private static final String ERROR_EMPTY_INPUT = 'Please verify your input';
     private static final String ERROR_CANT_SAVE_SETTINGS = 'Exception fired when tried to save settings: ';
+    @TestVisible
     private static final String STATUS_OK = 'OK';
+    @TestVisible
     private static final String STATUS_ERROR = 'ERROR';
+
+    private static final Integer MAX_RECORDS_AMOUNT_ON_PAGE = 100;
+    @TestVisible
+    private static final Integer DEFAULT_RECORDS_AMOUNT_ON_PAGE = 10;
 
     public class PageSettingsDTO {
         @AuraEnabled
@@ -19,7 +28,7 @@ public with sharing class AccountOrdersController {
 
         public PageSettingsDTO(PaginationSettings__c settings) {
             if(settings.RecordsAmountOnPage__c == null) {
-                this.amountOfRecordsOnPage = 10;
+                this.amountOfRecordsOnPage = DEFAULT_RECORDS_AMOUNT_ON_PAGE;
                 return;
             }
             this.amountOfRecordsOnPage = (Integer) settings.RecordsAmountOnPage__c;
@@ -70,7 +79,7 @@ public with sharing class AccountOrdersController {
             throw new AuraHandledException(ERROR_INVALID_ACCOUNT_ID);
         }
 
-        if (recordsAmount == null || recordsAmount < 1 || recordsAmount > 100) {
+        if (recordsAmount == null || recordsAmount < 1 || recordsAmount > MAX_RECORDS_AMOUNT_ON_PAGE) {
             throw new AuraHandledException(ERROR_INVALID_AMOUNT_OF_RECORDS);
         }
 
@@ -127,7 +136,7 @@ public with sharing class AccountOrdersController {
 
     @AuraEnabled
     public static void savePageSettings(Integer recordsAmountPerPage) {
-        if (recordsAmountPerPage == null || recordsAmountPerPage < 1 || recordsAmountPerPage > 100) {
+        if (recordsAmountPerPage == null || recordsAmountPerPage < 1 || recordsAmountPerPage > MAX_RECORDS_AMOUNT_ON_PAGE) {
             throw new AuraHandledException(ERROR_INVALID_AMOUNT_OF_RECORDS);
         }
         try {
@@ -140,6 +149,7 @@ public with sharing class AccountOrdersController {
         }
     } 
 
+    @TestVisible
     private static void validateAndUpdateOrdersByStatus(List<Id> orderIds, String statusFrom, String newStatus) {
         if (orderIds.isEmpty()) {
             throw new OrderInvalidOperationException(ERROR_EMPTY_INPUT);
