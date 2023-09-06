@@ -37,6 +37,10 @@
     border-bottom-right-radius: 0.25rem !important;
 }
 
+table caption {
+    display: none;
+}
+
 tbody tr {
     height: var(--table-body-row-height);
 }
