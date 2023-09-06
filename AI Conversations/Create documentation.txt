@@ -1,0 +1,29 @@
+Used GPT 3.5
+
+act as advanced salesforce developer: create application description: 2 paragraphs, 4-10 Sentences. 
+Documentation should include a description of the application and how to set up the data for manual testing. 
+
+about the application: LWC Component controlled by apex, table displaying orders associated with the account, the table allows you to manage the order status, view and upload invoice files, the table has a convenient interface and the ability to customize pagination.
+
+about the manual testing: you need to use the cli command 'sf force apex execute -f scripts/apex/generateData.apex' to generate test data, then go to an account called 'Softserve Inc'
+
+------------------------------------------------------------------------------------------
+Application Description:
+
+Our Salesforce application is a dynamic and user-friendly Lightning Web Component (LWC) controlled by Apex, designed to streamline the management of orders associated with customer accounts. The centerpiece of this application is a versatile table that presents a comprehensive overview of orders, providing valuable tools for order status management and easy access to invoice files. The table is thoughtfully designed with a user-friendly interface, and it offers convenient customization options for pagination, ensuring a seamless user experience.
+
+This application simplifies the process of order management within Salesforce, enhancing efficiency and productivity for your sales and customer support teams. With its intuitive design and robust functionality, it empowers users to effortlessly track, update, and organize orders, ultimately leading to improved customer satisfaction and more effective account management.
+
+Manual Testing Setup:
+
+To manually test our Salesforce application, follow these steps:
+
+Open your Salesforce CLI and run the following command to generate test data: sf force apex execute -f scripts/apex/generateData.apex.
+
+Once the test data is generated, navigate to the account named 'Softserve Inc' within your Salesforce instance.
+
+Locate and access the Lightning Web Component (LWC) associated with order management. This LWC should display the table showcasing orders related to the 'Softserve Inc' account.
+
+Use the table to experiment with order status management, view invoice files, and customize pagination as needed. Test different scenarios and ensure that the application responds as expected.
+
+By following these steps, you can thoroughly test our application's functionality and confirm that it effectively streamlines order management within Salesforce for improved productivity and customer service.
