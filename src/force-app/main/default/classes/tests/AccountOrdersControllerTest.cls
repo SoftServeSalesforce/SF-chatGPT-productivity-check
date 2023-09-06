@@ -86,7 +86,6 @@ public with sharing class AccountOrdersControllerTest {
 
         Test.startTest();
         Map<String, Object> response = AccountOrdersController.activateOrders(orderIds);
-        List<Order> testOrders = fetchOrders();
         Assert.areEqual(AccountOrdersController.STATUS_ERROR, 
             (String) response.get('status'), 
             'Activate orders should return error status response');
