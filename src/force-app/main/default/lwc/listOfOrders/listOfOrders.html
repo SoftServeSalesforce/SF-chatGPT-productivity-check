@@ -1,0 +1,27 @@
+<template>
+    <lightning-card title="Order List">
+        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+            <thead>
+                <tr>
+                    <th scope="col">Number</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Amount (USD)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Loop through the orders data and display in the table -->
+                <template for:each={orders} for:item="order">
+                    <tr key={order.Id}>
+                        <td data-label="Number">
+                            <a href={order.Id}>{order.orderNumber}</a>
+                        </td>
+                        <td data-label="Date">{order.orderDate}</td>
+                        <td data-label="Status">{order.orderStatus}</td>
+                        <td data-label="Amount (USD)">{order.orderAmount}</td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </lightning-card>
+</template>

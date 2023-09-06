@@ -3,18 +3,18 @@ public with sharing class AccountOrdersController {
     // Inner class for OrderDTO wrapper
     public class OrderDTO {
         @AuraEnabled
-        public Id orderId { get; set; }
-        @AuraEnabled
-        public String orderName { get; set; }
-        @AuraEnabled
         public String orderNumber { get; set; }
+        @AuraEnabled
+        public Date orderDate { get; set; }
+        @AuraEnabled
+        public Decimal orderAmount { get; set; }
         @AuraEnabled
         public String orderStatus { get; set; }
         
-        public OrderDTO(Id orderId, String orderName, String orderNumber, String orderStatus) {
-            this.orderId = orderId;
-            this.orderName = orderName;
+        public OrderDTO(String orderNumber, Date orderDate, Decimal orderAmount, String orderStatus) {
             this.orderNumber = orderNumber;
+            this.orderDate = orderDate;
+            this.orderAmount = orderAmount;
             this.orderStatus = orderStatus;
         }
     }
@@ -27,10 +27,10 @@ public with sharing class AccountOrdersController {
         
         // Query for orders related to the specified account
         List<Order> orders = orderSelector.getOrdersForAccount(accountId);
-        
+
         // Convert Order SObjects to OrderDTO wrappers
         for (Order order : orders) {
-            OrderDTO orderWrapper = new OrderDTO(order.Id, order.Name, order.OrderNumber, order.Status);
+            OrderDTO orderWrapper = new OrderDTO(order.OrderNumber, order.EffectiveDate, order.TotalAmount, order.Status);
             orderDTOs.add(orderWrapper);
         }
         

@@ -7,7 +7,7 @@ public with sharing class OrderSelector {
 
     // Method to retrieve orders for a specified account
     public List<Order> getOrdersForAccount(Id accountId) {
-        return [SELECT Id, Name, OrderNumber, Status
+        return [SELECT OrderNumber, EffectiveDate, Status, TotalAmount
                 FROM Order
                 WHERE AccountId = :accountId
                 ORDER BY CreatedDate DESC];
