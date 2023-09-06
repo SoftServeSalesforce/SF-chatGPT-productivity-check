@@ -16,4 +16,15 @@ public with sharing class OrderTriggerHandler {
     public void onBeforeUpdate(List<Order> newOrders, Map<Id, Order> oldOrders) {
         OrderService.getInstance().captureLastStatusChange(newOrders, oldOrders);
     }
+
+    public static void run(List<Order> newOrders, Map<Id, Order> oldOrders) {
+        switch on Trigger.operationType {
+            when BEFORE_INSERT {
+                OrderTriggerHandler.getInstance().onBeforeInsert(newOrders);
+            }
+            when BEFORE_UPDATE {
+                OrderTriggerHandler.getInstance().onBeforeUpdate(newOrders, oldOrders);
+            }
+        }
+    }
 }
