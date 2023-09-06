@@ -18,7 +18,7 @@ The `sfdx-project.json` file contains useful configuration information for your 
 - [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
 
 ## Application Description
-Usage-ready LWC component controlled by Apex, designed to view related Account Orders with custom actions available. Enhanced status view for better managing over orders. Preview and download orders directly on the page. Availability of header actions to quickly manage multiple orders. Component supports pagination with an automatic save of selected records amount view individually for each user. For Invoice component checks for attached files on Order - only files starting with Invoice* and Latest creation date are displayed and available for download. 
+Usage-ready LWC component controlled by Apex, designed to view related Account Orders with custom actions available. Enhanced status view for better managing over orders. Preview and download invoices directly on the page. Availability of header actions to quickly manage multiple orders. Component supports pagination with an automatic save of selected records amount view individually for each user. For Invoice component checks for attached files on Order - only files starting with Invoice* and Latest creation date are displayed and available for download. 
 
 ## Quick Demo Setup
 After deploying component with tests runs, from src folder run
