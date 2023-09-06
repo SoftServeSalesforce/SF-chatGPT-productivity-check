@@ -107,16 +107,6 @@ public class AccountOrdersControllerTest {
         Assert.areEqual(DEFAULT_PAGE_SIZE, result, 'Expected default page size.');
     }
 
-    // @isTest
-    // static void testGetPageSizeFailure() {        
-    //     Test.startTest();
-    //     Integer result = AccountOrdersController.getPageSize();
-    //     Test.stopTest();
-
-    //     // Assert.areNotEqual(null, result);
-    //     // Assert.areEqual(DEFAULT_PAGE_SIZE, result);
-    // }
-
     @isTest
     static void testSetPageSizeSuccess() {
         Test.startTest();
