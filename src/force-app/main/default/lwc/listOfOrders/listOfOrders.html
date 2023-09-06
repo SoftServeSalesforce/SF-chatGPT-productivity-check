@@ -7,6 +7,8 @@
                     <th scope="col">Date</th>
                     <th scope="col">Status</th>
                     <th scope="col">Amount (USD)</th>
+                    <th scope="col">Invoice</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -14,11 +16,54 @@
                 <template for:each={orders} for:item="order">
                     <tr key={order.Id}>
                         <td data-label="Number">
-                            <a href={order.Id}>{order.orderNumber}</a>
+                            <a href={order.orderId}>{order.orderNumber}</a>
                         </td>
                         <td data-label="Date">{order.orderDate}</td>
                         <td data-label="Status">{order.orderStatus}</td>
                         <td data-label="Amount (USD)">{order.orderAmount}</td>
+                        <td data-label="Invoice">
+                            <template if:true={order.hasInvoice}>
+                                <a href={order.cdURL} target="_blank">
+                                    <lightning-icon icon-name="utility:download" size="small"></lightning-icon>
+                                </a>
+                            </template>
+                        </td>
+                        <td data-label="Actions">
+                            <template if:true={order.isDraft}>
+                                <lightning-button-icon
+                                    icon-name="utility:check"
+                                    title="Activate"
+                                    alternative-text="Activate"
+                                    onclick={activateOrder}
+                                    data-number={order.orderNumber}
+                                ></lightning-button-icon>
+                            </template>
+                            <template if:true={order.isActive}>
+                                <lightning-button-icon
+                                    icon-name="utility:shipping_label"
+                                    title="Mark as Shipped"
+                                    alternative-text="Mark as Shipped"
+                                    onclick={markAsShipped}
+                                    data-number={order.orderNumber}
+                                ></lightning-button-icon>
+                            </template>
+                            <template if:true={order.hasInvoice}>
+                                <lightning-button-icon
+                                    icon-name="utility:preview"
+                                    title="Preview Invoice"
+                                    alternative-text="Preview Invoice"
+                                    onclick={previewInvoice}
+                                    data-invoiceid={order.invoiceId}
+                                ></lightning-button-icon>
+                                <lightning-button-icon
+                                    icon-name="utility:download"
+                                    title="Download Invoice"
+                                    alternative-text="Download Invoice"
+                                    onclick={downloadInvoice}
+                                    data-url={order.cdURL}
+                                ></lightning-button-icon>
+                            </template>
+                        </td>
                     </tr>
                 </template>
             </tbody>
