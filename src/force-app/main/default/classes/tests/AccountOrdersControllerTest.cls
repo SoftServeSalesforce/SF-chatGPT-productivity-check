@@ -70,12 +70,11 @@ public with sharing class AccountOrdersControllerTest {
         List<Id> orderIds = getSObjectIds(fetchOrders());
         Test.startTest();
         Map<String, Object> response = AccountOrdersController.activateOrders(orderIds);
-        List<Order> testOrders = fetchOrders();
-        Assert.areEqual(RECORDS_AMOUNT, testOrders.size(), 'Unexpected amount of orders');
-        Assert.areEqual(AccountOrdersController.STATUS_OK, (String) response.get('status'), 'Should return success response');
-        for (Order ord : testOrders) {
-            Assert.areEqual(AccountOrdersController.ORDER_STATUS_ACTIVATED, ord.Status, 'Should update orders status');
-        }
+        List<Order> testOrders = fetchOrdersWithStatus(AccountOrdersController.ORDER_STATUS_ACTIVATED);
+        Assert.areEqual(RECORDS_AMOUNT, testOrders.size(), 'Unexpected amount of activated orders');
+        Assert.areEqual(AccountOrdersController.STATUS_OK, 
+            (String) response.get('status'), 
+            'Activate orders should return success response');
         Test.stopTest();
     }
 
@@ -88,10 +87,12 @@ public with sharing class AccountOrdersControllerTest {
         Test.startTest();
         Map<String, Object> response = AccountOrdersController.activateOrders(orderIds);
         List<Order> testOrders = fetchOrders();
-        Assert.areEqual(RECORDS_AMOUNT, testOrders.size(), 'Unexpected amount of orders');
-        Assert.areEqual(AccountOrdersController.STATUS_ERROR, (String) response.get('status'), 'Should return success response');
+        Assert.areEqual(AccountOrdersController.STATUS_ERROR, 
+            (String) response.get('status'), 
+            'Activate orders should return error status response');
         String errorMessage = (String) response.get('errorMessage');
-        Assert.isTrue(errorMessage.contains(AccountOrdersController.ERROR_ORDER_INVALID_OPERATION), 'Expected invalid operation error');
+        Assert.isTrue(errorMessage.contains(AccountOrdersController.ERROR_ORDER_INVALID_OPERATION), 
+            'Activate orders should return invalid operation error');
 
         Test.stopTest();
     }
@@ -103,12 +104,12 @@ public with sharing class AccountOrdersControllerTest {
         updateOrdersStatus(orders, AccountOrdersController.ORDER_STATUS_ACTIVATED);
         Test.startTest();
         Map<String, Object> response = AccountOrdersController.markOrdersAsShipped(orderIds);
-        List<Order> testOrders = fetchOrders();
-        Assert.areEqual(RECORDS_AMOUNT, testOrders.size(), 'Unexpected amount of orders');
-        Assert.areEqual(AccountOrdersController.STATUS_OK, (String) response.get('status'), 'Should return success response');
-        for (Order ord : testOrders) {
-            Assert.areEqual(AccountOrdersController.ORDER_STATUS_SHIPPED, ord.Status, 'Should update orders status');
-        }
+        List<Order> testOrders = fetchOrdersWithStatus(AccountOrdersController.ORDER_STATUS_SHIPPED);
+        Assert.areEqual(RECORDS_AMOUNT, testOrders.size(), 'Unexpected amount of shipped orders');
+        Assert.areEqual(AccountOrdersController.STATUS_OK, 
+            (String) response.get('status'), 
+            'Mark orders as shipped should return success response');
+       
         Test.stopTest();
     }
 
@@ -120,11 +121,12 @@ public with sharing class AccountOrdersControllerTest {
 
         Test.startTest();
         Map<String, Object> response = AccountOrdersController.markOrdersAsShipped(orderIds);
-        List<Order> testOrders = fetchOrders();
-        Assert.areEqual(RECORDS_AMOUNT, testOrders.size(), 'Unexpected amount of orders');
-        Assert.areEqual(AccountOrdersController.STATUS_ERROR, (String) response.get('status'), 'Should return success response');
+        Assert.areEqual(AccountOrdersController.STATUS_ERROR, 
+            (String) response.get('status'), 
+            'Mark orders as shipped should return error status in response');
         String errorMessage = (String) response.get('errorMessage');
-        Assert.isTrue(errorMessage.contains(AccountOrdersController.ERROR_ORDER_INVALID_OPERATION), 'Expected invalid operation error');
+        Assert.isTrue(errorMessage.contains(AccountOrdersController.ERROR_ORDER_INVALID_OPERATION),
+            'Mark orders as shipped expected invalid operation error');
         Test.stopTest();
     }
 
@@ -132,7 +134,9 @@ public with sharing class AccountOrdersControllerTest {
     static void testGetAmountOfRecordsReturnsDto() {
         Test.startTest();
         AccountOrdersController.PageSettingsDTO settings = AccountOrdersController.getAmountOfRecords();
-        Assert.areEqual(AccountOrdersController.DEFAULT_RECORDS_AMOUNT_ON_PAGE, settings.amountOfRecordsOnPage, 'Should return default amount of records');
+        Assert.areEqual(AccountOrdersController.DEFAULT_RECORDS_AMOUNT_ON_PAGE, 
+            settings.amountOfRecordsOnPage, 
+            'Should return default amount of records');
         Test.stopTest();
     }
 
@@ -142,7 +146,9 @@ public with sharing class AccountOrdersControllerTest {
         Integer testAmountRecordsOnPage = 5;
         AccountOrdersController.savePageSettings(testAmountRecordsOnPage);
         PaginationSettings__c settings = fetchPaginationSettings();
-        Assert.areEqual(testAmountRecordsOnPage, settings.RecordsAmountOnPage__c, 'Unexpected value for page settings');
+        Assert.areEqual(testAmountRecordsOnPage, 
+            settings.RecordsAmountOnPage__c, 
+            'Unexpected value for page settings');
         Test.stopTest();
     }
     
@@ -152,7 +158,9 @@ public with sharing class AccountOrdersControllerTest {
         Integer testAmountRecordsOnPage = 5;
         AccountOrdersController.savePageSettings(testAmountRecordsOnPage);
         AccountOrdersController.PageSettingsDTO settings = AccountOrdersController.getAmountOfRecords();
-        Assert.areEqual(testAmountRecordsOnPage, settings.amountOfRecordsOnPage, 'Unexpected value for page settings');
+        Assert.areEqual(testAmountRecordsOnPage,
+            settings.amountOfRecordsOnPage, 
+            'DTO Should return updated value');
         Test.stopTest();
     }
 
@@ -185,6 +193,21 @@ public with sharing class AccountOrdersControllerTest {
             isExceptionFired = true;
         }
         Assert.isTrue(isExceptionFired, 'Should throw exception on empty ids list');
+        Test.stopTest();
+    }
+
+    @IsTest
+    static void testValidateAndUpdateOrdersByStatusSuccess() {
+        Test.startTest();
+        List<Id> orderIds = getSObjectIds(fetchOrders());
+        AccountOrdersController.validateAndUpdateOrdersByStatus(orderIds, 
+                AccountOrdersController.ORDER_STATUS_DRAFT, 
+                AccountOrdersController.ORDER_STATUS_ACTIVATED
+            );
+        List<Order> activatedOrders = fetchOrdersWithStatus(AccountOrdersController.ORDER_STATUS_ACTIVATED);
+        Assert.areEqual(RECORDS_AMOUNT, 
+            activatedOrders.size(), 
+            'Should update all orders to new status');
         Test.stopTest();
     }
 
