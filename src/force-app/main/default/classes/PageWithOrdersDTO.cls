@@ -28,6 +28,6 @@ public with sharing class PageWithOrdersDTO {
         this.hasPreviousPage = ssc.getHasPrevious();
         this.hasNextPage = ssc.getHasNext();
         this.totalOrders = ssc.getResultSize();
-        this.totalPages = ((this.totalOrders / (Decimal) this.pageSize)).round(System.RoundingMode.CEILING).intValue();
+        this.totalPages = (this.totalOrders / (Decimal) this.pageSize).round(System.RoundingMode.CEILING).intValue();
     }
 }
