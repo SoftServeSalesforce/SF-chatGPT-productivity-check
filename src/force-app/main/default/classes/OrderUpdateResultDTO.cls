@@ -15,6 +15,9 @@ public with sharing class OrderUpdateResultDTO {
     }
 
     public void captureErrorsFromSaveResults(Map<Id, Order> ordersById, List<Database.SaveResult> saveResults) {
+        if (null == ordersById || ordersById.isEmpty() || null == saveResults || saveResults.isEmpty()) {
+            return;
+        }
         for (Database.SaveResult saveResult : saveResults) {
             if (saveResult.isSuccess()) {
                 continue;
@@ -35,6 +38,9 @@ public with sharing class OrderUpdateResultDTO {
     }
 
     public void captureException(Exception e) {
+        if (null == e) {
+            return;
+        }
         this.status = Constants.ORDER_UPDATE_STATUS_ERROR;
         this.errorMessages.add(e.getMessage());
     }
