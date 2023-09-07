@@ -6,8 +6,9 @@ public with sharing class Constants {
     public static final String EXCEPTION_ACCOUNTID_CANNOT_BE_BLANK = '"accountId" cannot be blank!';
     public static final String EXCEPTION_ACCOUNTID_IS_NOT_VALID = '"accountId" is not valid!';
     public static final String EXCEPTION_ORDER_CANNOT_BE_NULL = '"order" cannot be null!';
-    public static final String EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_ACTIVATED = 'Order #{0} cannot be activated as it is at {1} Status.';
-    public static final String EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_SHIPPED = 'Order #{0} cannot be shipped as it is at {1} Status.';
+    public static final String EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_ACTIVATED = 'Order cannot be activated as it is at {0} Status.';
+    public static final String EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_SHIPPED = 'Order cannot be shipped as it is at {0} Status.';
+    public static final String EXCEPTION_TEMPLATE_ORDER_CANNOT_BE_UPDATED_BECAUSE = 'Order #{0} cannot be updated. Error(s): {1}';
     public static final String EXCEPTION_ORDERID_CANNOT_BE_NULL = '"orderIds" cannot be null!';
     public static final String EXCEPTION_ORDERID_CANNOT_BE_EMPTY = '"orderIds" cannot be empty!';
     public static final String EXCEPTION_ORDERID_SHOULD_CONTAIN_ONLY_VALID_ORDER_IDS = '"orderIds" should contain only valid Order Ids!';
@@ -19,6 +20,9 @@ public with sharing class Constants {
 
     public static final String ORDER_UPDATE_STATUS_OK = 'ok';
     public static final String ORDER_UPDATE_STATUS_ERROR = 'error';
+    
+    public static final String SEMICOLON = ';';
+    public static final String LINE_BRAKE = '\n\r';
 
     public static final String SOQL_STARTS_WITH_INVOICE = 'Invoice%';
 

@@ -12,6 +12,10 @@
 /**
  * OOTB styles overrides to make custom component look like standard one.
  */
+header {
+    height: 2rem;
+}
+
 .slds-card__header {
     background-color: #f3f3f3;
     padding: 1rem !important;
@@ -47,6 +51,7 @@ tbody tr {
 
 tr th:first-of-type,
 tr td:first-of-type {
+    width: 3.25rem;
     padding-left: 0.5rem !important;
 }
 

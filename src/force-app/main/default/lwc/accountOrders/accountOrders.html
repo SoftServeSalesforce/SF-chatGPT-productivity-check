@@ -17,6 +17,22 @@
                             <span>{title}</span>
                         </h2>
                     </div>
+                    <div class="slds-no-flex">
+                        <template lwc:if={showBulkUpdateButtons}>
+                            <lightning-button-group>
+                                <template lwc:if={showActivateOrdersButton}>
+                                    <lightning-button variant="brand-outlin" label="Activate"
+                                        title="Move selected Order(s) to 'Activated' status."
+                                        onclick={handleActivateOrdersClick}></lightning-button>
+                                </template>
+                                <template lwc:if={showMarkOrdersAsSentButton}>
+                                    <lightning-button variant="brand-outlin" label="Mark as Sent"
+                                        title="Move selected Order(s) to 'Shipped' status"
+                                        onclick={handleMarkOrdersAsSentClick}></lightning-button>
+                                </template>
+                            </lightning-button-group>
+                        </template>
+                    </div>
                 </header>
             </div>
             <div class={cardBodyCSSClasses}>
@@ -25,6 +41,9 @@
                         <caption>Custom related list with Orders data.</caption>
                         <thead>
                             <tr class="slds-line-height_reset">
+                                <th class="slds-text-align_right slds-cell_action-mode" scope="col">
+                                    <lightning-input type="checkbox" onclick={handleSelectAllClick} checked={allRowsSelected}></lightning-input>
+                                </th>
                                 <th scope="col">
                                     <div class="slds-truncate" title="Number">Number</div>
                                 </th>
@@ -39,8 +58,8 @@
                                 </th>
                                 <th scope="col">
                                     <div class="slds-truncate" title="Invoice">Invoice</div>
-                                    </th>
-                                    <th scope="col">
+                                </th>
+                                <th scope="col">
                                     <div class="slds-truncate slds-assistive-text" title="Actions">Actions</div>
                                 </th>
                             </tr>
@@ -48,6 +67,10 @@
                         <tbody>
                             <template for:each={orders.data} for:item="o" for:index="i">
                                 <tr class="slds-hint-parent" key={o.recordId}>
+                                    <td data-label="Select Row">
+                                        <lightning-input type="checkbox" data-index={i} onclick={handleSelectRowClick} checked={o.isSelected}
+                                            class="slds-p-left_xx-small"></lightning-input>
+                                    </td>
                                     <td data-label="Number">
                                         <lightning-formatted-url label={o.orderNumber} target="_blank" value={o.recordURL}></lightning-formatted-url>
                                     </td>

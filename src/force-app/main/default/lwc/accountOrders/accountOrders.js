@@ -1,6 +1,7 @@
 import { LightningElement, track, api } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { loadScript } from 'lightning/platformResourceLoader';
+import LightningConfirm from 'lightning/confirm';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import moveOrdersToActivatedStatus from '@salesforce/apex/AccountOrdersController.moveOrdersToActivatedStatus';
 import moveOrdersToShippedStatus from '@salesforce/apex/AccountOrdersController.moveOrdersToShippedStatus';
@@ -15,9 +16,11 @@ const ORDER_UPDATE_RESPONSE_STATUS_OK = 'ok';
 const TOAST_TITLE_SUCCESS = 'Success!';
 const TOAST_TITLE_ERROR = 'Error!';
 const TOAST_MESSAGE_SUCCESS = 'Order status was successfuly updated!';
-const TOAST_MESSAGE_ERROR_TEMPLATE = 'Invalid Operation for Order #{0}.';
 const TOAST_VARIANT_SUCCESS = 'success';
 const TOAST_VARIANT_ERROR = 'error';
+const TOAST_MODE_STICKY = 'sticky';
+const CONFIRM_MESSAGE_DO_YOU_CONFIRM_TO_ACTIVATE_X_OF_DRAFT_ORDERS = 'Do you confirm to activate {0} of Draft order(s)?';
+const CONFIRM_MESSAGE_DO_YOU_CONFIRM_TO_MARK_AS_SENT_X_OF_ACTIVATED_ORDERS = 'Do you confirm to mark as sent {0} of activated order(s)?';
 
 export default class AccountOrders extends LightningElement {
     /**
@@ -43,13 +46,19 @@ export default class AccountOrders extends LightningElement {
      */
     _isUpdatingOrder = false;
 
+    _totalOrders = 0;
+
+    allRowsSelected = false;
+
+    showActivateOrdersButton = false;
+
+    showMarkOrdersAsSentButton = false;
+
     /**
      * @description orders: Currently shown data.
      */
     @track
     orders;
-
-    _totalOrders = 0;
 
     async connectedCallback() {
         await loadScript(this, MOMENT_JS);
@@ -110,6 +119,10 @@ export default class AccountOrders extends LightningElement {
         return PREVIEW_ROWS_COUNT < this._totalOrders && this._cardState !== CARD_STATE_SHOW_ALL;
     }
 
+    get showBulkUpdateButtons() {
+        return this.showActivateOrdersButton || this.showMarkOrdersAsSentButton;
+    }
+
     /**
      * @description handleViewAllClick: Handler for "View All" button click.
      * Changes "_cardState" to "CARD_STATE_SHOW_ALL".
@@ -131,7 +144,7 @@ export default class AccountOrders extends LightningElement {
         const result = await moveOrdersToActivatedStatus({ orderIds: [recordId] });
         await this._getOrders();
         this._isUpdatingOrder = false;
-        this._handleOrderStatusChangeResult(recordId, result);
+        this._displayToastWithSaveResult(result);
     }
 
     /**
@@ -145,43 +158,114 @@ export default class AccountOrders extends LightningElement {
         const result = await moveOrdersToShippedStatus({ orderIds: [recordId] });
         await this._getOrders();
         this._isUpdatingOrder = false;
-        this._handleOrderStatusChangeResult(recordId, result);
+        this._displayToastWithSaveResult(result);
     }
 
     /**
-     * @description _handleOrderStatusChangeResult: Helper method used to handle
-     * Order "Status" update result by showing toast message.
-     * @param {String} recordId: Record to update Id.
-     * @param {Object} result: Update result. 
+     * @description handleSelectAllClick: Handler for "Select All" checkbox click.
+     * Toggle "isSelected" flag on all orders and refrehses bulk update actions visibility.
+     * @param {Object} event: Event with details about new state of the "Select All" checkbox.
      */
-    _handleOrderStatusChangeResult(recordId, result) {
-        this.dispatchEvent(new ShowToastEvent({
-            title: this._buildToastTitleOnOrderUpdate(result),
-            message: this._buildToastMessageOnOrderUpdate(recordId, result),
-            variant: this._buildToastVariantOnOrderUpdate(result)
-        }));
-    }
-
-    _buildToastTitleOnOrderUpdate(result) {
-        return ORDER_UPDATE_RESPONSE_STATUS_OK === result.status ? TOAST_TITLE_SUCCESS : TOAST_TITLE_ERROR;
-    }
-
-    _buildToastMessageOnOrderUpdate(recordId, result) {
-        let message;
-        if (ORDER_UPDATE_RESPONSE_STATUS_OK === result.status) {
-            message = TOAST_MESSAGE_SUCCESS;
-        } else {
-            const o = this.orders.data.find((order) => {
-                return order.recordId === recordId
-            });
-            message = TOAST_MESSAGE_ERROR_TEMPLATE.replace('{0}', o?.orderNumber);
-            console.error(message, result.errorMessage);
+    handleSelectAllClick(event) {
+        this.allRowsSelected = event.target.checked;
+        for (let i = this.orders.data.length; i--;) {
+            this.orders.data[i].isSelected = this.allRowsSelected;
         }
-        return message;
+        this._refreshShowActivateOrdersButtonFlag();
+        this._refreshShowMarkOrdersAsSentButtonFlag();
     }
 
-    _buildToastVariantOnOrderUpdate(result) {
-        return ORDER_UPDATE_RESPONSE_STATUS_OK === result.status ? TOAST_VARIANT_SUCCESS : TOAST_VARIANT_ERROR;
+    /**
+     * @description handleSelectRowClick: Handler for "Select Row" checkbox click.
+     * Toggle "isSelected" flag on single orders and refrehses bulk update actions visibility.
+     * @param {Object} event: Event with details about toggled order and new flag state.
+     */
+    handleSelectRowClick(event) {
+        const index = event.target.dataset.index;
+        this.orders.data[index].isSelected = event.target.checked;
+        this._refreshShowActivateOrdersButtonFlag();
+        this._refreshShowMarkOrdersAsSentButtonFlag();
+        this._refreshAllRowsSelectedFlag();
+    }
+
+    /**
+     * @description handleActivateOrdersClick: Handler for "Activate" button click.
+     * Moves selected order(s) to "Activated" Status in bulk.
+     */
+    async handleActivateOrdersClick() {
+        const scope = this._getSelectedOrdersToActivate();
+        const decision = await LightningConfirm.open({
+            message: CONFIRM_MESSAGE_DO_YOU_CONFIRM_TO_ACTIVATE_X_OF_DRAFT_ORDERS.replace('{0}', scope.length)
+        });
+        if (!decision) {
+            return;
+        }
+        let recordIds = scope.map((o) => { return o.recordId });
+        const result = await moveOrdersToActivatedStatus({ orderIds: recordIds });
+        await this._getOrders();
+        this._isUpdatingOrder = false;
+        this._displayToastWithSaveResult(result);
+    }
+
+    /**
+     * @description handleMarkOrdersAsSentClick: Handler for "Mark as Sent" button click.
+     * Moves selected order(s) to "Shipped" Status in bulk.
+     */
+    async handleMarkOrdersAsSentClick() {
+        const scope = this._getSelectedOrdersToMarkAsSent();
+        const decision = await LightningConfirm.open({
+            message: CONFIRM_MESSAGE_DO_YOU_CONFIRM_TO_MARK_AS_SENT_X_OF_ACTIVATED_ORDERS.replace('{0}', scope.length)
+        });
+        if (!decision) {
+            return;
+        }
+        let recordIds = scope.map((o) => { return o.recordId });
+        const result = await moveOrdersToShippedStatus({ orderIds: recordIds });
+        await this._getOrders();
+        this._isUpdatingOrder = false;
+        this._displayToastWithSaveResult(result);
+    }
+
+    _refreshAllRowsSelectedFlag() {
+        this.allRowsSelected = this.orders?.data?.every((o) => {
+            return o.isSelected;
+        }) || false;
+    }
+
+    _refreshShowActivateOrdersButtonFlag() {
+        this.showActivateOrdersButton = this._getSelectedOrdersToActivate().length > 0;
+    }
+
+    _refreshShowMarkOrdersAsSentButtonFlag() {
+        this.showMarkOrdersAsSentButton = this._getSelectedOrdersToMarkAsSent().length > 0;
+    }
+
+    _getSelectedOrdersToActivate() {
+        return this.orders?.data?.filter((o) => {
+            return o.canBeActivated && o.isSelected;
+        }) || [];
+    }
+
+    _getSelectedOrdersToMarkAsSent() {
+        return this.orders?.data?.filter((o) => {
+            return o.canBeShipped && o.isSelected;
+        }) || [];
+    }
+
+    _displayToastWithSaveResult(result) {
+        console.clear();
+        console.log(result);
+        if (ORDER_UPDATE_RESPONSE_STATUS_OK === result.status) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: TOAST_TITLE_SUCCESS, variant: TOAST_VARIANT_SUCCESS, message: TOAST_MESSAGE_SUCCESS
+            }));
+        } else {
+            result.errorMessages.forEach((em) => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: TOAST_TITLE_ERROR, variant: TOAST_VARIANT_ERROR, message: em, mode: TOAST_MODE_STICKY
+                }));
+            });
+        }
     }
 
     /**
@@ -197,16 +281,22 @@ export default class AccountOrders extends LightningElement {
             //Drop records which cannot be shown at preview state (if necessary).
             const trunc = CARD_STATE_PREVIEW === this._cardState && PREVIEW_ROWS_COUNT <= this._totalOrders;
             response = trunc ? response.slice(0, PREVIEW_ROWS_COUNT) : response;
-            //Calculate time from now in Current Status (non-Apex based solution because of possible maintenance issues).
+            //Add UI-only properties.
             for (let i = response.length; i--;) {
+                //timeInCurrentStatus - time from now in Current Status (non-Apex based solution because of possible maintenance issues).
                 response[i].timeInCurrentStatus
                     = response[i].lastStatusChanged ? moment().from(response[i].lastStatusChanged, true) : undefined;
+                //isSelected - indicates does or not row action checkbox is checked.
+                response[i].isSelected = false;
             }
             this.orders = { data: response, error: undefined };
         } catch (error) {
             this.orders = { data: undefined, error: error };
         } finally {
             this._isLoadingOrders = false;
+            this._refreshShowActivateOrdersButtonFlag();
+            this._refreshShowMarkOrdersAsSentButtonFlag();
+            this._refreshAllRowsSelectedFlag();
         }
     }
 }

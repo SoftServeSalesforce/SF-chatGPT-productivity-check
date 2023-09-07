@@ -15,49 +15,29 @@ public with sharing class OrderService {
     /**
      * @description setOrdersStatusToActived: Helper method used to apply
      * changes necessary to move given Order records to "Activated" Status.
-     * @param orderIds: Ids of the Order records to progress to "Activated" Status.
+     * @param orders: Scope.
      */
-    public void setOrdersStatusToActived(List<Id> orderIds) {
-        List<Order> orders = OrderSelector.getInstance().getOrdersById(
-            new Set<Id> (orderIds)
-        );
+    public List<Database.SaveResult> setOrdersStatusToActived(List<Order> orders) {
         for (Order o : orders) {
             if (Constants.ORDER_STATUS_DRAFT.equalsIgnoreCase(o.Status)) {
                 o.Status = Constants.ORDER_STATUS_ACTIVATED;
-            } else {
-                throw new IllegalArgumentException(
-                    String.format(
-                        Constants.EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_ACTIVATED,
-                        new List<String> { String.valueOf(o.OrderNumber), String.valueOf(Order.Status) }
-                    )
-                );
             }
         }
-        update orders;
+        return Database.update(orders, false);
     }
 
     /**
      * @description setOrdersStatusToShipped: Helper method used to apply 
      * changes necessary to move given Order records to "Shipped" Status.
-     * @param orderIds: Ids of the Order records to progress to "Shipped" Status.
+     * @param orders: Scope.
      */
-    public void setOrdersStatusToShipped(List<Id> orderIds) {
-        List<Order> orders = OrderSelector.getInstance().getOrdersById(
-            new Set<Id> (orderIds)
-        );
+    public List<Database.SaveResult> setOrdersStatusToShipped(List<Order> orders) {
         for (Order o : orders) {
             if (Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(o.Status)) {
                 o.Status = Constants.ORDER_STATUS_SHIPPED;
-            } else {
-                throw new IllegalArgumentException(
-                    String.format(
-                        Constants.EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_SHIPPED,
-                        new List<String> { String.valueOf(o.OrderNumber), String.valueOf(Order.Status) }
-                    )
-                );
             }
         }
-        update orders;
+        return Database.update(orders, false);
     }
 
     /**
@@ -76,5 +56,37 @@ public with sharing class OrderService {
                 o.LastStatusChanged__c = Datetime.now();
             }
         }
+    }
+
+    public void validateOrderStatusChangeToActivated(List<Order> newOrders, Map<Id, Order> oldOrders) {
+        for (Order o : newOrders) {
+            String newStatus = o.Status;
+            String oldStatus = oldOrders.get(o.Id).Status;
+            if (
+                Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(newStatus)
+                && !Constants.ORDER_STATUS_DRAFT.equalsIgnoreCase(oldStatus)
+            ) {
+                o.addError(String.format(
+                    Constants.EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_ACTIVATED,
+                    new List<String> { String.valueOf(o.Status) }
+                ));
+            }
+        }   
+    }
+
+    public void validateOrderStatusChangeToShipped(List<Order> newOrders, Map<Id, Order> oldOrders) {
+        for (Order o : newOrders) {
+            String newStatus = o.Status;
+            String oldStatus = oldOrders.get(o.Id).Status;
+            if (
+                Constants.ORDER_STATUS_SHIPPED.equalsIgnoreCase(newStatus)
+                && !Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(oldStatus)
+            ) {
+                o.addError(String.format(
+                    Constants.EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_SHIPPED,
+                    new List<String> { String.valueOf(o.Status) }
+                ));
+            }
+        }   
     }
 }

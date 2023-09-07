@@ -25,7 +25,7 @@ public with sharing class OrderSelector {
             FROM Order
             WHERE AccountId = :accountId
             WITH SECURITY_ENFORCED
-            ORDER BY LastModifiedDate DESC
+            ORDER BY CreatedDate ASC
         ];
     }
 
@@ -41,7 +41,7 @@ public with sharing class OrderSelector {
             FROM Order
             WHERE Id IN :orderIds
             WITH SECURITY_ENFORCED
-            ORDER BY LastModifiedDate DESC
+            ORDER BY CreatedDate ASC
         ]; 
     }
 }

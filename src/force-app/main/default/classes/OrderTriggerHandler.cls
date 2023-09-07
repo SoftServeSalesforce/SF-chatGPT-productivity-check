@@ -28,6 +28,9 @@ public with sharing class OrderTriggerHandler {
     }
 
     private void onBeforeUpdate(List<Order> newOrders, Map<Id, Order> oldOrders) {
-        OrderService.getInstance().captureLastStatusChange(newOrders, oldOrders);
+        OrderService service = OrderService.getInstance();
+        service.captureLastStatusChange(newOrders, oldOrders);
+        service.validateOrderStatusChangeToActivated(newOrders, oldOrders);
+        service.validateOrderStatusChangeToShipped(newOrders, oldOrders);
     }
 }
