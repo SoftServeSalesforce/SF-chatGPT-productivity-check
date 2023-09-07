@@ -6,6 +6,11 @@ public with sharing class Constants {
     public static final String EXCEPTION_ACCOUNTID_CANNOT_BE_BLANK = '"accountId" cannot be blank!';
     public static final String EXCEPTION_ACCOUNTID_IS_NOT_VALID = '"accountId" is not valid!';
     public static final String EXCEPTION_ORDER_CANNOT_BE_NULL = '"order" cannot be null!';
+    public static final String EXCEPTION_PAGENUMBER_CANNOT_BE_NULL = '"pageNumber" cannot be null!';
+    public static final String EXCEPTION_PAGENUMBER_BE_EQUAL_TO_OR_LESS_THAN_ZERO = '"pageNumber" cannot be equal to or less than 0!';
+    public static final String EXCEPTION_PAGESIZE_CANNOT_BE_NULL = '"pageSize" cannot be null!';
+    public static final String EXCEPTION_SSC_CANNOT_BE_NULL = '"ssc" cannot be null!';
+    public static final String EXCEPTION_PAGESIZE_CANNOT_BE_EQUAL_TO_OR_LESS_THAN_ZERO = '"pageSize" cannot be equal to or less than 0!';
     public static final String EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_ACTIVATED = 'Order cannot be activated as it is at {0} Status.';
     public static final String EXCEPTION_TEMPLATE_ORDER_STATUS_CANNOT_BE_CHANGED_TO_SHIPPED = 'Order cannot be shipped as it is at {0} Status.';
     public static final String EXCEPTION_TEMPLATE_ORDER_CANNOT_BE_UPDATED_BECAUSE = 'Order #{0} cannot be updated. Error(s): {1}';
@@ -32,4 +37,6 @@ public with sharing class Constants {
     public static final String CONTENT_DOCUMENT_VERSION_PREVIEW_LINK_TEMPLATE
         = Url.getSalesforceBaseUrl().toExternalForm()
         + '/sfc/servlet.shepherd/version/renditionDownload?rendition=THUMB720BY480&versionId=';
+
+    public static final Integer LWC_PAGINATION_PAGE_SIZE_DEFAULT = 25;
 }

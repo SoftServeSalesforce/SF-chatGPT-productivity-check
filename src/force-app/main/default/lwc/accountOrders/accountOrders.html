@@ -35,7 +35,7 @@
                     </div>
                 </header>
             </div>
-            <div class={cardBodyCSSClasses}>
+            <div class="slds-card__body slds-card__body_inner">
                 <template lwc:if={showData}>
                     <table class="slds-table slds-table_cell-buffer slds-table_bordered">
                         <caption>Custom related list with Orders data.</caption>
@@ -130,9 +130,25 @@
                 </template>
             </div>
             <footer class="slds-card__footer">
-                <template lwc:if={showViewAll}>
-                    <a class="slds-card__footer-action" onclick={handleViewAllClick}>View All</a>
-                </template>
+                <div class="slds-grid">
+                    <div class="slds-col">
+                        <lightning-button variant="base" label="<<" title="First page" disabled={disableLeftHandNavigation}
+                            onclick={handleNavigateToFistPageClick}></lightning-button>
+                        <lightning-button variant="base" label="<" title="Previous page" class="slds-m-left_x-small"
+                            disabled={disableLeftHandNavigation} onclick={handleNavigateToPreviousPageClick}></lightning-button>
+                        <span class="slds-m-left_x-small">{pageNumber} of {totalPages}</span>
+                        <lightning-button variant="base" label=">" title="Next page" class="slds-m-left_x-small"
+                            disabled={disableRightHandNavigation} onclick={handleNavigateToNextPageClick}></lightning-button>
+                        <lightning-button variant="base" label=">>" title="Last page" class="slds-m-left_x-small"
+                            disabled={disableRightHandNavigation} onclick={handleNavigateToLastPageClick}></lightning-button>
+                    </div>
+                    <div class="slds-col slds-grow-none slds-align_absolute-center">
+                        <span class="slds-m-right_x-small">Page Size: </span>
+                        <lightning-combobox label="Page Size" placeholder="Select Page Size" variant="label-hidden" value={pageSize}
+                            options={pageSizesOptions} onchange={handlePageSizeChange}
+                            disabled={disablePageSizePicklist}></lightning-combobox>
+                    </div>
+                </div>
             </footer>
         </article>
     </template>

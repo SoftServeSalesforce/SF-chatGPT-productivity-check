@@ -1,17 +1,14 @@
 :host {
-    --table-header-row-height: 1.563rem;
+    /* --table-header-row-height: 1.563rem; */
     --table-body-row-height: 2.188rem;
-    --table-rows-count-in-preview-mode: 5;
-    --table-rows-count-in-show-all-mode: 15;
+    /* --table-rows-count-in-preview-mode: 5;
+    --table-rows-count-in-show-all-mode: 15; */
 }
 
 .main-spinner-container {
     height: 2.5rem;
 }
 
-/**
- * OOTB styles overrides to make custom component look like standard one.
- */
 header {
     height: 2rem;
 }
@@ -25,20 +22,6 @@ header {
 .slds-card__body {
     padding: 0px !important;
     margin: 0px !important;
-}
-
-.slds-card__body.preview {
-    max-height: calc(var(--table-header-row-height) + var(--table-body-row-height) * var(--table-rows-count-in-preview-mode)) !important;
-}
-
-.slds-card__body.show-all {
-    max-height: calc(var(--table-header-row-height) + var(--table-body-row-height) * var(--table-rows-count-in-show-all-mode)) !important;
-}
-
-.show-all table {
-    border-bottom: 0px !important;
-    border-bottom-left-radius: 0.25rem !important;
-    border-bottom-right-radius: 0.25rem !important;
 }
 
 table caption {

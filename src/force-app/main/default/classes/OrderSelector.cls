@@ -13,28 +13,17 @@ public with sharing class OrderSelector {
         return instance;
     }
 
-    /**
-     * @description getOrdersByAccountId: Method used to query records 
-     * of the "Order" SObject with given value specified for "AccountId" lookup.
-     * @param accountId: Id of a parent "Account" record.
-     * @return: List of the "Order" records which match filter criteria OR empty list.
-     */
-    public List<Order> getOrdersByParentAccountId(Id accountId) {
-        return [
+    public Database.QueryLocator getQueryLocatorToOrdersByParentAccountId(Id accountId) {
+        return Database.getQueryLocator([
             SELECT Id, OrderNumber, EffectiveDate, Status, TotalAmount, LastStatusChanged__c
             FROM Order
             WHERE AccountId = :accountId
             WITH SECURITY_ENFORCED
             ORDER BY CreatedDate ASC
-        ];
+            LIMIT 10000
+        ]);
     }
 
-    /**
-     * @description getOrdersById: Method used to query records 
-     * of the "Order" SObject with given value specified for "Id" field.
-     * @param orderIds: Scope.
-     * @return: Orders with given Ids.
-     */
     public List<Order> getOrdersById(Set<Id> orderIds) {
         return [
             SELECT Id, OrderNumber, Status
@@ -42,6 +31,6 @@ public with sharing class OrderSelector {
             WHERE Id IN :orderIds
             WITH SECURITY_ENFORCED
             ORDER BY CreatedDate ASC
-        ]; 
+        ];
     }
 }
