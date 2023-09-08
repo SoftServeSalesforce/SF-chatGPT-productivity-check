@@ -2,16 +2,9 @@
 public with sharing class TestOrderSelector {
     @IsTest
     private static void getQueryLocatorToOrdersByParentAccountIdTest() {
-        Id accountId = fflib_IDGenerator.generate(Account.SObjectType);
-        Database.QueryLocator expected = Database.getQueryLocator([
-            SELECT Id, OrderNumber, EffectiveDate, Status, TotalAmount, LastStatusChanged__c
-            FROM Order
-            WHERE AccountId = :accountId
-            WITH SECURITY_ENFORCED
-            ORDER BY CreatedDate ASC
-            LIMIT 10000
-        ]);
-        Database.QueryLocator actual = OrderSelector.getInstance().getQueryLocatorToOrdersByParentAccountId(accountId);
+        Id accId = fflib_IDGenerator.generate(Account.SObjectType);
+        Database.QueryLocator actual = OrderSelector.getInstance().getQueryLocatorToOrdersByParentAccountId(accId);
+        System.assertNotEquals(null, actual);
     }
 
     @IsTest

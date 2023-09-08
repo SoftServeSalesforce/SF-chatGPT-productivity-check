@@ -95,7 +95,6 @@ public with sharing class TestAccountOrdersController {
         Id accountId = fflib_IDGenerator.generate(Account.SobjectType);
         Integer pageNumber = 1;
         Integer pageSize = 1;
-        Account acc = new Account(Id = accountId);
         Map<Id, Order> ordersById = new Map<Id, Order>();
         Database.QueryLocator ql = Database.getQueryLocator([SELECT Id FROM Order]);
         //Stub data.
