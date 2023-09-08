@@ -46,7 +46,7 @@ public with sharing class Constants {
         = Url.getSalesforceBaseUrl().toExternalForm()
         + '/sfc/servlet.shepherd/version/renditionDownload?rendition=THUMB720BY480&versionId=';
 
-    public static final Integer LWC_PAGINATION_PAGE_SIZE_DEFAULT = 25;
+    public static final Integer LWC_PAGINATION_PAGE_SIZE_DEFAULT = 10;
 
     public static final String DSR_WITH_NO_ERROR_TEMPLATE = '{"success":true,"id":"{0}"}';
     public static final String DSR_WITH_ERROR_TEMPLATE = '{"success":false,"id":"{0}","errors":[{"message":"{1}"}]}';
