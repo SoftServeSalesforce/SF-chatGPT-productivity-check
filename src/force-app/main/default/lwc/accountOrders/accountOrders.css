@@ -1,8 +1,5 @@
 :host {
-    /* --table-header-row-height: 1.563rem; */
     --table-body-row-height: 2.188rem;
-    /* --table-rows-count-in-preview-mode: 5;
-    --table-rows-count-in-show-all-mode: 15; */
 }
 
 .main-spinner-container {

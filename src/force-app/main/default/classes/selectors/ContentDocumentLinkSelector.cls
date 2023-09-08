@@ -1,5 +1,5 @@
 /**
- * @description OrderSelector: Apex Class used to access "ContentDocumentLink" SObject records.
+ * @description OrderSelector: Selector to access "ContentDocumentLink" SObject records.
  */
 public with sharing class ContentDocumentLinkSelector {
 

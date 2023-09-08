@@ -28,18 +28,14 @@ public with sharing class AccountOrdersController {
      */
     @AuraEnabled(cacheable=false)
     public static void updatePageSizeForLWCPaginationSetting(Integer pageSize) {
-        try {
-            //Validate given arguments.
-            if (null == pageSize) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_PAGESIZE_CANNOT_BE_NULL);
-            }
-            if (0 >= pageSize) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_PAGESIZE_CANNOT_BE_EQUAL_TO_OR_LESS_THAN_ZERO);
-            }
-            CustomSettingsService.getInstance().capturePreferredLWCPaginationPageSize(pageSize);
-        } catch (Exception e) {
-            throw new AuraHandledException(e.getMessage());
+        //Validate given arguments.
+        if (null == pageSize) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_PAGESIZE_CANNOT_BE_NULL);
         }
+        if (0 >= pageSize) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_PAGESIZE_CANNOT_BE_EQUAL_TO_OR_LESS_THAN_ZERO);
+        }
+        CustomSettingsService.getInstance().capturePreferredLWCPaginationPageSize(pageSize);
     }
 
     /**
@@ -54,37 +50,20 @@ public with sharing class AccountOrdersController {
     public static PageWithOrdersDTO getOrders(Id accountId, Integer pageNumber, Integer pageSize) {
         try {
             //Validate given arguments.
-            if (String.isBlank(accountId)) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_ACCOUNTID_CANNOT_BE_BLANK);
-            }
-            if (Account.SObjectType != accountId.getSObjectType()) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_ACCOUNTID_IS_NOT_VALID);
-            }
-            if (null == pageNumber) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_PAGENUMBER_CANNOT_BE_NULL);
-            }
-            if (0 >= pageNumber) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_PAGENUMBER_BE_EQUAL_TO_OR_LESS_THAN_ZERO);
-            }
-            if (null == pageSize) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_PAGESIZE_CANNOT_BE_NULL);
-            }
-            if (0 >= pageSize) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_PAGESIZE_CANNOT_BE_EQUAL_TO_OR_LESS_THAN_ZERO);
-            }
+            validateGetOrdersRequest(accountId, pageNumber, pageSize);
             PageWithOrdersDTO result = new PageWithOrdersDTO();
             Database.QueryLocator ql = OrderSelector.getInstance().getQueryLocatorToOrdersByParentAccountId(accountId);
+            //Pagination happens here.
             ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(ql);
             ssc.setPageSize(pageSize);
             ssc.setPageNumber(pageNumber);
             result.addPageDetails(ssc);
             Map<Id, Order> ordersById = new Map<Id,Order>((List<Order>)ssc.getRecords());
-            Map<Id, ContentDocumentLink> invoicesByOrderId = ContentDocumentLinkService.getInstance().getTheMostRecentInvoicesByParentId(ordersById.keySet());
+            Map<Id, Id> invoicesByOrderId = ContentDocumentLinkService.getInstance().getTheMostRecentInvoicesIdsByParentId(ordersById.keySet());
             for (Id oId : ordersById.keySet()) {
-                OrderDTO odto = new OrderDTO();
-                odto.addOrderDetails(ordersById.get(oId));
-                odto.addInvoice(invoicesByOrderId.get(oId));
-                result.orders.add(odto);
+                result.orders.add(
+                    new OrderDTO(ordersById.get(oId), invoicesByOrderId.get(oId))
+                );
             }
             return result;
         } catch (Exception e) {
@@ -130,21 +109,39 @@ public with sharing class AccountOrdersController {
         return our;
     }
 
-    /**
-     * @description validateStatusChangeRequest: Helper method to ensure that only valid
-     * data is passed on Order Status Change request.
-     * @param orderIds: Scope.
-     */
-    private static void validateStatusChangeRequest(List<Id> orderIds) {
-        if (null == orderIds) {
+    @TestVisible
+    private static void validateGetOrdersRequest(Id accountId, Integer pageNumber, Integer pageSize) {
+        if (String.isBlank(accountId)) {
             throw new IllegalArgumentException(Constants.EXCEPTION_ACCOUNTID_CANNOT_BE_BLANK);
         }
+        if (Account.SObjectType != accountId.getSObjectType()) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_ACCOUNTID_IS_NOT_VALID);
+        }
+        if (null == pageNumber) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_PAGENUMBER_CANNOT_BE_NULL);
+        }
+        if (0 >= pageNumber) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_PAGENUMBER_BE_EQUAL_TO_OR_LESS_THAN_ZERO);
+        }
+        if (null == pageSize) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_PAGESIZE_CANNOT_BE_NULL);
+        }
+        if (0 >= pageSize) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_PAGESIZE_CANNOT_BE_EQUAL_TO_OR_LESS_THAN_ZERO);
+        }
+    }
+
+    @TestVisible
+    private static void validateStatusChangeRequest(List<Id> orderIds) {
+        if (null == orderIds) {
+            throw new IllegalArgumentException(Constants.EXCEPTION_ORDERIDS_CANNOT_BE_NULL);
+        }
         if (orderIds.isEmpty()) {
-            throw new IllegalArgumentException(Constants.EXCEPTION_ORDERID_CANNOT_BE_EMPTY);
+            throw new IllegalArgumentException(Constants.EXCEPTION_ORDERIDS_CANNOT_BE_EMPTY);
         }
         for (Id oId : orderIds) {
             if (null == oId || Order.SObjectType != oId.getSobjectType()) {
-                throw new IllegalArgumentException(Constants.EXCEPTION_ORDERID_SHOULD_CONTAIN_ONLY_VALID_ORDER_IDS);
+                throw new IllegalArgumentException(Constants.EXCEPTION_ORDERIDS_SHOULD_CONTAIN_ONLY_VALID_ORDER_IDS);
             }
         }
     }

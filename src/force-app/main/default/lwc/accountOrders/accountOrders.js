@@ -77,10 +77,6 @@ export default class AccountOrders extends LightningElement {
         return !this.showData && !this.showError && 0 >= this._pageEntriesCount;
     }
 
-    get showBulkUpdateButtons() {
-        return this.showActivateOrdersButton || this.showMarkOrdersAsSentButton;
-    }
-
     get _pageEntriesCount() {
         return this.orders?.data?.length || 0;
     }
@@ -107,7 +103,6 @@ export default class AccountOrders extends LightningElement {
      * Handlers.
      */
     async connectedCallback() {
-        console.clear();
         await loadScript(this, MOMENT_JS);
         await this._getLWCPaginationSetting();
         await this._getOrders();
@@ -129,23 +124,6 @@ export default class AccountOrders extends LightningElement {
         await this._getOrders();
         this._isUpdatingOrder = false;
         this._displayToastWithSaveResult(result);
-    }
-
-    handleSelectAllClick(event) {
-        this.allRowsSelected = event.target.checked;
-        for (let i = this._pageEntriesCount; i--;) {
-            this.orders.data[i].isSelected = this.allRowsSelected;
-        }
-        this._refreshShowActivateOrdersButtonFlag();
-        this._refreshShowMarkOrdersAsSentButtonFlag();
-    }
-
-    handleSelectRowClick(event) {
-        const index = event.target.dataset.index;
-        this.orders.data[index].isSelected = event.target.checked;
-        this._refreshShowActivateOrdersButtonFlag();
-        this._refreshShowMarkOrdersAsSentButtonFlag();
-        this._refreshIsSelectedFlagOnAllOrders();
     }
 
     async handleActivateOrdersClick() {
@@ -204,48 +182,30 @@ export default class AccountOrders extends LightningElement {
         await this._getOrders();
     }
 
+    async handleForceRefreshClick() {
+        await this._getOrders();
+    }
+
+    handleSelectAllClick(event) {
+        this.allRowsSelected = event.target.checked;
+        for (let i = this._pageEntriesCount; i--;) {
+            this.orders.data[i].isSelected = this.allRowsSelected;
+        }
+        this._refreshShowActivateOrdersButtonFlag();
+        this._refreshShowMarkOrdersAsSentButtonFlag();
+    }
+
+    handleSelectRowClick(event) {
+        const index = event.target.dataset.index;
+        this.orders.data[index].isSelected = event.target.checked;
+        this._refreshShowActivateOrdersButtonFlag();
+        this._refreshShowMarkOrdersAsSentButtonFlag();
+        this._refreshIsSelectedFlagOnAllOrders();
+    }
+
     /**
      * Helper methods.
      */
-    _refreshIsSelectedFlagOnAllOrders() {
-        this.allRowsSelected = this.orders?.data?.every((o) => {
-            return o.isSelected;
-        }) || false;
-    }
-
-    _refreshShowActivateOrdersButtonFlag() {
-        this.showActivateOrdersButton = this._getSelectedOrdersToActivate().length > 0;
-    }
-
-    _refreshShowMarkOrdersAsSentButtonFlag() {
-        this.showMarkOrdersAsSentButton = this._getSelectedOrdersToMarkAsSent().length > 0;
-    }
-
-    _getSelectedOrdersToActivate() {
-        return this.orders?.data?.filter((o) => {
-            return o.canBeActivated && o.isSelected;
-        }) || [];
-    }
-
-    _getSelectedOrdersToMarkAsSent() {
-        return this.orders?.data?.filter((o) => {
-            return o.canBeShipped && o.isSelected;
-        }) || [];
-    }
-
-    _displayToastWithSaveResult(result) {
-        if (ORDER_UPDATE_RESPONSE_STATUS_OK === result.status) {
-            this.dispatchEvent(new ShowToastEvent({
-                title: TOAST_TITLE_SUCCESS, variant: TOAST_VARIANT_SUCCESS, message: TOAST_MESSAGE_SUCCESS
-            }));
-        } else {
-            result.errorMessages.forEach((em) => {
-                this.dispatchEvent(new ShowToastEvent({
-                    title: TOAST_TITLE_ERROR, variant: TOAST_VARIANT_ERROR, message: em, mode: TOAST_MODE_STICKY
-                }));
-            });
-        }
-    }
 
     async _getLWCPaginationSetting() {
         try {
@@ -300,6 +260,46 @@ export default class AccountOrders extends LightningElement {
             console.error(JSON.parse(JSON.stringify(error)));
         } finally {
             this._isUpdatingLWCPaginationSettings = false;
+        }
+    }
+
+    _refreshIsSelectedFlagOnAllOrders() {
+        this.allRowsSelected = this.orders?.data?.every((o) => {
+            return o.isSelected;
+        }) || false;
+    }
+
+    _refreshShowActivateOrdersButtonFlag() {
+        this.showActivateOrdersButton = this._getSelectedOrdersToActivate().length > 0;
+    }
+
+    _refreshShowMarkOrdersAsSentButtonFlag() {
+        this.showMarkOrdersAsSentButton = this._getSelectedOrdersToMarkAsSent().length > 0;
+    }
+
+    _getSelectedOrdersToActivate() {
+        return this.orders?.data?.filter((o) => {
+            return o.canBeActivated && o.isSelected;
+        }) || [];
+    }
+
+    _getSelectedOrdersToMarkAsSent() {
+        return this.orders?.data?.filter((o) => {
+            return o.canBeShipped && o.isSelected;
+        }) || [];
+    }
+
+    _displayToastWithSaveResult(result) {
+        if (ORDER_UPDATE_RESPONSE_STATUS_OK === result.status) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: TOAST_TITLE_SUCCESS, variant: TOAST_VARIANT_SUCCESS, message: TOAST_MESSAGE_SUCCESS
+            }));
+        } else {
+            result.errorMessages.forEach((em) => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: TOAST_TITLE_ERROR, variant: TOAST_VARIANT_ERROR, message: em, mode: TOAST_MODE_STICKY
+                }));
+            });
         }
     }
 }

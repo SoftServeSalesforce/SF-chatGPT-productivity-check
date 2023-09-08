@@ -51,7 +51,7 @@ public with sharing class OrderService {
     public void captureLastStatusChange(List<Order> newOrders, Map<Id, Order> oldOrders) {
         for (Order o : newOrders) {
             String newStatus = o.Status;
-            String oldStatus = null == oldOrders ? '' : oldOrders.get(o.Id).Status;
+            String oldStatus = null == oldOrders ? '' : oldOrders.get(o.Id)?.Status;
             if (!newStatus.equalsIgnoreCase(oldStatus)) {
                 o.LastStatusChanged__c = Datetime.now();
             }
@@ -63,7 +63,8 @@ public with sharing class OrderService {
             String newStatus = o.Status;
             String oldStatus = oldOrders.get(o.Id).Status;
             if (
-                Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(newStatus)
+                !newStatus.equalsIgnoreCase(oldStatus)
+                && Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(newStatus)
                 && !Constants.ORDER_STATUS_DRAFT.equalsIgnoreCase(oldStatus)
             ) {
                 o.addError(String.format(
@@ -79,7 +80,8 @@ public with sharing class OrderService {
             String newStatus = o.Status;
             String oldStatus = oldOrders.get(o.Id).Status;
             if (
-                Constants.ORDER_STATUS_SHIPPED.equalsIgnoreCase(newStatus)
+                !newStatus.equalsIgnoreCase(oldStatus)
+                && Constants.ORDER_STATUS_SHIPPED.equalsIgnoreCase(newStatus)
                 && !Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(oldStatus)
             ) {
                 o.addError(String.format(

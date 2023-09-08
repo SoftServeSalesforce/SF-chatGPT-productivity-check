@@ -12,8 +12,8 @@ public with sharing class ContentDocumentLinkService {
         return instance;
     }
 
-    public Map<Id, ContentDocumentLink> getTheMostRecentInvoicesByParentId(Set<Id> parentRecordsIds) {
-        Map<Id, ContentDocumentLink> result = new Map<Id, ContentDocumentLink>();
+    public Map<Id, Id> getTheMostRecentInvoicesIdsByParentId(Set<Id> parentRecordsIds) {
+        Map<Id, Id> result = new Map<Id, Id>();
         if (null != parentRecordsIds && !parentRecordsIds.isEmpty()) {
             List<ContentDocumentLink> cdls = ContentDocumentLinkSelector.getInstance().getAttachedInvoicesOrderedByCDLMD(parentRecordsIds);
             for (ContentDocumentLink cdl : cdls) {
@@ -21,7 +21,7 @@ public with sharing class ContentDocumentLinkService {
                     //Recent ivoice already added.
                     continue;
                 }
-                result.put(cdl.LinkedEntityId, cdl);
+                result.put(cdl.LinkedEntityId, cdl.ContentDocument?.LatestPublishedVersionId);
             }
         }
         return result;

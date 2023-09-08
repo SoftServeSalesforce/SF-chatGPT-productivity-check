@@ -30,11 +30,30 @@ public with sharing class OrderDTO {
     @AuraEnabled
     public Boolean showActionsMenu;
 
-    public void addOrderDetails(Order o) {
-        //Safety block to avoid NLPE.
+    //Testing support.
+    @TestVisible
+    private OrderDTO() {}
+
+    public OrderDTO(Order o, Id invoiceId) {
         if (null == o) {
             throw new IllegalArgumentException(Constants.EXCEPTION_ORDER_CANNOT_BE_NULL);
         }
+        captureOrderDetails(o);
+        if (null != invoiceId) {
+            if (ContentVersion.SObjectType != invoiceId.getSobjectType()) {
+                throw new IllegalArgumentException(Constants.EXCEPTION_INVOICEID_SHOULD_BE_VALID_CV_ID);
+            }
+            captureInvoiceDetails(invoiceId);
+        }
+        initHasInvoiceFlag();
+        initCanBeActivatedFlag();
+        initCanBeShippedFlag();
+        //After all.
+        initShowActionsMenuFlag();
+    }
+
+    @TestVisible
+    private void captureOrderDetails(Order o) {
         this.recordId = o.Id;
         this.recordURL = '/' + o.Id;
         this.orderNumber = o.OrderNumber;
@@ -42,34 +61,37 @@ public with sharing class OrderDTO {
         this.status = o.Status;
         this.lastStatusChanged = o.LastStatusChanged__c;
         this.amount = o.TotalAmount;
-        this.initCanBeActivatedFlag();
-        this.initCanBeShippedFlag();
-        this.initShowActionsMenuFlag();
     }
 
-    public void addInvoice(ContentDocumentLink cdl) {
-        //Safety block to avoid NLPE.
-        if (null == cdl) {
+    @TestVisible
+    private void captureInvoiceDetails(Id invoiceId) {
+        if (null == invoiceId) {
             return;
         }
-        this.hasInvoice = true;
         this.invoicePreviewURL
             = Constants.CONTENT_DOCUMENT_VERSION_PREVIEW_LINK_TEMPLATE
-            + cdl.ContentDocument.LatestPublishedVersionId;
+            + invoiceId;
         this.invoiceDownloadURL
             = Constants.CONTENT_DOCUMENT_VERSION_DOWNLOAD_LINK_TEMPLATE
-            + cdl.ContentDocument.LatestPublishedVersionId;
-        this.initShowActionsMenuFlag();
+            + invoiceId;
     }
 
+    @TestVisible
+    private void initHasInvoiceFlag() {
+        this.hasInvoice = String.isNotBlank(this.invoicePreviewURL) || String.isNotBlank(this.invoiceDownloadURL);
+    }
+
+    @TestVisible
     private void initCanBeActivatedFlag() {
         this.canBeActivated = Constants.ORDER_STATUS_DRAFT.equalsIgnoreCase(this.Status);
     }
 
+    @TestVisible
     private void initCanBeShippedFlag() {
         this.canBeShipped = Constants.ORDER_STATUS_ACTIVATED.equalsIgnoreCase(this.Status);
     }
 
+    @TestVisible
     private void initShowActionsMenuFlag() {
         this.showActionsMenu = true == this.canBeActivated || true == this.canBeShipped || true == this.hasInvoice;
     }

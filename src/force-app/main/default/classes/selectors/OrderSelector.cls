@@ -1,5 +1,5 @@
 /**
- * @description OrderSelector: Apex Class used to access "Order" SObject records.
+ * @description OrderSelector: Selector to access "Order" SObject records.
  */
 public with sharing class OrderSelector {
 

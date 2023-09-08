@@ -18,20 +18,18 @@
                         </h2>
                     </div>
                     <div class="slds-no-flex">
-                        <template lwc:if={showBulkUpdateButtons}>
-                            <lightning-button-group>
-                                <template lwc:if={showActivateOrdersButton}>
-                                    <lightning-button variant="brand-outlin" label="Activate"
-                                        title="Move selected Order(s) to 'Activated' status."
-                                        onclick={handleActivateOrdersClick}></lightning-button>
-                                </template>
-                                <template lwc:if={showMarkOrdersAsSentButton}>
-                                    <lightning-button variant="brand-outlin" label="Mark as Sent"
-                                        title="Move selected Order(s) to 'Shipped' status"
-                                        onclick={handleMarkOrdersAsSentClick}></lightning-button>
-                                </template>
-                            </lightning-button-group>
-                        </template>
+                        <lightning-button-group>
+                            <template lwc:if={showActivateOrdersButton}>
+                                <lightning-button variant="brand-outline" label="Activate" title="Move selected Order(s) to 'Activated' status."
+                                    onclick={handleActivateOrdersClick}></lightning-button>
+                            </template>
+                            <template lwc:if={showMarkOrdersAsSentButton}>
+                                <lightning-button variant="brand-outline" label="Mark as Sent" title="Move selected Order(s) to 'Shipped' status"
+                                    onclick={handleMarkOrdersAsSentClick}></lightning-button>
+                            </template>
+                            <lightning-button-icon variant="border-filled" icon-name="utility:refresh" alternative-text="Refresh" title="Refresh"
+                                onclick={handleForceRefreshClick}></lightning-button-icon>
+                        </lightning-button-group>
                     </div>
                 </header>
             </div>
