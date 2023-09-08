@@ -1,3 +1,12 @@
+# Description
+
+The Application facilitate users working with Accounts and related Orders. The Component orderTableview is embedded in Account page and renders all related Account’s Orders. The user has the possibility to view order Number which has a link to the order record itself, the time in which the order is in Status Draft/Activated/Shipped, Amount,Date,Amount and allows the user to edit the status via inline row action. Updating the status re-render the component showing the new Status. User will be able to also preview/download file related to an Order whenever they contains ‘invoice’ in the file title. User has also possibility to mass activate and mark as sent orders via checkbox which streamline the order update process in a single view. Component also offers the pagination view with possibility to select record size per page, navigate to next and previous page and also having information of total orders number related to the Account
+
+# Manual Testing
+
+User can setup the data for manual testing running command :sfdx force:apex:execute -f scripts\apex\generateData.apex. Alternatively user can run generateData.apex in Anonymous Developer console to load data. The script will create an Account named Softserve.inc,related,400 orders and 5 new products. Related files titled ‘invoice’ will be also loaded to test the preview/download logic.
+
+
 # Salesforce DX Project: Next Steps
 
 Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
