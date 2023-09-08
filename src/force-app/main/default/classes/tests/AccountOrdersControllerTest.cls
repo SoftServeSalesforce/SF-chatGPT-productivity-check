@@ -178,12 +178,24 @@ public with sharing class AccountOrdersControllerTest {
     }
 
     @IsTest
+    static void testValidateAndUpdateOrdersByStatusException1() {
+        Boolean isExceptionFired = false;
+        Test.startTest();
+        List<Id> orderIds = new List<Id>();
+        AccountOrdersController.validateAndUpdateOrdersByStatus(null, 
+            AccountOrdersController.ORDER_STATUS_DRAFT, 
+            AccountOrdersController.ORDER_STATUS_ACTIVATED
+        );
+        Test.stopTest();
+    }
+
+    @IsTest
     static void testValidateAndUpdateOrdersByStatusException() {
         Boolean isExceptionFired = false;
         Test.startTest();
         List<Id> orderIds = new List<Id>();
         try {
-            AccountOrdersController.validateAndUpdateOrdersByStatus(orderIds, 
+            AccountOrdersController.validateAndUpdateOrdersByStatus(null, 
                 AccountOrdersController.ORDER_STATUS_DRAFT, 
                 AccountOrdersController.ORDER_STATUS_ACTIVATED
             );
