@@ -1,13 +1,31 @@
 <template>
     <div class="slds-box related_list">
         <lightning-card title={componentTitle} icon-name="standard:orders">
+            <div slot="actions">
+                <lightning-button-group>
+                    <lightning-button label="Activate" 
+                                      variant="neutral" 
+                                      onclick={handleBulkActivate}>
+                    </lightning-button>
+                    <lightning-button label="Mark as Shipped" 
+                                      variant="neutral" 
+                                      onclick={handleBulkMarkShipped}>
+                    </lightning-button>
+                    <lightning-button label="Refresh" 
+                                      variant="neutral" 
+                                      onclick={handleRefresh}>
+                    </lightning-button>
+                </lightning-button-group>
+            </div>
             <template if:true={hasOrders}>
                 <c-orders-data-table data={ordersTableData}
                                      key-field="id"
                                      columns={ordersTableColumnsDef}
                                      onrowaction={handleRowAction}
-                                     hide-checkbox-column="true"
-                ></c-orders-data-table>
+                                     selected-rows={selectedOrderIds}
+                                     onrowselection={handleRowSelection}
+                                     hide-checkbox-column="false">
+                </c-orders-data-table>
             </template>
         </lightning-card>
     </div>

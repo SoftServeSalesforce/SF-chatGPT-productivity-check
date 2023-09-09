@@ -1,7 +1,9 @@
 import {api, LightningElement, wire} from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders'
 import activateOrderById from '@salesforce/apex/AccountOrdersController.activateOrderById'
+import activateOrdersByIds from '@salesforce/apex/AccountOrdersController.activateOrdersByIds';
 import markOrderAsShippedById from '@salesforce/apex/AccountOrdersController.markAsShippedOrderById'
+import markAsShippedOrdersByIds from '@salesforce/apex/AccountOrdersController.markAsShippedOrdersByIds';
 import {ShowToastEvent} from 'lightning/platformShowToastEvent';
 import {NavigationMixin} from 'lightning/navigation';
 import {refreshApex} from "@salesforce/apex";
@@ -10,8 +12,12 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
     @api recordId;
     ordersTableData = [];
     wiredOrders;
+    selectedOrderIds = [];
 
     ordersTableColumnsDef = [
+        {
+            type: 'boolean', fieldName: 'isSelected', label: '', initialWidth: 30
+        },
         {
             type: 'url', fieldName: 'orderUrl', label: 'Number',
             typeAttributes: {
@@ -78,6 +84,11 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
         doneCallback(actions);
     }
 
+    handleRowSelection(event) {
+        const selectedRows = event.detail.selectedRows;
+        this.selectedOrderIds = selectedRows.map(row => row.id);
+    }
+
     handleRowAction(event) {
         const row = event.detail.row;
         const action = event.detail.action.name;
@@ -116,6 +127,18 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
         });
     }
 
+    handleBulkActivate() {
+        this.handleBulkOrderAction('activate');
+    }
+
+    handleBulkMarkShipped() {
+        this.handleBulkOrderAction('mark_shipped');
+    }
+
+    handleRefresh() {
+        this.handleBulkOrderAction('refresh');
+    }
+
     async handleOrderAction(action, orderId) {
         try {
             let result;
@@ -134,6 +157,36 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
         } catch (error) {
             console.error('## error updating order: ' + JSON.stringify(error));
         }
+        return refreshApex(this.wiredOrders);
+    }
+
+    async handleBulkOrderAction(action) {
+        if (this.selectedOrderIds.length === 0) {
+            this.showToast('No orders selected', 'warning', 'Warning');
+            return;
+        }
+        
+        try {
+            let result;
+            switch (action) {
+                case 'activate':
+                    result = await activateOrdersByIds({ orderIds: this.selectedOrderIds });
+                    break;
+                case 'mark_shipped':
+                    result = await markAsShippedOrdersByIds({ orderIds: this.selectedOrderIds });
+                    break;
+                case 'refresh':
+                    return refreshApex(this.wiredOrders);
+                default:
+            }
+            
+            if (result && result.status !== 'OK') {
+                this.showToast(`There was an error updating the orders: ${result.errorMessage}`, 'error', 'Error');
+            }
+        } catch (error) {
+            console.error('## error updating orders: ' + JSON.stringify(error));
+        }
+        
         return refreshApex(this.wiredOrders);
     }
 

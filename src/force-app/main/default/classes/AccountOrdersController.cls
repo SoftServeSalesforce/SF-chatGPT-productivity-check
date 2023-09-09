@@ -21,43 +21,63 @@ public with sharing class AccountOrdersController {
 
     @AuraEnabled
     public static OrderActionResponse activateOrderById(Id orderId) {
-        return orderAction(orderId, OrderAction.ACTIVATE_ORDER);
+        return bulkOrderAction(new List<Id>{orderId}, OrderAction.ACTIVATE_ORDER);
+    }
+
+    @AuraEnabled
+    public static OrderActionResponse activateOrdersByIds(List<Id> orderIds) {
+        return bulkOrderAction(orderIds, OrderAction.ACTIVATE_ORDER);
     }
 
     @AuraEnabled
     public static OrderActionResponse markAsShippedOrderById(Id orderId) {
-        return orderAction(orderId, OrderAction.MARK_SHIPPED);
+        return bulkOrderAction(new List<Id>{orderId}, OrderAction.MARK_SHIPPED);
     }
 
-    private static OrderActionResponse orderAction(Id orderId, OrderAction action) {
-        if (null == orderId) {
-            return new OrderActionResponse(false, 'Missing Order Id');
+    @AuraEnabled
+    public static OrderActionResponse markAsShippedOrdersByIds(List<Id> orderIds) {
+        return bulkOrderAction(orderIds, OrderAction.MARK_SHIPPED);
+    }
+
+    private static OrderActionResponse bulkOrderAction(List<Id> orderIds, OrderAction action) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return new OrderActionResponse(false, 'Missing Order Ids');
         }
-        Order[] orders = new OrderSelector().getOrdersByIds(new Set<Id>{orderId});
+        
+        Order[] orders = new OrderSelector().getOrdersByIds(new Set<Id>(orderIds));
+        
         if (orders.isEmpty()) {
-            return new OrderActionResponse(false, 'Order not found');
+            return new OrderActionResponse(false, 'Orders not found');
         }
-        switch on action {
-            when ACTIVATE_ORDER {
-                if (orders[0].Status == ORDER_STATUS_DRAFT) {
-                    orders[0].Status = ORDER_STATUS_ACTIVE;
-                } else {
-                    return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + orders[0].OrderNumber);
+
+        List<Order> ordersToUpdate = new List<Order>();
+
+        for (Order ord : orders) {
+            switch on action {
+                when ACTIVATE_ORDER {
+                    if (ord.Status == ORDER_STATUS_DRAFT) {
+                        ord.Status = ORDER_STATUS_ACTIVE;
+                        ordersToUpdate.add(ord);
+                    } else {
+                        return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + ord.OrderNumber);
+                    }
+                }
+                when MARK_SHIPPED {
+                    if (ord.Status == ORDER_STATUS_ACTIVE) {
+                        ord.Status = ORDER_STATUS_SHIPPED;
+                        ordersToUpdate.add(ord);
+                    } else {
+                        return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + ord.OrderNumber);
+                    }
+                }
+                when else {
+                    return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + ord.OrderNumber);
                 }
             }
-            when MARK_SHIPPED {
-                if (orders[0].Status == ORDER_STATUS_ACTIVE) {
-                    orders[0].Status = ORDER_STATUS_SHIPPED;
-                } else {
-                    return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + orders[0].OrderNumber);
-                }
-            }
-            when else {
-                return new OrderActionResponse(false, INVALID_OPERATION_FOR_ORDER + orders[0].OrderNumber);
-            }
         }
+
         try {
-            update orders[0];
+            update ordersToUpdate;
             return new OrderActionResponse(true, null);
         } catch (DmlException e) {
             return new OrderActionResponse(false, e.getMessage());
@@ -69,6 +89,7 @@ public with sharing class AccountOrdersController {
         public String status;
         @AuraEnabled
         public String errorMessage;
+
         public OrderActionResponse(Boolean statusOk, String errorMessage) {
             this.status = statusOk ? 'OK' : 'ERROR';
             this.errorMessage = errorMessage;
@@ -106,5 +127,4 @@ public with sharing class AccountOrdersController {
             }
         }
     }
-
 }
