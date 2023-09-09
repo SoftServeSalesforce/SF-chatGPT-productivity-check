@@ -15,4 +15,8 @@ public with sharing class CustomSettingsSelector {
     public LWCPagination__c getLWCPaginationSettings() {
         return LWCPagination__c.getInstance();
     }
+
+    public FeaturesEnabler__c getFeaturesEnabler() {
+        return FeaturesEnabler__c.getInstance();
+    }
 }

@@ -3,11 +3,9 @@ public with sharing class TestAccountOrdersController {
 
     @IsTest
     private static void getPageSizeFromLWCPaginationSetting_withCustomSetting() {
-        //Prepare mocks.
         fflib_ApexMocks mocks = new fflib_ApexMocks();
         CustomSettingsSelector selectorMock = (CustomSettingsSelector)mocks.mock(CustomSettingsSelector.class);
         CustomSettingsSelector.instance = selectorMock;
-        //Prepare data.
         Integer expected = 200;
         LWCPagination__c setting = new LWCPagination__c(
             PageSize__c = expected
@@ -16,9 +14,7 @@ public with sharing class TestAccountOrdersController {
         mocks.startStubbing();
         mocks.when(selectorMock.getLWCPaginationSettings()).thenReturn(setting);
         mocks.stopStubbing();
-        //Execute scenario.
         Integer result = AccountOrdersController.getPageSizeFromLWCPaginationSetting();
-        //Verify outcomes.
         System.assertNotEquals(null, result);
         System.assertEquals(expected, result);
         ((CustomSettingsSelector) mocks.verify(selectorMock, 1)).getLWCPaginationSettings();
@@ -26,20 +22,16 @@ public with sharing class TestAccountOrdersController {
 
     @IsTest
     private static void getPageSizeFromLWCPaginationSetting_noCustomSetting() {
-        //Prepare mocks.
         fflib_ApexMocks mocks = new fflib_ApexMocks();
         CustomSettingsSelector selectorMock = (CustomSettingsSelector)mocks.mock(CustomSettingsSelector.class);
         CustomSettingsSelector.instance = selectorMock;
-        //Prepare data.
         Integer expected = Constants.LWC_PAGINATION_PAGE_SIZE_DEFAULT;
         LWCPagination__c setting = new LWCPagination__c();
         //Stub data.
         mocks.startStubbing();
         mocks.when(selectorMock.getLWCPaginationSettings()).thenReturn(setting);
         mocks.stopStubbing();
-        //Execute scenario.
         Integer result = AccountOrdersController.getPageSizeFromLWCPaginationSetting();
-        //Verify outcomes.
         System.assertNotEquals(null, result);
         System.assertEquals(expected, result);
         ((CustomSettingsSelector) mocks.verify(selectorMock, 1)).getLWCPaginationSettings();
@@ -47,15 +39,11 @@ public with sharing class TestAccountOrdersController {
 
     @IsTest
     private static void updatePageSizeForLWCPaginationSettingTest() {
-        //Prepare mocks.
         fflib_ApexMocks mocks = new fflib_ApexMocks();
         CustomSettingsService serviceMock = (CustomSettingsService)mocks.mock(CustomSettingsService.class);
         CustomSettingsService.instance = serviceMock;
-        //Prepare data.
         Integer pageSize = Constants.LWC_PAGINATION_PAGE_SIZE_DEFAULT;
-        //Execute scenario.
         AccountOrdersController.updatePageSizeForLWCPaginationSetting(pageSize);
-        //Verify outcomes.
         ((CustomSettingsService) mocks.verify(serviceMock, 1)).capturePreferredLWCPaginationPageSize(pageSize);
     }
 
@@ -85,13 +73,11 @@ public with sharing class TestAccountOrdersController {
 
     @IsTest
     private static void getOrdersTest() {
-        //Prepare mocks.
         fflib_ApexMocks mocks = new fflib_ApexMocks();
         OrderSelector selectorMock = (OrderSelector)mocks.mock(OrderSelector.class);
         OrderSelector.instance = selectorMock;
         ContentDocumentLinkService serviceMock = (ContentDocumentLinkService)mocks.mock(ContentDocumentLinkService.class);
         ContentDocumentLinkService.instance = serviceMock;
-        //Prepare data.
         Id accountId = fflib_IDGenerator.generate(Account.SobjectType);
         Integer pageNumber = 1;
         Integer pageSize = 1;
@@ -101,9 +87,7 @@ public with sharing class TestAccountOrdersController {
         mocks.startStubbing();
         mocks.when(selectorMock.getQueryLocatorToOrdersByParentAccountId(accountId)).thenReturn(ql);
         mocks.stopStubbing();
-        //Execute scenario.
         PageWithOrdersDTO result = AccountOrdersController.getOrders(accountId, pageNumber, pageSize);
-        //Verify outcomes.
         System.assertNotEquals(null, result);
         ((OrderSelector) mocks.verify(selectorMock, 1)).getQueryLocatorToOrdersByParentAccountId(accountId);
         ((ContentDocumentLinkService) mocks.verify(serviceMock, 1)).getTheMostRecentInvoicesIdsByParentId(ordersById.keySet());
@@ -193,13 +177,11 @@ public with sharing class TestAccountOrdersController {
 
     @IsTest
     private static void moveOrdersToActivatedStatusTest() {
-        //Prepare mocks.
         fflib_ApexMocks mocks = new fflib_ApexMocks();
         OrderSelector selectorMock = (OrderSelector)mocks.mock(OrderSelector.class);
         OrderSelector.instance = selectorMock;
         OrderService serviceMock = (OrderService)mocks.mock(OrderService.class);
         OrderService.instance = serviceMock;
-        //Prepare data.
         Id orderId = fflib_IDGenerator.generate(Order.SobjectType);
         Set<Id> orderIdsSet = new Set<Id> { orderId };
         List<Id> orderIdsList = new List<Id> { orderId };
@@ -215,9 +197,7 @@ public with sharing class TestAccountOrdersController {
         mocks.when(selectorMock.getOrdersById(orderIdsSet)).thenReturn(orders);
         mocks.when(serviceMock.setOrdersStatusToActived(orders)).thenReturn(dsrs);
         mocks.stopStubbing();
-        //Execute scenario.
         OrderUpdateResultDTO result = AccountOrdersController.moveOrdersToActivatedStatus(orderIdsList);
-        //Verify outcomes.
         System.assertNotEquals(null, result);
         ((OrderSelector) mocks.verify(selectorMock, 1)).getOrdersById(orderIdsSet);
         ((OrderService) mocks.verify(serviceMock, 1)).setOrdersStatusToActived(orders);
@@ -225,13 +205,11 @@ public with sharing class TestAccountOrdersController {
 
     @IsTest
     private static void moveOrdersToShippedStatusTest() {
-        //Prepare mocks.
         fflib_ApexMocks mocks = new fflib_ApexMocks();
         OrderSelector selectorMock = (OrderSelector)mocks.mock(OrderSelector.class);
         OrderSelector.instance = selectorMock;
         OrderService serviceMock = (OrderService)mocks.mock(OrderService.class);
         OrderService.instance = serviceMock;
-        //Prepare data.
         Id orderId = fflib_IDGenerator.generate(Order.SobjectType);
         Set<Id> orderIdsSet = new Set<Id> { orderId };
         List<Id> orderIdsList = new List<Id> { orderId };
@@ -247,9 +225,7 @@ public with sharing class TestAccountOrdersController {
         mocks.when(selectorMock.getOrdersById(orderIdsSet)).thenReturn(orders);
         mocks.when(serviceMock.setOrdersStatusToShipped(orders)).thenReturn(dsrs);
         mocks.stopStubbing();
-        //Execute scenario.
         OrderUpdateResultDTO result = AccountOrdersController.moveOrdersToShippedStatus(orderIdsList);
-        //Verify outcomes.
         System.assertNotEquals(null, result);
         ((OrderSelector) mocks.verify(selectorMock, 1)).getOrdersById(orderIdsSet);
         ((OrderService) mocks.verify(serviceMock, 1)).setOrdersStatusToShipped(orders);

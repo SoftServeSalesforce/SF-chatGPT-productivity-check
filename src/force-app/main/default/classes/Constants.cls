@@ -22,6 +22,9 @@ public with sharing class Constants {
     public static final String EXCEPTION_TRIGGER_NEW_LIST_CANNOT_BE_EMPTY = 'Trigger new list cannot be empty!';
     public static final String EXCEPTION_TRIGGER_OLD_MAP_CANNOT_BE_NULL = 'Trigger old map list cannot be null!';
     public static final String EXCEPTION_TRIGGER_OLD_MAP_CANNOT_BE_EMPTY = 'Trigger old map cannot be empty!';
+    public static final String EXCEPTION_TRIGGER_NEW_AND_OLD_SIZES_SHOULD_MATCH = 'Trigger new and old sizes should match!';
+    public static final String EXCEPTION_TRIGGER_NEW_ITEMS_SHOULD_HAVE_IDS_ON_UPDATE = 'Trigger new items should have Ids on update!';
+    public static final String EXCEPTION_EACH_TRIGGER_NEW_ITEM_SHOULD_HAVE_CORRESPONDING_OLD_ITEM_ON_UPDATE = 'Each Trigger new item should have corresponding old item on update!';
     //SOQL-related constants.
 
     public static final String CONTRACT_STATUS_DRAFT = 'Draft';

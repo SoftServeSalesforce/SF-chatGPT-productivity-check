@@ -10,15 +10,11 @@ public with sharing class AccountOrdersController {
      */
     @AuraEnabled(cacheable=false)
     public static Integer getPageSizeFromLWCPaginationSetting() {
-        try {
-            Integer result = (Integer) CustomSettingsSelector.getInstance().getLWCPaginationSettings().PageSize__c;
-            if (null == result || result <= 0) {
-                result = Constants.LWC_PAGINATION_PAGE_SIZE_DEFAULT;
-            }
-            return result;
-        } catch (Exception e) {
-            throw new AuraHandledException(e.getMessage());
+        Integer result = (Integer) CustomSettingsSelector.getInstance().getLWCPaginationSettings().PageSize__c;
+        if (null == result || result <= 0) {
+            result = Constants.LWC_PAGINATION_PAGE_SIZE_DEFAULT;
         }
+        return result;
     }
 
     /**
@@ -48,27 +44,23 @@ public with sharing class AccountOrdersController {
      */
     @AuraEnabled(cacheable=false)
     public static PageWithOrdersDTO getOrders(Id accountId, Integer pageNumber, Integer pageSize) {
-        try {
-            //Validate given arguments.
-            validateGetOrdersRequest(accountId, pageNumber, pageSize);
-            PageWithOrdersDTO result = new PageWithOrdersDTO();
-            Database.QueryLocator ql = OrderSelector.getInstance().getQueryLocatorToOrdersByParentAccountId(accountId);
-            //Pagination happens here.
-            ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(ql);
-            ssc.setPageSize(pageSize);
-            ssc.setPageNumber(pageNumber);
-            result.addPageDetails(ssc);
-            Map<Id, Order> ordersById = new Map<Id,Order>((List<Order>)ssc.getRecords());
-            Map<Id, Id> invoicesByOrderId = ContentDocumentLinkService.getInstance().getTheMostRecentInvoicesIdsByParentId(ordersById.keySet());
-            for (Id oId : ordersById.keySet()) {
-                result.orders.add(
-                    new OrderDTO(ordersById.get(oId), invoicesByOrderId.get(oId))
-                );
-            }
-            return result;
-        } catch (Exception e) {
-            throw new AuraHandledException(e.getMessage());
+        //Validate given arguments.
+        validateGetOrdersRequest(accountId, pageNumber, pageSize);
+        PageWithOrdersDTO result = new PageWithOrdersDTO();
+        Database.QueryLocator ql = OrderSelector.getInstance().getQueryLocatorToOrdersByParentAccountId(accountId);
+        //Pagination happens here.
+        ApexPages.StandardSetController ssc = new ApexPages.StandardSetController(ql);
+        ssc.setPageSize(pageSize);
+        ssc.setPageNumber(pageNumber);
+        result.addPageDetails(ssc);
+        Map<Id, Order> ordersById = new Map<Id,Order>((List<Order>)ssc.getRecords());
+        Map<Id, Id> invoicesByOrderId = ContentDocumentLinkService.getInstance().getTheMostRecentInvoicesIdsByParentId(ordersById.keySet());
+        for (Id oId : ordersById.keySet()) {
+            result.orders.add(
+                new OrderDTO(ordersById.get(oId), invoicesByOrderId.get(oId))
+            );
         }
+        return result;
     }
 
     /**
