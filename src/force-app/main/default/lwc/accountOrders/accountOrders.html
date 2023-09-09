@@ -128,25 +128,27 @@
                 </template>
             </div>
             <footer class="slds-card__footer">
-                <div class="slds-grid">
-                    <div class="slds-col">
-                        <lightning-button variant="base" label="<<" title="First page" disabled={disableLeftHandNavigation}
-                            onclick={handleNavigateToFistPageClick}></lightning-button>
-                        <lightning-button variant="base" label="<" title="Previous page" class="slds-m-left_x-small"
-                            disabled={disableLeftHandNavigation} onclick={handleNavigateToPreviousPageClick}></lightning-button>
-                        <span class="slds-m-left_x-small">{pageNumber} of {totalPages}</span>
-                        <lightning-button variant="base" label=">" title="Next page" class="slds-m-left_x-small"
-                            disabled={disableRightHandNavigation} onclick={handleNavigateToNextPageClick}></lightning-button>
-                        <lightning-button variant="base" label=">>" title="Last page" class="slds-m-left_x-small"
-                            disabled={disableRightHandNavigation} onclick={handleNavigateToLastPageClick}></lightning-button>
+                <template lwc:if={showPaginationControls}>
+                    <div class="slds-grid">
+                        <div class="slds-col">
+                            <lightning-button variant="base" label="<<" title="First page" disabled={disableLeftHandNavigation}
+                                onclick={handleNavigateToFistPageClick}></lightning-button>
+                            <lightning-button variant="base" label="<" title="Previous page" class="slds-m-left_x-small"
+                                disabled={disableLeftHandNavigation} onclick={handleNavigateToPreviousPageClick}></lightning-button>
+                            <span class="slds-m-left_x-small">{pageNumber} of {totalPages}</span>
+                            <lightning-button variant="base" label=">" title="Next page" class="slds-m-left_x-small"
+                                disabled={disableRightHandNavigation} onclick={handleNavigateToNextPageClick}></lightning-button>
+                            <lightning-button variant="base" label=">>" title="Last page" class="slds-m-left_x-small"
+                                disabled={disableRightHandNavigation} onclick={handleNavigateToLastPageClick}></lightning-button>
+                        </div>
+                        <div class="slds-col slds-grow-none slds-align_absolute-center">
+                            <span class="slds-m-right_x-small">Page Size: </span>
+                            <lightning-combobox label="Page Size" placeholder="Select Page Size" variant="label-hidden" value={pageSize}
+                                options={pageSizesOptions} onchange={handlePageSizeChange}
+                                disabled={disablePageSizePicklist}></lightning-combobox>
+                        </div>
                     </div>
-                    <div class="slds-col slds-grow-none slds-align_absolute-center">
-                        <span class="slds-m-right_x-small">Page Size: </span>
-                        <lightning-combobox label="Page Size" placeholder="Select Page Size" variant="label-hidden" value={pageSize}
-                            options={pageSizesOptions} onchange={handlePageSizeChange}
-                            disabled={disablePageSizePicklist}></lightning-combobox>
-                    </div>
-                </div>
+                </template>
             </footer>
         </article>
     </template>

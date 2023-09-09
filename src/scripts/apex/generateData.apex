@@ -97,13 +97,13 @@ enabler.Order_ValidateActivation__c = false;
 enabler.Order_ValidateShipment__c = false;
 update enabler;
 for (Integer i = 100; i < ORDERS_TO_SEED; i++) {
-    if (i > 100 && i < 200) {
+    if (i >= 100 && i < 200) {
         orders[i].Status = ORDER_STATUS_ACTIVATED;
     }
-    if (i > 200 && i < 300) {
+    if (i >= 200 && i < 300) {
         orders[i].Status = ORDER_STATUS_SHIPPED;
     }
-    if (i > 300) {
+    if (i >= 300) {
         orders[i].Status = ORDER_STATUS_DELIVERED;
     }
     orders[i].LastStatusChanged__c = Datetime.now();
@@ -124,20 +124,20 @@ List<ContentDocumentLink> attachmentToOrder = new List<ContentDocumentLink>();
 for (Integer i = 0; i < ORDERS_TO_SEED; i++) {
     //Figure out Ids of Orders to have related Invoices.
     if (
-        (i > 25 && i < 75) //Link 25 invoices to 25 Orders in "Draft" state.
-        || (i > 125 && i < 175) //Link 25 invoices to 25 Orders in "Activated" state.
-        || (i > 225 && i < 275) //Link 25 invoices to 25 Orders in "Shipped" state.
-        || (i > 325 && i < 375) //Link 25 invoices to 25 Orders in "Delivered" state.
+        (i >= 25 && i < 75) //Link 50 invoices to 50 Orders in "Draft" state.
+        || (i >= 125 && i < 175) //Link 50 invoices to 50 Orders in "Activated" state.
+        || (i >= 225 && i < 275) //Link 50 invoices to 50 Orders in "Shipped" state.
+        || (i >= 325 && i < 375) //Link 50 invoices to 50 Orders in "Delivered" state.
     ) {
         attachmentToOrder.add(buildOrderToAttachmentLink(orders[i].Id, invoice.ContentDocumentId));
     }
     //Figure out Ids of Orders to have related non-Invoices
     //Overlap with above so 25 Orders in each status have both attachment types.
     if (
-        (i > 50 && i < 100) //Link 25 non-invoices to 25 Orders in "Draft" state.
-        || (i > 150 && i < 200) //Link 25 non-invoices to 25 Orders in "Activated" state.
-        || (i > 250 && i < 300) //Link 25 non-invoices to 25 Orders in "Shipped" state.
-        || (i > 350 && i < 400) //Link 25 non-invoices to 25 Orders in "Delivered" state.
+        (i >= 50 && i < 100) //Link 50 non-invoices to 50 Orders in "Draft" state.
+        || (i >= 150 && i < 200) //Link 50 non-invoices to 50 Orders in "Activated" state.
+        || (i >= 250 && i < 300) //Link 50 non-invoices to 50 Orders in "Shipped" state.
+        || (i >= 350 && i < 400) //Link 50 non-invoices to 50 Orders in "Delivered" state.
     ) {
         attachmentToOrder.add(buildOrderToAttachmentLink(orders[i].Id, nonInvoice.ContentDocumentId));
     }

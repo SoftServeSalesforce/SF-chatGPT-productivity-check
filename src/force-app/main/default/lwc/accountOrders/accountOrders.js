@@ -99,6 +99,10 @@ export default class AccountOrders extends LightningElement {
         return this._isUpdatingLWCPaginationSettings;
     }
 
+    get showPaginationControls() {
+        return !this.showNoRelatedOrdersMsg;
+    }
+
     /**
      * Handlers.
      */

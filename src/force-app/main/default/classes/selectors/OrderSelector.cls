@@ -19,7 +19,7 @@ public with sharing class OrderSelector {
             FROM Order
             WHERE AccountId = :accountId
             WITH SECURITY_ENFORCED
-            ORDER BY CreatedDate ASC
+            ORDER BY OrderNumber DESC
             LIMIT 10000
         ]);
     }
