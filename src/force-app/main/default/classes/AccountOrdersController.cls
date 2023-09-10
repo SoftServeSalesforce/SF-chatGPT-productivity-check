@@ -89,6 +89,8 @@ public with sharing class AccountOrdersController {
         public String InvoiceUrl { get; set; }
         @AuraEnabled
         public Datetime LastStatusChanged { get; set; }
+        @AuraEnabled
+        public Datetime CreatedDate { get; set;}
 
         public OrderDTO(Order ord) {
             this.Id = ord.Id;
@@ -97,6 +99,7 @@ public with sharing class AccountOrdersController {
             this.TotalAmount = ord.TotalAmount;
             this.EffectiveDate = ord.EffectiveDate;
             this.LastStatusChanged = ord.LastStatusChanged__c;
+            this.CreatedDate = ord.CreatedDate;
             if (ord.AttachedContentDocuments != null && !ord.AttachedContentDocuments.isEmpty()) {
                 List<AttachedContentDocument> subq = (List<AttachedContentDocument>) ord.AttachedContentDocuments;
                 this.ContentDocumentId = subq[0].ContentDocumentId;
