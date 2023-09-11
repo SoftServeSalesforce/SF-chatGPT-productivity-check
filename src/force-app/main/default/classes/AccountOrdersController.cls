@@ -245,19 +245,29 @@ public with sharing class AccountOrdersController {
         Integer minutes = now.minute() - lastStatusChanged.minute();
     
         String timeSinceLastStatusChange = '';
-        if (years > 0) {
-            timeSinceLastStatusChange += years + ' year' + (years > 1 ? 's' : '') + ' ';
-        } else if (months > 0) {
-            timeSinceLastStatusChange += months + ' month' + (months > 1 ? 's' : '') + ' ';
-        } else if (days > 0) {
-            timeSinceLastStatusChange += days + ' day' + (days > 1 ? 's' : '') + ' ';
-        } else if (hours > 0) {
+        timeSinceLastStatusChange=calculateYearsMonthsDays(years,months,days);
+        if (hours > 0) {
             timeSinceLastStatusChange += hours + ' hour' + (hours > 1 ? 's' : '') + ' ';
         } else if (minutes > 0) {
             timeSinceLastStatusChange += minutes + ' minute' + (minutes > 1 ? 's' : '') + ' ';
         }
     
         return timeSinceLastStatusChange;
+    }
+
+    private static String calculateYearsMonthsDays(Integer years, Integer months,Integer days) {
+        String timeSinceLastStatusChange = '';
+        if (years > 0) {
+            timeSinceLastStatusChange += years + ' year' + (years > 1 ? 's' : '') + ' ';
+        } else if (months > 0) {
+            timeSinceLastStatusChange += months + ' month' + (months > 1 ? 's' : '') + ' ';
+        } else if (days > 0) {
+                timeSinceLastStatusChange += days + ' day' + (days > 1 ? 's' : '') + ' ';
+        }        
+
+        return timeSinceLastStatusChange;   
+
+
     }
 
     
