@@ -47,6 +47,7 @@ export default class OrderListView extends NavigationMixin(LightningElement) {
     @track ButtontrueShipped=true;
 
     isLoading = true;
+    isFunctionCalled = false;
     
 
     // JS Properties 
@@ -96,7 +97,8 @@ export default class OrderListView extends NavigationMixin(LightningElement) {
 
 
     renderedCallback() {
-        
+       
+       
         getPageSizeUser()
             .then(result => { 
                 if(result){                    
@@ -106,11 +108,15 @@ export default class OrderListView extends NavigationMixin(LightningElement) {
                     this.pageSize= this.pageSizeOptions[0].value;
                     
                 }               
-                
-                
+               
+                if(this.isFunctionCalled==false){
+                    this.firstPage();
+                    this.isFunctionCalled=true;
+                }
+
           })
           .catch(error => {
-            console.error('PAge size not retrieved,Error!:', error);
+            console.error('Page size not retrieved,Error!:', error);
           });        
     }
 
