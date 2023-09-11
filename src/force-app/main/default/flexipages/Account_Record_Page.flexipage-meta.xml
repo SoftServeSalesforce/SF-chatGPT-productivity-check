@@ -34,6 +34,16 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
+                <componentName>orderTableView</componentName>
+                <identifier>c_orderTableView</identifier>
+            </componentInstance>
+        </itemInstances>
+        <name>Facet-652d2624-df56-4ac9-b676-ecafe2f0df17</name>
+        <type>Facet</type>
+    </flexiPageRegions>
+    <flexiPageRegions>
+        <itemInstances>
+            <componentInstance>
                 <componentName>cooper:companyInsightTeaserCard</componentName>
                 <identifier>cooper_companyInsightTeaserCard</identifier>
             </componentInstance>
@@ -84,14 +94,22 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>orderTableView</componentName>
-                <identifier>c_orderTableView</identifier>
+                <componentInstanceProperties>
+                    <name>active</name>
+                    <value>false</value>
+                </componentInstanceProperties>
+                <componentInstanceProperties>
+                    <name>body</name>
+                    <value>Facet-652d2624-df56-4ac9-b676-ecafe2f0df17</value>
+                </componentInstanceProperties>
+                <componentInstanceProperties>
+                    <name>title</name>
+                    <value>Orders</value>
+                </componentInstanceProperties>
+                <componentName>flexipage:tab</componentName>
+                <identifier>flexipage_tab</identifier>
             </componentInstance>
         </itemInstances>
-        <name>Facet-652d2624-df56-4ac9-b676-ecafe2f0df17</name>
-        <type>Facet</type>
-    </flexiPageRegions>
-    <flexiPageRegions>
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
@@ -122,20 +140,6 @@
                 </componentInstanceProperties>
                 <componentName>flexipage:tab</componentName>
                 <identifier>detailTab</identifier>
-            </componentInstance>
-        </itemInstances>
-        <itemInstances>
-            <componentInstance>
-                <componentInstanceProperties>
-                    <name>body</name>
-                    <value>Facet-652d2624-df56-4ac9-b676-ecafe2f0df17</value>
-                </componentInstanceProperties>
-                <componentInstanceProperties>
-                    <name>title</name>
-                    <value>Orders</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:tab</componentName>
-                <identifier>flexipage_tab</identifier>
             </componentInstance>
         </itemInstances>
         <mode>Replace</mode>
