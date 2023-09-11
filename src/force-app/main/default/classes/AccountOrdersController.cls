@@ -33,13 +33,15 @@ public with sharing class AccountOrdersController {
     }
     
     // Method to retrieve orders for a specified account
-    @AuraEnabled
+    @AuraEnabled(cacheable=true)
     public static List<OrderDTO> getOrders(Id accountId) {
         OrderSelector orderSelector = OrderSelector.create();
         List<OrderDTO> orderDTOs = new List<OrderDTO>();
-        
+        System.debug(LoggingLevel.ERROR, '@a.Id: ' + accountId);
         // Query for orders related to the specified account
         List<Order> orders = orderSelector.getOrdersForAccount(accountId);
+        System.debug(LoggingLevel.ERROR, '@orders.size(): ' + orders.size());
+        System.debug(LoggingLevel.ERROR, '@orders: ' + orders);
 
         // Convert Order SObjects to OrderDTO wrappers
         for (Order order : orders) {

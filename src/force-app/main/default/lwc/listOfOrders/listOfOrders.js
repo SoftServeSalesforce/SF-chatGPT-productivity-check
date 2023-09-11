@@ -10,6 +10,7 @@ export default class OrdersTable extends LightningElement {
 
     @wire(getOrders)
     wiredOrders({ error, data }) {
+        debugger;
         if (data) {
             this.orders = data.map(order => ({
                 ...order,
