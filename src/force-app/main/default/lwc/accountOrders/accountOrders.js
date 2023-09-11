@@ -8,7 +8,29 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 export default class AccountOrders extends NavigationMixin(LightningElement) {
     @api recordId;
     @track orders;
+    @track selectedRows = new Map();
     isLoading = false;
+
+    get isGroupActivate() {
+        return this.checkSelectedRowsStatuses('Draft');
+    }
+
+    get isGroupShip() {
+        return this.checkSelectedRowsStatuses('Activated');
+    }
+
+    checkSelectedRowsStatuses(status) {
+        if (this.selectedRows.size == 0) {
+            return true;
+        }
+        let notAllDraft = false;
+        this.selectedRows.forEach((value) => {
+            if (value !== status) {
+                notAllDraft = true;
+            }
+        });
+        return notAllDraft;
+    }
 
     getRowActions(status, isInvoiceDisabled) {
         const actions = [];
@@ -38,13 +60,16 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
                     let rowData = { ...row };
                     rowData.OrderURL = `/lightning/r/Order/${rowData.Id}/view`;
                     rowData.isInvoiceDisabled = rowData.ContentDocumentId ? false : true;
-    
-                    const statusTime = new Date(row.LastStatusChanged);
+
+                    const statusTime = row.LastStatusChanged == null ?
+                        new Date(row.CreatedDate) :
+                        new Date(row.LastStatusChanged);
                     const currentTime = new Date();
     
                     rowData.statusTime = this.calculateTimeDifference(statusTime, currentTime);
                     rowData.statusClassName = this.getStatusClass(rowData.Status);
                     rowData.actionOptions = this.getRowActions(rowData.Status, rowData.isInvoiceDisabled);
+                    rowData.hasActions = rowData.actionOptions.length > 0 ? true : false;
 
                     return rowData;
                 });
@@ -67,28 +92,6 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
             return 'status-delivered';
         }
         return '';
-    }
-
-    handleActivateOrder(itemId) {
-        activateOrder({ orderId: itemId })
-            .then(result => {
-                this.refreshView.call(this);
-                this.showToast(result.status, result.ErrorMessage);
-            })
-            .catch(() => {
-                this.showToast('ERROR', 'An unexpected error occurred.');
-            });
-    }
-
-    handleMarkAsShipped(itemId) {
-        markOrderAsShipped({ orderId: itemId })
-            .then(result => {
-                this.refreshView.call(this);
-                this.showToast(result.status, result.ErrorMessage);
-            })
-            .catch(() => {
-                this.showToast('ERROR', 'An unexpected error occurred.');
-            });
     }
 
     showToast(title, message) {
@@ -140,6 +143,11 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
         this.navigateToPage(orderId);
     }
 
+    handleInvoiceButton(event) {
+        const invoiceUrl = event.currentTarget.getAttribute('data-invoice-url');
+        this.downloadInvoice(invoiceUrl);
+    }
+
     handleActionChange(event) {
         const actionName = event.detail.value;
         const itemId = event.target.getAttribute('data-order-id');
@@ -157,11 +165,74 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
                 invoiceId = event.target.getAttribute('data-invoice-id');
                 this.navigateToPage(invoiceId);
                 break;
-                case 'download_invoice':
+            case 'download_invoice':
                 invoiceUrl = event.target.getAttribute('data-invoice-url');
                 this.downloadInvoice(invoiceUrl);
                 break;
         }
+    }
+
+    handleActivateOrder(itemId) {
+        const items = [itemId];
+        activateOrder({ orderIds: items })
+            .then(result => {
+                this.refreshView.call(this);
+                this.showToast(result.status, result.ErrorMessage);
+            })
+            .catch(() => {
+                this.showToast('ERROR', 'An unexpected error occurred.');
+            });
+    }
+
+    handleMarkAsShipped(itemId) {
+        const items = [itemId];
+        markOrderAsShipped({ orderIds: items })
+            .then(result => {
+                this.refreshView.call(this);
+                this.showToast(result.status, result.ErrorMessage);
+            })
+            .catch(() => {
+                this.showToast('ERROR', 'An unexpected error occurred.');
+            });
+    }
+
+    handleRowCheckbox(event) {
+        const rowId = event.target.dataset.id;
+        const isChecked = event.target.checked;
+        const status = event.target.dataset.status;
+        let localMap = this.selectedRows.size ? this.selectedRows : new Map();
+
+        if (isChecked) {
+            localMap.set(rowId, status);
+        } else {
+            localMap.delete(rowId);
+        }
+        this.selectedRows = new Map([...localMap]);
+        console.log('selected rows', this.selectedRows);
+    }
+
+    handleActivateOrders() {
+        const orderIds = [...this.selectedRows.keys()];
+        activateOrder({ orderIds: orderIds })
+            .then(result => {
+                this.refreshView.call(this);
+                this.showToast(result.status, result.ErrorMessage);
+            })
+            .catch(() => {
+                this.showToast('ERROR', 'An unexpected error occurred.');
+            });
+    }
+
+    handleShipOrders() {
+        const orderIds = [...this.selectedRows.keys()];
+        markOrderAsShipped({ orderIds: orderIds })
+            .then(result => {
+                this.refreshView.call(this);
+                this.showToast(result.status, result.ErrorMessage);
+            })
+            .catch(() => {
+                this.showToast('ERROR', 'An unexpected error occurred.');
+            });
     }
 }
 

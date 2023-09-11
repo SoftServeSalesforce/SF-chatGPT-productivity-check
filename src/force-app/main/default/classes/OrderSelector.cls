@@ -3,22 +3,20 @@ public with sharing class OrderSelector {
         return new OrderSelector();
     }
 
-    public List<Order> selectDraftOrderById(Id orderId) {
+    public List<Order> selectDraftOrderById(List<Id> orderIds) {
         return [
             SELECT Id, Status
             FROM Order
-            WHERE Id = :orderId AND Status = 'Draft' 
-            LIMIT 1
+            WHERE Id IN :orderIds AND Status = 'Draft' 
             FOR UPDATE
         ];
     }
 
-    public List<Order> selectActiveOrderById(Id orderId) {
+    public List<Order> selectActiveOrderById(List<Id> orderIds) {
         return [
             SELECT Id, Status
             FROM Order
-            WHERE Id = :orderId AND Status = 'Activated' 
-            LIMIT 1
+            WHERE Id IN :orderIds AND Status = 'Activated' 
             FOR UPDATE
         ];
     }

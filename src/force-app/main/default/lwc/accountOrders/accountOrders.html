@@ -6,19 +6,40 @@
             </div>
         </template>
         <template lwc:else>
+            <lightning-quick-action-panel class="slds-float--right">
+                <lightning-button label="Activate"
+                                    onclick={handleActivateOrders}
+                                    disabled={isGroupActivate}
+                                    ></lightning-button>
+                <lightning-button label="Mark as Shipped"
+                                    class="slds-m-left_x-small"
+                                    onclick={handleShipOrders}
+                                    disabled={isGroupShip}></lightning-button>
+                <lightning-button label="Refresh"
+                                    class="slds-m-left_x-small"
+                                    onclick={refreshView}></lightning-button>
+            </lightning-quick-action-panel>
             <table class="slds-table slds-table_bordered slds-table_fixed-layout">
                 <thead>
                     <tr>
+                        <th></th>
                         <th aria-label="Order Number">Order Number</th>
                         <th aria-label="Start Date">Start Date</th>
                         <th aria-label="Status">Status</th>
                         <th aria-label="Amount">Amount</th>
-                        <th aria-label="Actions">Actions</th>
+                        <th aria-label="Invoice">Invoice</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <template for:each={orders} for:item="item">
                         <tr key={item.Id}>
+                            <td>
+                                <lightning-input type="checkbox"
+                                                    data-id={item.Id}
+                                                    data-status={item.Status}
+                                                    onchange={handleRowCheckbox}></lightning-input>
+                            </td>
                             <td>
                                 <a onclick={handleClickOnOrder}
                                     data-id={item.Id}>
@@ -32,14 +53,24 @@
                             </td>
                             <td>{item.TotalAmount}</td>
                             <td>
-                                <lightning-combobox
-                                    class="action-dropdown"
-                                    data-order-id={item.Id}
-                                    data-invoice-id ={item.ContentDocumentId}
-                                    data-invoice-url={item.InvoiceUrl}
-                                    options={item.actionOptions}
-                                    onchange={handleActionChange}>
-                                </lightning-combobox>
+                                <template lwc:if={item.isInvoiceDisabled}></template>
+                                <template lwc:else>
+                                    <lightning-button-icon icon-name="utility:download" 
+                                                            alternative-text="Download invoice"
+                                                            data-invoice-url={item.InvoiceUrl}
+                                                            onclick={handleInvoiceButton}></lightning-button-icon>
+                                </template>
+                            </td>
+                            <td>
+                                <template lwc:if={item.hasActions}>
+                                    <lightning-combobox class="action-dropdown"
+                                                        data-order-id={item.Id}
+                                                        data-invoice-id ={item.ContentDocumentId}
+                                                        data-invoice-url={item.InvoiceUrl}
+                                                        options={item.actionOptions}
+                                                        onchange={handleActionChange}>
+                                    </lightning-combobox>
+                                </template>
                             </td>
                         </tr>
                     </template>

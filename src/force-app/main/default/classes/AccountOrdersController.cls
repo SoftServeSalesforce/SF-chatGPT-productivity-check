@@ -19,22 +19,25 @@ public with sharing class AccountOrdersController {
     }
 
     @AuraEnabled
-    public static Map<String, String> activateOrder(Id orderId) {
+    public static Map<String, String> activateOrder(List<Id> orderIds) {
+        system.debug('input ids ' + orderIds);
         Map<String, String> response = new Map<String, String>();
 
         try {
             OrderSelector selector = OrderSelector.newInstance(); 
-            List<Order> ordersToActivate = selector.selectDraftOrderById(orderId);
-            
+            List<Order> ordersToActivate = selector.selectDraftOrderById(orderIds);
+            system.debug('selected ids ' + ordersToActivate);
+
             if (ordersToActivate.isEmpty()) {
                 response.put('status', 'ERROR');
-                response.put('ErrorMessage', 'Invalid operation for Order#' + orderId);
+                response.put('ErrorMessage', 'Invalid operation for Order#' + orderIds);
                 return response;
             }
 
-            Order orderToActivate = ordersToActivate[0];
-            orderToActivate.Status = ORDER_ACTIVATED_STATUS;
-            update orderToActivate;
+            for (Order ord : ordersToActivate) {
+                ord.Status = ORDER_ACTIVATED_STATUS;
+            }
+            update ordersToActivate;
 
             response.put('status', 'OK');
             response.put('ErrorMessage', null);
@@ -46,22 +49,23 @@ public with sharing class AccountOrdersController {
     }
 
     @AuraEnabled
-    public static Map<String, String> markOrderAsShipped(Id orderId) {
+    public static Map<String, String> markOrderAsShipped(List<Id> orderIds) {
         Map<String, String> response = new Map<String, String>();
 
         try {
             OrderSelector selector = OrderSelector.newInstance(); 
-            List<Order> ordersToMarkShipped = selector.selectActiveOrderById(orderId);
+            List<Order> ordersToMarkShipped = selector.selectActiveOrderById(orderIds);
             
             if (ordersToMarkShipped.isEmpty()) {
                 response.put('status', 'ERROR');
-                response.put('ErrorMessage', 'Invalid operation for Order#' + orderId);
+                response.put('ErrorMessage', 'Invalid operation for Order#' + orderIds);
                 return response;
             }
 
-            Order orderToMarkShipped = ordersToMarkShipped[0];
-            orderToMarkShipped.Status = ORDER_SHIPPED_STATUS;
-            update orderToMarkShipped;
+            for (Order ord : ordersToMarkShipped) {
+                ord.Status = ORDER_SHIPPED_STATUS;
+            }
+            update ordersToMarkShipped;
 
             response.put('status', 'OK');
             response.put('ErrorMessage', null);
