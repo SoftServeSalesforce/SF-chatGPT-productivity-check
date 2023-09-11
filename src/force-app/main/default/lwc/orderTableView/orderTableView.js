@@ -13,7 +13,7 @@ import getPageSizeUser from '@salesforce/apex/AccountOrdersController.getPageSiz
 
 
 
-const COLTODISPLAY = [
+const COLUMNS = [
     { label: 'Number', fieldName: 'OrderNumberLink', type: 'url', 
       typeAttributes: { label: { fieldName: 'OrderNumber' }, 
       target: '_blank', tooltip: 'Click to view order' } },
@@ -52,7 +52,6 @@ export default class OrderListView extends NavigationMixin(LightningElement) {
     // JS Properties 
     
     records = []; //All records available in the data table
-    columns = []; //columns information available in the data table
     totalRecords = 0; //Total no.of records
     pageSize; //No.of records to be displayed per page
     totalPages; //Total no.of pages
@@ -60,7 +59,7 @@ export default class OrderListView extends NavigationMixin(LightningElement) {
    
    
     selectedRows = [];
-    columns = COLTODISPLAY;
+    columns = COLUMNS;
     orders;
     _wiredOrders;
     
