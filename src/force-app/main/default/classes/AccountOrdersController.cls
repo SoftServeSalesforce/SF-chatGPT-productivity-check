@@ -2,7 +2,6 @@ public with sharing class AccountOrdersController {
 
     private static final String ORDER_STATUS_DRAFT = 'Draft';
     private static final String INVALID_OPERATION_FOR_ORDER = 'Invalid Operation for Order #';
-
     private enum OrderAction { ACTIVATE_ORDER, MARK_SHIPPED }
     private static final String ORDER_STATUS_ACTIVE = 'Activated';
     private static final String ORDER_STATUS_SHIPPED = 'Shipped';
@@ -13,27 +12,19 @@ public with sharing class AccountOrdersController {
         if (orderPage.orders == null) {
             orderPage.orders = new List<OrderDTO>();
         }
-
         if (accountId == null) {
             return orderPage;
         }
-
         List<Order> allOrders = new OrderSelector().getOrdersByAccountId(accountId);
         if (allOrders == null) {
             allOrders = new List<Order>();
         }
-
-        // Set total records count
         orderPage.totalRecords = allOrders.size();
-
         Integer startIndex = (pageNumber - 1) * pageSize;
         Integer endIndex = Math.min(startIndex + pageSize, allOrders.size());
-
         for (Integer i = startIndex; i < endIndex; i++) {
             orderPage.orders.add(new OrderDTO(allOrders[i]));
         }
-
-        System.debug('OrderPage being returned: ' + orderPage);
         return orderPage;
     }
 
@@ -70,13 +61,12 @@ public with sharing class AccountOrdersController {
             UserInterfaceSettings__c setting = UserInterfaceSettings__c.getInstance();
             if (setting == null) {
                 setting = new UserInterfaceSettings__c();
-                setting.PageSize__c = 10; // Set a default page size if the setting doesn't exist
+                setting.PageSize__c = 10;
                 upsert setting;
             }
             return setting.PageSize__c.intValue();
         } catch (Exception e) {
-            System.debug('Exception in getPageSize: ' + e.getMessage());
-            return 10; // Default page size in case of an error
+            return 10;
         }
     }
 
@@ -91,25 +81,19 @@ public with sharing class AccountOrdersController {
             upsert setting;
             return 'OK';
         } catch (Exception e) {
-            System.debug('Exception in setPageSize: ' + e.getMessage());
             return e.getMessage();
         }
     }
-
 
     private static OrderActionResponse bulkOrderAction(List<Id> orderIds, OrderAction action) {
         if (orderIds == null || orderIds.isEmpty()) {
             return new OrderActionResponse(false, 'Missing Order Ids');
         }
-        
         Order[] orders = new OrderSelector().getOrdersByIds(new Set<Id>(orderIds));
-        
         if (orders.isEmpty()) {
             return new OrderActionResponse(false, 'Orders not found');
         }
-
         List<Order> ordersToUpdate = new List<Order>();
-
         for (Order ord : orders) {
             switch on action {
                 when ACTIVATE_ORDER {
@@ -133,7 +117,6 @@ public with sharing class AccountOrdersController {
                 }
             }
         }
-
         try {
             update ordersToUpdate;
             return new OrderActionResponse(true, null);
@@ -147,7 +130,6 @@ public with sharing class AccountOrdersController {
         public String status;
         @AuraEnabled
         public String errorMessage;
-
         public OrderActionResponse(Boolean statusOk, String errorMessage) {
             this.status = statusOk ? 'OK' : 'ERROR';
             this.errorMessage = errorMessage;
@@ -173,7 +155,6 @@ public with sharing class AccountOrdersController {
         public Id contentDocumentId { get; private set; }
         @AuraEnabled
         public Datetime lastStatusChangedTimestamp { get; private set; }
-
         public OrderDTO(Order order) {
             if (null == order) {
                 return;
