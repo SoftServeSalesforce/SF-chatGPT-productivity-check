@@ -46,7 +46,7 @@ export default class OrderListView extends NavigationMixin(LightningElement) {
     @track Buttontrue=true;
     @track ButtontrueShipped=true;
 
-    
+    isLoading = true;
     
 
     // JS Properties 
@@ -126,13 +126,18 @@ export default class OrderListView extends NavigationMixin(LightningElement) {
                     
                     this.records = data;
                     this.totalRecords = data.length; // update total records count
-                      
+                    this.isLoading = false; 
                     
                     this.paginationHelper(); // call helper menthod to update pagination logic 
                 } else if (error) {
+                    this.isLoading = false; 
                     this.showToast('Error', 'An error occurred while loading your orders', 'error');
                 }
 
+    }
+
+    get OrdersToDisplay() {
+        return this.records.length != 0;
     }
 
 
