@@ -13,7 +13,7 @@ import getPageSizeUser from '@salesforce/apex/AccountOrdersController.getPageSiz
 
 
 
-const COLUMNS = [
+const COLUMNSDISPLAY = [
     { label: 'Number', fieldName: 'OrderNumberLink', type: 'url', 
       typeAttributes: { label: { fieldName: 'OrderNumber' }, 
       target: '_blank', tooltip: 'Click to view order' } },
@@ -60,7 +60,7 @@ export default class OrderListView extends NavigationMixin(LightningElement) {
    
    
     selectedRows = [];
-    columns = COLUMNS;
+    columns = COLUMNSDISPLAY;
     orders;
     _wiredOrders;
     
