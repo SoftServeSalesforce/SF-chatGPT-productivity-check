@@ -19,14 +19,42 @@
             </div>
             <template if:true={hasOrders}>
                 <c-orders-data-table data={ordersTableData}
-                                     key-field="id"
-                                     columns={ordersTableColumnsDef}
-                                     onrowaction={handleRowAction}
-                                     selected-rows={selectedOrderIds}
-                                     onrowselection={handleRowSelection}
-                                     hide-checkbox-column="false">
+                    key-field="id"
+                    columns={ordersTableColumnsDef}
+                    onrowaction={handleRowAction}
+                    selected-rows={selectedOrderIds}
+                    onrowselection={handleRowSelection}
+                    oncheckboxchange={handleCheckboxChange}
+                    hide-checkbox-column>
                 </c-orders-data-table>
+                <div class="slds-float_right">
+                    <lightning-combobox 
+                        name="progress"
+                        label="Page Size"
+                        value={selectedPageSize}
+                        options={pageSizeOptions}
+                        onchange={handlePageSizeChange}>
+                    </lightning-combobox>
+                </div>
+                <div class="slds-align_absolute-center slds-m-top_small">
+                    <lightning-button
+                        label="Previous"
+                        onclick={handlePreviousPage}
+                        disabled={disablePrevButton}
+                    ></lightning-button>
+                    <span class="slds-m-horizontal_small">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <lightning-button
+                        label="Next"
+                        onclick={handleNextPage}
+                        disabled={disableNextButton}
+                    ></lightning-button>
+                </div>
             </template>
+            <div if:false={hasOrders} class="slds-align_absolute-center">
+                You have no orders yet
+            </div>
         </lightning-card>
     </div>
 </template>

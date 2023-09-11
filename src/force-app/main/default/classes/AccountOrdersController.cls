@@ -8,15 +8,40 @@ public with sharing class AccountOrdersController {
     private static final String ORDER_STATUS_SHIPPED = 'Shipped';
 
     @AuraEnabled(Cacheable=true)
-    public static OrderDTO[] getOrders(Id accountId) {
-        if (null == accountId) {
-            return new OrderDTO[]{};
+    public static OrderPage getOrders(Id accountId, Integer pageNumber, Integer pageSize) {
+        OrderPage orderPage = new OrderPage();
+        if (orderPage.orders == null) {
+            orderPage.orders = new List<OrderDTO>();
         }
-        OrderDTO[] orderDTOS = new OrderDTO[]{};
-        for (Order order : new OrderSelector().getOrdersByAccountId(accountId)) {
-            orderDTOS.add(new OrderDTO(order));
+
+        if (accountId == null) {
+            return orderPage;
         }
-        return orderDTOS;
+
+        List<Order> allOrders = new OrderSelector().getOrdersByAccountId(accountId);
+        if (allOrders == null) {
+            allOrders = new List<Order>();
+        }
+
+        // Set total records count
+        orderPage.totalRecords = allOrders.size();
+
+        Integer startIndex = (pageNumber - 1) * pageSize;
+        Integer endIndex = Math.min(startIndex + pageSize, allOrders.size());
+
+        for (Integer i = startIndex; i < endIndex; i++) {
+            orderPage.orders.add(new OrderDTO(allOrders[i]));
+        }
+
+        System.debug('OrderPage being returned: ' + orderPage);
+        return orderPage;
+    }
+
+    public class OrderPage {
+        @AuraEnabled
+        public List<OrderDTO> orders;
+        @AuraEnabled
+        public Integer totalRecords;
     }
 
     @AuraEnabled
@@ -38,6 +63,39 @@ public with sharing class AccountOrdersController {
     public static OrderActionResponse markAsShippedOrdersByIds(List<Id> orderIds) {
         return bulkOrderAction(orderIds, OrderAction.MARK_SHIPPED);
     }
+
+    @AuraEnabled(cacheable=true)
+    public static Integer getPageSize() {
+        try {
+            UserInterfaceSettings__c setting = UserInterfaceSettings__c.getInstance();
+            if (setting == null) {
+                setting = new UserInterfaceSettings__c();
+                setting.PageSize__c = 10; // Set a default page size if the setting doesn't exist
+                upsert setting;
+            }
+            return setting.PageSize__c.intValue();
+        } catch (Exception e) {
+            System.debug('Exception in getPageSize: ' + e.getMessage());
+            return 10; // Default page size in case of an error
+        }
+    }
+
+    @AuraEnabled
+    public static String setPageSize(Integer newSize) {
+        try {
+            UserInterfaceSettings__c setting = UserInterfaceSettings__c.getInstance();
+            if (setting == null) {
+                setting = new UserInterfaceSettings__c();
+            }
+            setting.PageSize__c = newSize;
+            upsert setting;
+            return 'OK';
+        } catch (Exception e) {
+            System.debug('Exception in setPageSize: ' + e.getMessage());
+            return e.getMessage();
+        }
+    }
+
 
     private static OrderActionResponse bulkOrderAction(List<Id> orderIds, OrderAction action) {
         if (orderIds == null || orderIds.isEmpty()) {
@@ -100,6 +158,10 @@ public with sharing class AccountOrdersController {
         @AuraEnabled
         public Id id { get; private set; }
         @AuraEnabled
+        public Boolean isSelected { get; private set; }
+        @AuraEnabled
+        public String orderUrl { get; private set; }
+        @AuraEnabled
         public String orderNumber { get; private set; }
         @AuraEnabled
         public Date startDate { get; private set; }
@@ -117,7 +179,9 @@ public with sharing class AccountOrdersController {
                 return;
             }
             this.id = order.Id;
+            this.isSelected = false;
             this.orderNumber = order.OrderNumber;
+            this.orderUrl = '/' + order.Id;
             this.startDate = order.EffectiveDate;
             this.status = order.Status;
             this.amount = order.TotalAmount;

@@ -1,30 +1,40 @@
 public with sharing class OrderSelector {
 
     public Order[] getOrdersByAccountId(Id accountId) {
-        if (null == accountId) {
+        if (accountId == null) {
             return new Order[]{};
         }
         return [
-                SELECT OrderNumber, EffectiveDate, Status, TotalAmount, LastStatusChanged__c, (
-                        SELECT Id, ContentDocument.Title, ContentDocumentId
-                        FROM ContentDocumentLinks
-                        WHERE ContentDocument.Title LIKE 'invoice%'
-                        ORDER BY SystemModstamp DESC
-                        LIMIT 1
+            SELECT 
+                Id, OrderNumber, EffectiveDate, Status, TotalAmount, LastStatusChanged__c,
+                (
+                    SELECT Id, ContentDocument.Title, ContentDocumentId
+                    FROM ContentDocumentLinks
+                    WHERE ContentDocument.Title LIKE 'invoice%'
+                    ORDER BY SystemModstamp DESC
+                    LIMIT 1
                 )
-                FROM Order
-                WHERE AccountId = :accountId
+            FROM Order
+            WHERE AccountId = :accountId
         ];
     }
 
     public Order[] getOrdersByIds(Set<Id> orderIdsSet) {
-        if (null == orderIdsSet || orderIdsSet.isEmpty()) {
+        if (orderIdsSet == null || orderIdsSet.isEmpty()) {
             return new Order[]{};
         }
         return [
-                SELECT Status, OrderNumber
-                FROM Order
-                WHERE Id IN :orderIdsSet
+            SELECT 
+                Id, OrderNumber, EffectiveDate, Status, TotalAmount, LastStatusChanged__c,
+                (
+                    SELECT Id, ContentDocument.Title, ContentDocumentId
+                    FROM ContentDocumentLinks
+                    WHERE ContentDocument.Title LIKE 'invoice%'
+                    ORDER BY SystemModstamp DESC
+                    LIMIT 1
+                )
+            FROM Order
+            WHERE Id IN :orderIdsSet
         ];
     }
 
