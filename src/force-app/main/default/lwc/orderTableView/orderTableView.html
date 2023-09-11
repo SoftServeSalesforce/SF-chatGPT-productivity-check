@@ -1,6 +1,11 @@
 <template>
-    
-    <template lwc:if={orders}>
+    <div>
+        <template if:true={isLoading}>
+            <!-- Display the spinner while loading -->
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+    <template lwc:if={OrdersToDisplay}>
+
     <div class="slds-align_absolute-center" style="height:5rem">
             <div class="header-panel">
                 <lightning-button label="Activate" onclick={handleConfirmClick} disabled={Buttontrue}></lightning-button>
@@ -66,6 +71,12 @@
     </div>
 
 </template > 
+<template lwc:else>
+    <template if:false={isLoading}>
+        <lightning-card title="Order Table View" icon-name="standard:orders"></lightning-card>
+        No Records To Display for this Account!
+    </template>
+</template>
 
-
+</div>
 </template>
