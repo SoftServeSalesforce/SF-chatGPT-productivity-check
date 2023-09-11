@@ -1,13 +1,71 @@
 <template>
+    
+    <template lwc:if={orders}>
+    <div class="slds-align_absolute-center" style="height:5rem">
+            <div class="header-panel">
+                <lightning-button label="Activate" onclick={handleConfirmClick} disabled={Buttontrue}></lightning-button>
+            </div>
+        <div class="header-panel">
+                <lightning-button label="Mark As sent" onclick={handleConfirmClickShipped} disabled={ButtontrueShipped}></lightning-button>
+        </div>
+        <div class="header-panel">
+                <lightning-button label="Refresh" onclick={refreshedOrders} ></lightning-button>
+        </div>
+    </div>
+
     <lightning-card title="Order Table View" icon-name="standard:orders">
         <div class="slds-m-around_medium">
-            <lightning-datatable
-                key-field="Id"
-                data={orders}
-                columns={columns}
-                hide-checkbox-column
-                onrowaction={handleRowAction}>
-            </lightning-datatable>
+            <template if:true={orders}>  
+                <lightning-datatable
+                    key-field="Id"
+                    data={orders}
+                    columns={columns}
+                    onrowselection={handleRowSelection}
+                    onrowaction={handleRowAction}
+                   >
+                </lightning-datatable>
+            </template> 
         </div>
+       
     </lightning-card>
+
+
+
+    <div class="slds-grid slds-grid_vertical-align-center slds-grid_align-spread" style="padding-top: 0.5em;">
+        <!--RECORDS PER PAGE-->
+        <div class="slds-col">
+            <div class="slds-list_inline slds-p-bottom_xx-small">
+                <label class="slds-text-color_weak slds-p-horizontal_x-small" for="recordsPerPage">Page Size:</label>
+               
+                    <lightning-combobox label="Page Size" placeholder="Select Page Size" variant="label-hidden" value={pageSize}
+                                options={pageSizeOptions} onchange={handleRecordsPerPage}
+                               ></lightning-combobox>
+                
+            </div>
+        </div>
+
+        <!--PAGE NAVIGATION-->
+        <div class="slds-align_absolute-center" style="height:5rem">
+            <lightning-button disabled={bDisableFirst} icon-name="utility:jump_to_left" label="First" class="slds-p-horizontal_x-small" alternative-text="first page" onclick={firstPage}></lightning-button>
+
+            <lightning-button disabled={bDisableFirst} icon-name="utility:chevronleft" label="Previous" alternative-text="Previous" onclick={previousPage}></lightning-button>
+            &nbsp;
+            <span class="slds-badge">Showing {pageNumber} &nbsp;of&nbsp; {totalPages} &nbsp;&nbsp;Page(s)</span>
+            &nbsp;
+            <lightning-button disabled={bDisableLast} icon-name="utility:chevronright" label="Next" alternative-text="Next" onclick={nextPage} class="slds-p-horizontal_x-small" icon-position="right"></lightning-button>
+
+            <lightning-button disabled={bDisableLast} icon-name="utility:jump_to_right" label="Last" alternative-text="last page" onclick={lastPage} icon-position="right"></lightning-button>
+        </div>
+
+        <!--TOTAL RECORDS-->
+        <div class="slds-clearfix">
+            <div class="slds-float_right">
+                <span class="slds-badge"> Total Records: {totalRecords}</span>
+            </div>
+        </div>
+    </div>
+
+</template > 
+
+
 </template>
