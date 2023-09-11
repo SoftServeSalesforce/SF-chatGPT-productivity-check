@@ -1,6 +1,8 @@
 @IsTest
 public class AccountOrdersControllerTest {
 
+    public static String NO_ORDERS_PASSED = 'No orders Passed';
+
 
     @testSetup
     static void setupData() {
@@ -221,7 +223,7 @@ public class AccountOrdersControllerTest {
         Test.startTest();
         try {
             AccountOrdersController.activateSelectedOrders(emptyOrderIds);
-            System.assert(false, 'No orders Passed');
+            System.assert(false, NO_ORDERS_PASSED);
         } catch (Exception ex) {
             e = ex;
         }
@@ -256,7 +258,7 @@ public class AccountOrdersControllerTest {
         Test.startTest();
         try {
             AccountOrdersController.shipSelectedOrders(emptyOrderIds);
-            System.assert(false, 'No orders Passed');
+            System.assert(false, NO_ORDERS_PASSED);
         } catch (Exception ex) {
             e = ex;
         }
@@ -296,7 +298,7 @@ public class AccountOrdersControllerTest {
         Test.startTest();
         try {
             AccountOrdersController.getOrders(null);
-            System.assert(false, 'No orders Passed');
+            System.assert(false, NO_ORDERS_PASSED);
         } catch (Exception ex) {
             e = ex;
         }
