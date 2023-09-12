@@ -1,6 +1,6 @@
 import LightningDatatable from 'lightning/datatable';
 import customStatusTemplate from './customStatusTemplate.html';
-import customCheckboxTemplate from './customCheckboxTemplate.html'; // Import the new LWC
+import customCheckboxTemplate from './customCheckboxTemplate.html';
 
 export default class OrdersDataTable extends LightningDatatable {
     static customTypes = {
@@ -10,7 +10,7 @@ export default class OrdersDataTable extends LightningDatatable {
             typeAttributes: ['duration', 'status']
         },
         customCheckboxType: {
-            template: customCheckboxTemplate, // Use the new LWC as the template
+            template: customCheckboxTemplate,
             standardCellLayout: true,
             typeAttributes: ['isSelected', 'rowId']
         }

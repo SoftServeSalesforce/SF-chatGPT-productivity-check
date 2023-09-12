@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite name="force.apex" timestamp="2023-09-12T07:36:50.000Z" hostname="https://customer-page-2258-dev-ed.scratch.my.salesforce.com" tests="5" failures="0"  errors="0"  time="3.14">
+        <properties>
+            <property name="outcome" value="Successful"/>
+            <property name="testsRan" value="5"/>
+            <property name="passing" value="5"/>
+            <property name="failing" value="0"/>
+            <property name="skipped" value="0"/>
+            <property name="passRate" value="100%"/>
+            <property name="failRate" value="0%"/>
+            <property name="testStartTime" value="Tue Sep 12 2023 09:36:50"/>
+            <property name="testExecutionTime" value="3.14 s"/>
+            <property name="testTotalTime" value="3.14 s"/>
+            <property name="commandTime" value="0.27 s"/>
+            <property name="hostname" value="https://customer-page-2258-dev-ed.scratch.my.salesforce.com"/>
+            <property name="orgId" value="00D5t000000DTZ7EAO"/>
+            <property name="username" value="test-y0lhl7bwcq65@example.com"/>
+            <property name="testRunId" value="7075t00001fe37L"/>
+            <property name="userId" value="0055t000003rrIjAAI"/>
+            <property name="coveredLines" value="94"/>
+            <property name="testRunCoverage" value="82%"/>
+            <property name="orgWideCoverage" value="82%"/>
+        </properties>
+        <testcase name="testGetOrdersByAccountId" classname="OrderSelectorTest" time="0.79">
+        </testcase>
+        <testcase name="testGetOrdersByIds" classname="OrderSelectorTest" time="0.62">
+        </testcase>
+        <testcase name="testSetOrderTimestamps" classname="OrderTriggerHandlerTest" time="0.23">
+        </testcase>
+        <testcase name="testUpdateOrderTimestamps" classname="OrderTriggerHandlerTest" time="0.16">
+        </testcase>
+        <testcase name="testOrderOperations" classname="AccountOrdersControllerTest" time="1.35">
+        </testcase>
+    </testsuite>
+</testsuites>
