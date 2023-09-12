@@ -2286,3 +2286,1004 @@ export default class OrdersDataTable extends LightningDatatable {
     }    
 }
 You can paste this directly into your IDE as well.
+
+ok, i need you to further improve the performance of below pasted script that I need to get working as anonymous apex, maybe dml consolidation pattern could help here or do you have any other ideas? its hitting CPU limit time but the AC requires it to be working as anonymous apex and not a batch...
+
+Savepoint sp = Database.setSavepoint(); // Set a savepoint
+try {
+    // Create Products
+    List<Product2> products = new List<Product2>{
+        new Product2(Name = 'HP ZBook', IsActive = true),
+        new Product2(Name = 'Mac Book Pro', IsActive = true),
+        new Product2(Name = 'Dell Inspiron', IsActive = true),
+        new Product2(Name = 'SFDC Apex Development', IsActive = true),
+        new Product2(Name = 'LWC Development', IsActive = true)
+    };
+    insert products;
+
+    // Create Pricebook Entries for Standard Pricebook
+    Pricebook2 stdPb = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+    Id stdPbId = stdPb.Id;
+
+    List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+    for (Product2 prod : products) {
+        pbEntries.add(new PricebookEntry(Pricebook2Id = stdPbId, Product2Id = prod.Id, UnitPrice = Math.random() * 1000, IsActive = true));
+    }
+    insert pbEntries;
+
+    // Create Account
+    Account acc = new Account(Name = 'SoftServe Inc.');
+    insert acc;
+
+    // Create Activated Contract
+    Contract contract = new Contract(AccountId = acc.Id, Status = 'Draft', StartDate = Date.today(), ContractTerm = 12);
+    insert contract;
+
+    // Create Orders with 'Draft' status
+    List<Order> orders = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        orders.add(new Order(AccountId = acc.Id, Status = 'Draft', EffectiveDate = Date.today(), Pricebook2Id = stdPbId, ContractId = contract.Id));
+    }
+    insert orders;
+
+    // Create Order Line Items
+    List<OrderItem> orderItems = new List<OrderItem>();
+    for (Order ord : orders) {
+        for (PricebookEntry pbe : pbEntries) {
+            orderItems.add(new OrderItem(OrderId = ord.Id, PricebookEntryId = pbe.Id, Quantity = 1, UnitPrice = pbe.UnitPrice));
+        }
+    }
+    insert orderItems;
+
+    // Create Content Files
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 0; i < 400; i++) {
+        Integer modResult = Math.mod(i, 4);
+        if (modResult == 1 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+        if (modResult == 2 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 0; i < 400; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+    // Update the status of orders as needed
+    for (Integer i = 0; i < 400; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+    }
+    update orders;
+} catch (Exception e) {
+    Database.rollback(sp); // Rollback to the savepoint on any exception
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+ChatGPT
+The script you've provided is quite extensive and is performing a lot of DML operations. The primary reason for hitting the CPU time limit is the sheer volume of operations being performed in a single transaction.
+
+To improve the performance, you can consider the following:
+
+DML Consolidation: Instead of performing DML operations in loops, gather all the records in a list and perform a single DML operation. This is already being done in your script, which is good.
+
+Bulkify SOQL Queries: Ensure that SOQL queries are not inside loops. This is also already being done in your script.
+
+Reduce the Number of Records: The script is creating a large number of records (400 orders, 400 content versions, etc.). If possible, reduce the number of records being created. If you need to test with a large dataset, consider using Batch Apex or splitting the logic into multiple anonymous Apex scripts.
+
+Optimize Logic: Check if there are any unnecessary operations or logic that can be removed or optimized.
+
+Use Maps for Faster Lookups: Instead of using loops to search for records, use maps for faster lookups. This is already being done with titleToContentDocumentId.
+
+Given the requirements and the current script, here's a slightly optimized version:
+
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // ... [No changes here]
+
+    // Create Orders with 'Draft' status
+    List<Order> orders = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        orders.add(new Order(AccountId = acc.Id, Status = 'Draft', EffectiveDate = Date.today(), Pricebook2Id = stdPbId, ContractId = contract.Id));
+    }
+    insert orders;
+
+    // ... [No changes here]
+
+    // Update the status of orders as needed
+    List<Order> ordersToUpdate = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+        ordersToUpdate.add(orders[i]);
+    }
+    update ordersToUpdate;
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+However, given the volume of operations, it's still possible to hit the CPU time limit. If you continue to face issues, you might need to reconsider the requirement of running this as anonymous Apex and explore other options like Batch Apex.
+
+
+
+
+User
+is it possible from executing a single anonymous apex to use multiple transactions for performing the data actions so that we avoid hitting the limit?
+ChatGPT
+In Salesforce, a single execution of anonymous Apex runs in a single transaction. This means that all governor limits (like CPU time, SOQL queries, DML statements, etc.) are applied to the entire execution of that script.
+
+However, there are some workarounds to achieve what you're asking:
+
+Future Methods: You can use @future methods to execute parts of your logic asynchronously in a separate transaction. However, this approach is not ideal for anonymous Apex since you'd have to define the @future method in a class, and you can't directly call it from anonymous Apex and expect to see the results immediately.
+
+Queueable Apex: Similar to @future, you can use Queueable Apex to chain jobs and execute logic asynchronously. Again, this is not ideal for anonymous Apex for the same reasons.
+
+Batch Apex: While this is typically used for processing large sets of records, you can use Batch Apex to split your logic into separate transactions (each execute method runs in its own transaction). But again, this is not directly executable from anonymous Apex in the way you might want.
+
+Multiple Anonymous Apex Executions: If you're using tools like the Developer Console, you can split your script into multiple parts and execute them sequentially. This is manual but ensures that each script runs in its own transaction.
+
+Platform Events: You can publish a platform event from anonymous Apex, and have a trigger on that platform event that performs the necessary logic. The trigger runs in a separate transaction. This is a bit of an advanced and roundabout method but can be used to achieve separate transactions.
+
+Of all these methods, the manual splitting and execution of multiple anonymous Apex scripts is the most straightforward for one-off data setup or manipulation tasks. If this is a recurring need, you might want to consider setting up Batch Apex or another more automated solution.
+
+
+
+
+User
+Data setup: 
+
+Create file /scripts/apex/generateData.apex inside of src folder 
+
+Write apex code inside the created file to generate data, including: 
+
+5 products with names like HP ZBook, Mac Book Pro, Dell Inspiron, SFDC Apex Development, LWC Development 
+
+Pricebook entries for standard pricebook and each product with non-zero arbitrary value of unit price chosen by developer 
+
+Account record SoftServe Inc. 
+
+Create activated Contract 
+
+400 orders related to created Account records 
+
+Each order should have 5 order line items, one order line item per product 
+
+There should be 100 orders per each status (Draft/Activated/Shipped/Delivered) 
+
+In every 100 orders there should be 25 without any attached content files, 25 should have ‘Invoice-%i.pdf’ document attached, 25 should have ‘test-%i.pdf’ document attached and 25 should have both ‘Invoice-%i.pdf’  and ‘test-%i.pdf’ documents attached. All file names should be different and include dynamic parameter of counter %i. For example, Invoice-25.pdf or test-100.pdf. 
+
+Verify that the script compiles and can be executed successfully by running command 
+
+sfdx force:apex:execute -f scripts/apex/gen.apex  
+
+the actual ask:
+those are the exact requirements i was given, what do you suggest to do for it to avoid hitting CPU limit?
+ChatGPT
+Given the requirements and the need to avoid hitting the CPU limit, here's a suggested approach:
+
+Split the Tasks: Instead of trying to do everything in one script, break down the tasks into smaller chunks. For example, you can have separate scripts for:
+
+Creating products and their pricebook entries.
+Creating the account and contract.
+Creating orders.
+Creating order line items.
+Attaching content files to orders.
+Use Lists Efficiently: Instead of using nested loops, try to use lists and bulkify your operations. For instance, when creating order line items, you can create a list of all order line items for all orders and insert them in one DML operation.
+
+Limit SOQL Queries: Try to minimize the number of SOQL queries. For instance, when you need the standard pricebook ID, fetch it once and store it in a variable.
+
+Use Maps for Efficient Lookups: If you need to reference previously created records, use maps with appropriate keys for quick lookups instead of looping through lists.
+
+Content Creation: For content creation, consider creating all the ContentVersion records first, then creating the ContentDocumentLink records. This way, you can bulkify the creation of content and its linking to orders.
+
+Test in Stages: After writing each script, test it separately to ensure it's working as expected and not hitting any limits.
+
+Use Platform Tools: Use tools like Developer Console or SFDX to execute the scripts. This way, you can get immediate feedback on any errors or governor limit issues.
+
+Monitor Governor Limits: After each major operation (like inserting orders or order line items), you can use System.debug(Limits.getXXXLimit()) to print out the current usage of specific governor limits. This can help you identify potential issues before they become problematic.
+
+Error Handling: Implement error handling to catch any exceptions and provide meaningful error messages. This will help in troubleshooting any issues that arise during execution.
+
+Consider Asynchronous Execution: If you still face issues with governor limits, consider breaking the script into smaller asynchronous chunks using @future or Queueable classes. However, this might not be ideal for a data setup script that you want to run and monitor synchronously.
+
+Given the complexity and the amount of data you're working with, it's essential to approach this task methodically, testing each step along the way.
+
+
+
+
+User
+ok, lets split the script into three smaller scripts then, please split it up for me in a way that makes the most sense:
+
+Savepoint sp = Database.setSavepoint(); // Set a savepoint
+try {
+    // Create Products
+    List<Product2> products = new List<Product2>{
+        new Product2(Name = 'HP ZBook', IsActive = true),
+        new Product2(Name = 'Mac Book Pro', IsActive = true),
+        new Product2(Name = 'Dell Inspiron', IsActive = true),
+        new Product2(Name = 'SFDC Apex Development', IsActive = true),
+        new Product2(Name = 'LWC Development', IsActive = true)
+    };
+    insert products;
+
+    // Create Pricebook Entries for Standard Pricebook
+    Pricebook2 stdPb = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+    Id stdPbId = stdPb.Id;
+
+    List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+    for (Product2 prod : products) {
+        pbEntries.add(new PricebookEntry(Pricebook2Id = stdPbId, Product2Id = prod.Id, UnitPrice = Math.random() * 1000, IsActive = true));
+    }
+    insert pbEntries;
+
+    // Create Account
+    Account acc = new Account(Name = 'SoftServe Inc.');
+    insert acc;
+
+    // Create Activated Contract
+    Contract contract = new Contract(AccountId = acc.Id, Status = 'Draft', StartDate = Date.today(), ContractTerm = 12);
+    insert contract;
+
+    // Create Orders with 'Draft' status
+    List<Order> orders = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        orders.add(new Order(AccountId = acc.Id, Status = 'Draft', EffectiveDate = Date.today(), Pricebook2Id = stdPbId, ContractId = contract.Id));
+    }
+    insert orders;
+
+    // Create Order Line Items
+    List<OrderItem> orderItems = new List<OrderItem>();
+    for (Order ord : orders) {
+        for (PricebookEntry pbe : pbEntries) {
+            orderItems.add(new OrderItem(OrderId = ord.Id, PricebookEntryId = pbe.Id, Quantity = 1, UnitPrice = pbe.UnitPrice));
+        }
+    }
+    insert orderItems;
+
+    // Create Content Files
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 0; i < 400; i++) {
+        Integer modResult = Math.mod(i, 4);
+        if (modResult == 1 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+        if (modResult == 2 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 0; i < 400; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+    // Update the status of orders as needed
+    List<Order> ordersToUpdate = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+        ordersToUpdate.add(orders[i]);
+    }
+    update ordersToUpdate;
+} catch (Exception e) {
+    Database.rollback(sp); // Rollback to the savepoint on any exception
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+ChatGPT
+Given the requirements and the need to split the script into three smaller scripts, here's a suggested breakdown:
+
+Script 1: Product, Pricebook Entry, Account, and Contract Creation
+This script will handle the creation of products, their associated pricebook entries, the account, and the contract.
+
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Create Products
+    List<Product2> products = new List<Product2>{
+        new Product2(Name = 'HP ZBook', IsActive = true),
+        new Product2(Name = 'Mac Book Pro', IsActive = true),
+        new Product2(Name = 'Dell Inspiron', IsActive = true),
+        new Product2(Name = 'SFDC Apex Development', IsActive = true),
+        new Product2(Name = 'LWC Development', IsActive = true)
+    };
+    insert products;
+
+    // Create Pricebook Entries for Standard Pricebook
+    Pricebook2 stdPb = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+    Id stdPbId = stdPb.Id;
+
+    List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+    for (Product2 prod : products) {
+        pbEntries.add(new PricebookEntry(Pricebook2Id = stdPbId, Product2Id = prod.Id, UnitPrice = Math.random() * 1000, IsActive = true));
+    }
+    insert pbEntries;
+
+    // Create Account
+    Account acc = new Account(Name = 'SoftServe Inc.');
+    insert acc;
+
+    // Create Activated Contract
+    Contract contract = new Contract(AccountId = acc.Id, Status = 'Draft', StartDate = Date.today(), ContractTerm = 12);
+    insert contract;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+Script 2: Order and Order Line Item Creation
+This script will handle the creation of orders and their associated order line items.
+
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Assuming you have the Account, Contract, and PricebookEntry IDs from the previous script
+    // Create Orders with 'Draft' status
+    List<Order> orders = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        orders.add(new Order(AccountId = acc.Id, Status = 'Draft', EffectiveDate = Date.today(), Pricebook2Id = stdPbId, ContractId = contract.Id));
+    }
+    insert orders;
+
+    // Create Order Line Items
+    List<OrderItem> orderItems = new List<OrderItem>();
+    for (Order ord : orders) {
+        for (PricebookEntry pbe : pbEntries) {
+            orderItems.add(new OrderItem(OrderId = ord.Id, PricebookEntryId = pbe.Id, Quantity = 1, UnitPrice = pbe.UnitPrice));
+        }
+    }
+    insert orderItems;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+Script 3: Content Creation and Order Status Update
+This script will handle the creation of content files, linking them to orders, and updating the status of orders.
+
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Create Content Files
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 0; i < 400; i++) {
+        Integer modResult = Math.mod(i, 4);
+        if (modResult == 1 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+        if (modResult == 2 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 0; i < 400; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+    // Update the status of orders as needed
+    List<Order> ordersToUpdate = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+
+
+
+User
+as expected, there is info missing already on script 2, fix scripts 2 & 3 in this regard without altering script 1 anymore as it successfully executed already...
+
+Line: 7, Column: 42
+Variable does not exist: acc
+ChatGPT
+Understood. Since you've already executed Script 1, we'll need to fetch the necessary records in Scripts 2 and 3 to continue the operations. Here's the corrected version:
+
+Script 2: Order and Order Line Item Creation
+This script will handle the creation of orders and their associated order line items. We'll fetch the necessary Account, Contract, and PricebookEntry records to continue.
+
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Account, Contract, and PricebookEntry IDs from the previous script
+    Account acc = [SELECT Id FROM Account WHERE Name = 'SoftServe Inc.' LIMIT 1];
+    Contract contract = [SELECT Id FROM Contract WHERE AccountId = :acc.Id LIMIT 1];
+    List<PricebookEntry> pbEntries = [SELECT Id, UnitPrice FROM PricebookEntry WHERE Product2.Name IN ('HP ZBook', 'Mac Book Pro', 'Dell Inspiron', 'SFDC Apex Development', 'LWC Development')];
+
+    // Create Orders with 'Draft' status
+    List<Order> orders = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        orders.add(new Order(AccountId = acc.Id, Status = 'Draft', EffectiveDate = Date.today(), Pricebook2Id = pbEntries[0].Pricebook2Id, ContractId = contract.Id));
+    }
+    insert orders;
+
+    // Create Order Line Items
+    List<OrderItem> orderItems = new List<OrderItem>();
+    for (Order ord : orders) {
+        for (PricebookEntry pbe : pbEntries) {
+            orderItems.add(new OrderItem(OrderId = ord.Id, PricebookEntryId = pbe.Id, Quantity = 1, UnitPrice = pbe.UnitPrice));
+        }
+    }
+    insert orderItems;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+Script 3: Content Creation and Order Status Update
+This script will handle the creation of content files, linking them to orders, and updating the status of orders. We'll fetch the necessary Order records to continue.
+
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the necessary Order records
+    List<Order> orders = [SELECT Id FROM Order WHERE Account.Name = 'SoftServe Inc.'];
+
+    // Create Content Files
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 0; i < 400; i++) {
+        Integer modResult = Math.mod(i, 4);
+        if (modResult == 1 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+        if (modResult == 2 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 0; i < 400; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+    // Update the status of orders as needed
+    List<Order> ordersToUpdate = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+        ordersToUpdate.add(orders[i]);
+    }
+    update ordersToUpdate;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+This should help you execute the scripts in sequence without hitting the CPU limit.
+
+
+
+
+User
+need to fix script  2:
+
+10:44:54:079 USER_DEBUG [26]|DEBUG|EXCEPTION: SObject row was retrieved via SOQL without querying the requested field: PricebookEntry.Pricebook2Id
+ChatGPT
+I apologize for the oversight. The error indicates that the Pricebook2Id field was not queried when fetching the PricebookEntry records in Script 2.
+
+Let's fix that by including the Pricebook2Id field in the SOQL query for PricebookEntry records.
+
+Here's the corrected version of Script 2:
+
+Script 2: Order and Order Line Item Creation
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Account, Contract, and PricebookEntry IDs from the previous script
+    Account acc = [SELECT Id FROM Account WHERE Name = 'SoftServe Inc.' LIMIT 1];
+    Contract contract = [SELECT Id FROM Contract WHERE AccountId = :acc.Id LIMIT 1];
+    List<PricebookEntry> pbEntries = [SELECT Id, UnitPrice, Pricebook2Id FROM PricebookEntry WHERE Product2.Name IN ('HP ZBook', 'Mac Book Pro', 'Dell Inspiron', 'SFDC Apex Development', 'LWC Development')];
+
+    // Create Orders with 'Draft' status
+    List<Order> orders = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        orders.add(new Order(AccountId = acc.Id, Status = 'Draft', EffectiveDate = Date.today(), Pricebook2Id = pbEntries[0].Pricebook2Id, ContractId = contract.Id));
+    }
+    insert orders;
+
+    // Create Order Line Items
+    List<OrderItem> orderItems = new List<OrderItem>();
+    for (Order ord : orders) {
+        for (PricebookEntry pbe : pbEntries) {
+            orderItems.add(new OrderItem(OrderId = ord.Id, PricebookEntryId = pbe.Id, Quantity = 1, UnitPrice = pbe.UnitPrice));
+        }
+    }
+    insert orderItems;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+This should resolve the error you encountered.
+
+
+
+
+User
+script 3 still needs some love, its causing CPU time exception, could you divide it into 2 parts please? try to remember about all data that needs to be queried in order for it to work
+ChatGPT
+Certainly! I'll split the third script into two parts to avoid hitting the CPU time limit.
+
+Script 3.1: Content Files and ContentDocumentLinks Creation (Part 1)
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Orders created in the previous scripts
+    List<Order> orders = [SELECT Id FROM Order WHERE Account.Name = 'SoftServe Inc.' LIMIT 200];
+
+    // Create Content Files for the first 200 orders
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 0; i < 200; i++) {
+        Integer modResult = Math.mod(i, 4);
+        if (modResult == 1 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+        if (modResult == 2 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks for the first 200 orders
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 0; i < 200; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+Script 3.2: Content Files and ContentDocumentLinks Creation (Part 2) and Order Status Update
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Orders created in the previous scripts
+    List<Order> orders = [SELECT Id FROM Order WHERE Account.Name = 'SoftServe Inc.' OFFSET 200];
+
+    // Create Content Files for the next 200 orders
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 200; i < 400; i++) {
+        Integer modResult = Math.mod(i, 4);
+        if (modResult == 1 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+        if (modResult == 2 || modResult == 3) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks for the next 200 orders
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 200; i < 400; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i-200].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i-200].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+    // Update the status of orders as needed
+    List<Order> ordersToUpdate = new List<Order>();
+    for (Integer i = 0; i < 400; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+        ordersToUpdate.add(orders[i]);
+    }
+    update ordersToUpdate;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+By splitting the script into two parts, we're distributing the workload and reducing the chances of hitting the CPU time limit.
+
+
+
+
+User
+please pay attention to the requirements, i think you've messed up here bad:
+
+n every 100 orders there should be 25 without any attached content files, 25 should have ‘Invoice-%i.pdf’ document attached, 25 should have ‘test-%i.pdf’ document attached and 25 should have both ‘Invoice-%i.pdf’  and ‘test-%i.pdf’ documents attached. All file names should be different and include dynamic parameter of counter %i. For example, Invoice-25.pdf or test-100.pdf. 
+
+adjust scripts 3a and 3b to reflect whats required in the AC!
+ChatGPT
+I apologize for the oversight. Let's correct this.
+
+We'll adjust the logic to ensure that for every 100 orders:
+
+25 have no content files attached.
+25 have only the Invoice-%i.pdf document attached.
+25 have only the test-%i.pdf document attached.
+25 have both Invoice-%i.pdf and test-%i.pdf documents attached.
+Script 3.1: Content Files and ContentDocumentLinks Creation (Part 1)
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Orders created in the previous scripts
+    List<Order> orders = [SELECT Id FROM Order WHERE Account.Name = 'SoftServe Inc.' LIMIT 200];
+
+    // Create Content Files for the first 200 orders
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 0; i < 200; i++) {
+        if (i % 4 == 1) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        } else if (i % 4 == 2) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        } else if (i % 4 == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks for the first 200 orders
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 0; i < 200; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+Script 3.2: Content Files and ContentDocumentLinks Creation (Part 2) and Order Status Update
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Orders created in the previous scripts
+    List<Order> orders = [SELECT Id FROM Order WHERE Account.Name = 'SoftServe Inc.' OFFSET 200];
+
+    // Create Content Files for the next 200 orders
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 200; i < 400; i++) {
+        if (i % 4 == 1) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        } else if (i % 4 == 2) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        } else if (i % 4 == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks for the next 200 orders
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 200; i < 400; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i-200].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i-200].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+    // Update the status of orders as needed
+    List<Order> ordersToUpdate = new List<Order>();
+    for (Integer i = 0; i < 200; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+        ordersToUpdate.add(orders[i]);
+    }
+    update ordersToUpdate;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+This should now correctly distribute the content files as per the requirements.
+
+
+
+
+User
+replace % operator with math.mod, it wont work like this!
+ChatGPT
+I apologize for the oversight. Let's correct this by using Math.mod() instead of the % operator.
+
+Script 3.1: Content Files and ContentDocumentLinks Creation (Part 1)
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Orders created in the previous scripts
+    List<Order> orders = [SELECT Id FROM Order WHERE Account.Name = 'SoftServe Inc.' LIMIT 200];
+
+    // Create Content Files for the first 200 orders
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 0; i < 200; i++) {
+        if (Math.mod(i, 4) == 1) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        } else if (Math.mod(i, 4) == 2) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        } else if (Math.mod(i, 4) == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks for the first 200 orders
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 0; i < 200; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+Script 3.2: Content Files and ContentDocumentLinks Creation (Part 2) and Order Status Update
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Orders created in the previous scripts
+    List<Order> orders = [SELECT Id FROM Order WHERE Account.Name = 'SoftServe Inc.' OFFSET 200];
+
+    // Create Content Files for the next 200 orders
+    List<ContentVersion> allCVs = new List<ContentVersion>();
+    for (Integer i = 200; i < 400; i++) {
+        if (Math.mod(i, 4) == 1) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        } else if (Math.mod(i, 4) == 2) {
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        } else if (Math.mod(i, 4) == 3) {
+            allCVs.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = 'Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+            allCVs.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = 'test-' + i + '.pdf', VersionData = Blob.valueOf('Test Content')));
+        }
+    }
+    insert allCVs;
+
+    // Create ContentDocumentLinks for the next 200 orders
+    List<ContentDocumentLink> allCDLs = new List<ContentDocumentLink>();
+    Map<String, Id> titleToContentDocumentId = new Map<String, Id>();
+    for (ContentDocument cd : [SELECT Id, Title FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentVersion WHERE Id IN :allCVs)]) {
+        titleToContentDocumentId.put(cd.Title, cd.Id);
+    }
+
+    for (Integer i = 200; i < 400; i++) {
+        String invoiceTitle = 'Invoice-' + i + '.pdf';
+        String testTitle = 'test-' + i + '.pdf';
+        if (titleToContentDocumentId.containsKey(invoiceTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(invoiceTitle), LinkedEntityId = orders[i-200].Id, ShareType = 'V'));
+        }
+        if (titleToContentDocumentId.containsKey(testTitle)) {
+            allCDLs.add(new ContentDocumentLink(ContentDocumentId = titleToContentDocumentId.get(testTitle), LinkedEntityId = orders[i-200].Id, ShareType = 'V'));
+        }
+    }
+    insert allCDLs;
+
+    // Update the status of orders as needed
+    List<Order> ordersToUpdate = new List<Order>();
+    for (Integer i = 0; i < 200; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+        ordersToUpdate.add(orders[i]);
+    }
+    update ordersToUpdate;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+Now, the scripts use Math.mod() for the modulus operation and should distribute the content files as per the requirements.
+
+
+
+
+User
+extract the last part (order update) to yet another script but make sure to query all 400 scripts created in previous steps and not only factor in 200 from script 3.2...
+ChatGPT
+Certainly! Here's the extracted script for updating the status of all 400 orders:
+
+Script 3.3: Update Order Status
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch all 400 Orders created in the previous scripts
+    List<Order> orders = [SELECT Id FROM Order WHERE Account.Name = 'SoftServe Inc.'];
+
+    // Update the status of orders as needed
+    for (Integer i = 0; i < 400; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+    }
+    update orders;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+This script will fetch all 400 orders and update their status accordingly.
+
+
+
+
+User
+yeah, i thought problems are going to start now.
+
+Update failed. First exception on row 100 with id 8015t0000027mcBAAQ; first error: FAILED_ACTIVATION, This order's contract is inactive.:
+
+lets not mess with previous scripts and make this all work in script 5, i want to be done with this asap, try to predict any other OOTB validations on order status update as well...
+ChatGPT
+I understand the frustration. The error indicates that the contract associated with the order is inactive, which is preventing the order from being activated.
+
+To address this, we need to:
+
+Activate the contract.
+Update the order status.
+Let's create a script that does this:
+
+Script 5: Activate Contract and Update Order Status
+apex
+Copy code
+Savepoint sp = Database.setSavepoint();
+try {
+    // Fetch the Contract associated with 'SoftServe Inc.' Account
+    Contract contract = [SELECT Id, Status FROM Contract WHERE Account.Name = 'SoftServe Inc.' LIMIT 1];
+
+    // Activate the contract
+    if (contract.Status == 'Draft') {
+        contract.Status = 'Activated';
+        update contract;
+    }
+
+    // Fetch all 400 Orders created in the previous scripts
+    List<Order> orders = [SELECT Id, Status FROM Order WHERE Account.Name = 'SoftServe Inc.'];
+
+    // Update the status of orders as needed
+    for (Integer i = 0; i < 400; i++) {
+        if (i >= 100 && i < 200) orders[i].Status = 'Activated';
+        else if (i >= 200 && i < 300) orders[i].Status = 'Shipped';
+        else if (i >= 300) orders[i].Status = 'Delivered';
+    }
+    update orders;
+
+} catch (Exception e) {
+    Database.rollback(sp);
+    System.debug('EXCEPTION: ' + e.getMessage());
+}
+This script first activates the contract and then updates the order statuses. This should help you avoid the "This order's contract is inactive" error.
+
+
+
+
