@@ -3,12 +3,12 @@ public with sharing class AccountOrdersController {
     private static final String ORDER_SHIPPED_STATUS = 'Shipped';
 
 
-
     @AuraEnabled
-    public static List<OrderDTO> getOrders(Id accountId) {
+    public static List<OrderDTO> getOrders(Id accountId, Integer page, Integer pageSize) {
         OrderSelector orderSelector = OrderSelector.newInstance();
+        Integer offsetSize = (page - 1) * pageSize;
 
-        List<Order> orders = orderSelector.selectOrdersByAccountId(accountId);
+        List<Order> orders = orderSelector.selectOrdersByAccountId(accountId, pageSize, offsetSize);
         List<OrderDTO> orderDTOs = new List<OrderDTO>();
         
         for(Order ord : orders) {
@@ -16,6 +16,35 @@ public with sharing class AccountOrdersController {
         }
 
         return orderDTOs;
+    }
+
+    @AuraEnabled
+    public static Integer getOrdersCount(Id accountId) {
+        OrderSelector orderSelector = OrderSelector.newInstance();
+        Integer orders = orderSelector.countOrdersByAccounId(accountId);
+        return orders;
+    }
+
+    @AuraEnabled
+    public static Integer getUserPageSize() {
+        OrderPageSize__c pref = OrderPageSize__c.getInstance(UserInfo.getUserId());
+        return (pref.Page_Size__c != null) ? Integer.valueOf(pref.Page_Size__c) : 10;
+    }
+
+    @AuraEnabled
+    public static void saveUserPageSize(Integer pageSize) {
+        OrderSelector orderSelector = OrderSelector.newInstance();
+        OrderPageSize__c order = orderSelector.selectUserPageSize();
+        if (order != null) {
+            order.Page_Size__c = pageSize;
+            update order;
+        } else {
+            order = new OrderPageSize__c(
+                SetupOwnerId = UserInfo.getUserId(),
+                Page_Size__c = pageSize
+            );
+            insert order;
+        }
     }
 
     @AuraEnabled

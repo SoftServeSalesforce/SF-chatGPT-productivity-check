@@ -76,7 +76,27 @@
                         </tr>
                     </template>
                 </tbody>
-            </table>    
+            </table>
+            <div class="slds-m-top_small">
+                <lightning-button class="slds-m-left_large"
+                                    label="previous"
+                                    disabled={isPreviousDisabled}
+                                    onclick={handlePrevious}></lightning-button>
+                <span class="slds-m-left_large">Display </span>
+                <lightning-button-menu label={pageSize} variant="container">
+                    <lightning-menu-item label="10" value=10 onclick={handlePageSizeChange}></lightning-menu-item>
+                    <lightning-menu-item label="25" value=25 onclick={handlePageSizeChange}></lightning-menu-item>
+                    <lightning-menu-item label="50" value=50 onclick={handlePageSizeChange}></lightning-menu-item>
+                    <lightning-menu-item label="100" value=100 onclick={handlePageSizeChange}></lightning-menu-item>
+                    <lightning-menu-item label="200" value=200 onclick={handlePageSizeChange}></lightning-menu-item>
+                </lightning-button-menu>
+                <span> recors per page</span>
+                <span class="slds-m-left_large">Page {currentPage} of {totalPages}</span>
+                <lightning-button label="next"
+                                    class="slds-m-left_large"
+                                    disabled={isNextDisabled}
+                                    onclick={handleNext}></lightning-button>
+            </div>    
         </template>
     </lightning-card>
 </template>

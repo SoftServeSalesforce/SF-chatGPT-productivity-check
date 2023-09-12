@@ -1,5 +1,8 @@
 import { LightningElement, api, track } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+import getOrdersCount from '@salesforce/apex/AccountOrdersController.getOrdersCount';
+import getPageSize from '@salesforce/apex/AccountOrdersController.getUserPageSize';
+import setPageSize from '@salesforce/apex/AccountOrdersController.saveUserPageSize';
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
 import { NavigationMixin } from 'lightning/navigation';
@@ -9,14 +12,43 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
     @api recordId;
     @track orders;
     @track selectedRows = new Map();
+    
+    pageSize;
+    totalOrders;
+    pageSizeOptions = [
+        { label: '10', value: 10 },
+        { label: '25', value: 25 },
+        { label: '50', value: 50 },
+        { label: '100', value: 100 },
+        { label: '200', value: 200 },
+    ];
+    currentPage = 1;
+
     isLoading = false;
 
+    get totalPages() {
+        return Math.ceil(this.totalOrders / this.pageSize);
+    }
     get isGroupActivate() {
         return this.checkSelectedRowsStatuses('Draft');
     }
 
     get isGroupShip() {
         return this.checkSelectedRowsStatuses('Activated');
+    }
+
+    get isNextDisabled() {
+        return this.currentPage >= this.totalPages;
+    }
+
+    get isPreviousDisabled() {
+        return this.currentPage <= 1;
+    }
+
+    async connectedCallback() {
+        this.pageSize = await getPageSize();
+        this.totalOrders = await getOrdersCount({accountId: this.recordId});
+        this.refreshView();
     }
 
     checkSelectedRowsStatuses(status) {
@@ -48,13 +80,11 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
         return actions;
     }
 
-    connectedCallback() {
-        this.refreshView();
-    }
-
     refreshView() {
         this.isLoading = true;
-        getOrders({accountId: this.recordId})
+        getOrders({accountId: this.recordId,
+                    page: this.currentPage,
+                    pageSize: this.pageSize})
             .then(data => {
                 this.orders = data.map(row => {
                     let rowData = { ...row };
@@ -239,6 +269,26 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
                     this.showToast('ERROR', 'An unexpected error occurred.');
                 });
         }
+    }
+
+    handlePrevious() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.refreshView.call(this);
+        }
+    }
+
+    handleNext() {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.refreshView.call(this);
+        }
+    }
+
+    async handlePageSizeChange(event) {
+        this.pageSize = event.target.value;
+        await setPageSize({pageSize: this.pageSize});
+        this.refreshView.call(this);
     }
 }
 

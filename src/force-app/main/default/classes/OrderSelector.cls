@@ -21,7 +21,7 @@ public with sharing class OrderSelector {
         ];
     }
 
-    public List<Order> selectOrdersByAccountId(Id accountId) {
+    public List<Order> selectOrdersByAccountId(Id accountId, Integer limitSize, Integer offsetSize) {
         return [
             SELECT Id, Status, EffectiveDate, OrderNumber, TotalAmount, LastStatusChanged__c, CreatedDate,
                    (SELECT ContentDocumentId
@@ -31,6 +31,24 @@ public with sharing class OrderSelector {
                     LIMIT 1)
             FROM Order
             WHERE AccountId = :accountId
+            LIMIT :limitSize
+            OFFSET :offsetSize
         ];
+    }
+
+    public Integer countOrdersByAccounId(Id accountId) {
+       AggregateResult agg = [SELECT COUNT(Id) total
+                                FROM Order
+                                WHERE AccountId = :accountId
+       ];
+       Integer totalOrders = (Integer)agg.get('total');
+    return totalOrders; 
+    }
+
+    public OrderPageSize__c selectUserPageSize() {
+        return [SELECT Page_Size__c
+                FROM OrderPageSize__c
+                WHERE SetupOwnerId = :UserInfo.getUserId()
+                LIMIT 1];
     }
 }
