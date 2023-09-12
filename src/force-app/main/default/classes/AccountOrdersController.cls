@@ -20,13 +20,11 @@ public with sharing class AccountOrdersController {
 
     @AuraEnabled
     public static Map<String, String> activateOrder(List<Id> orderIds) {
-        system.debug('input ids ' + orderIds);
         Map<String, String> response = new Map<String, String>();
 
         try {
             OrderSelector selector = OrderSelector.newInstance(); 
             List<Order> ordersToActivate = selector.selectDraftOrderById(orderIds);
-            system.debug('selected ids ' + ordersToActivate);
 
             if (ordersToActivate.isEmpty()) {
                 response.put('status', 'ERROR');

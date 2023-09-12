@@ -1,4 +1,4 @@
-import { LightningElement, api, wire, track } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder';
@@ -74,7 +74,8 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
                     return rowData;
                 });
                 this.error = undefined;
-                this.isLoading = false;               
+                this.isLoading = false;
+                this.selectedRows = new Map();               
             })
             .catch(error => {
                 console.error('Error received: ', error);
@@ -208,31 +209,36 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
             localMap.delete(rowId);
         }
         this.selectedRows = new Map([...localMap]);
-        console.log('selected rows', this.selectedRows);
     }
 
     handleActivateOrders() {
         const orderIds = [...this.selectedRows.keys()];
-        activateOrder({ orderIds: orderIds })
-            .then(result => {
-                this.refreshView.call(this);
-                this.showToast(result.status, result.ErrorMessage);
-            })
-            .catch(() => {
-                this.showToast('ERROR', 'An unexpected error occurred.');
+        let confirmation = confirm(`Do you confirm to activate ${this.selectedRows.size} of Draft order(s)?`);
+        if (confirmation) {
+            activateOrder({ orderIds: orderIds })
+                .then(result => {
+                    this.refreshView.call(this);
+                    this.showToast(result.status, result.ErrorMessage);
+                })
+                .catch(() => {
+                    this.showToast('ERROR', 'An unexpected error occurred.');
             });
+        }
     }
 
     handleShipOrders() {
         const orderIds = [...this.selectedRows.keys()];
-        markOrderAsShipped({ orderIds: orderIds })
-            .then(result => {
-                this.refreshView.call(this);
-                this.showToast(result.status, result.ErrorMessage);
-            })
-            .catch(() => {
-                this.showToast('ERROR', 'An unexpected error occurred.');
-            });
+        let confirmation = confirm(`Do you confirm to mark as sent ${this.selectedRows.size} of activated order(s)?`);
+        if (confirmation) {
+            markOrderAsShipped({ orderIds: orderIds })
+                .then(result => {
+                    this.refreshView.call(this);
+                    this.showToast(result.status, result.ErrorMessage);
+                })
+                .catch(() => {
+                    this.showToast('ERROR', 'An unexpected error occurred.');
+                });
+        }
     }
 }
 
