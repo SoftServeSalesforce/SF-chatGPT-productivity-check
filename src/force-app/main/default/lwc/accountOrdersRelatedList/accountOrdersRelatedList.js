@@ -1,4 +1,4 @@
-import { api, LightningElement, wire } from 'lwc';
+import { api, LightningElement, wire, track } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import activateOrderById from '@salesforce/apex/AccountOrdersController.activateOrderById';
 import activateOrdersByIds from '@salesforce/apex/AccountOrdersController.activateOrdersByIds';
@@ -83,33 +83,46 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
     ];
 
     connectedCallback() {
+        console.log('connectedCallback called');
         this.initializePageSize().then(() => {
             this.fetchData();
+        }).catch(error => {
+            console.error("Error during initialization:", error);
         });
     }    
 
     async initializePageSize() {
+        console.log(1);
         try {
+            console.log(2);
             const initialPageSize = await getPageSize();
+            console.log('Initial Page Size from Apex:', initialPageSize);
             this.pageSize = parseInt(initialPageSize, 10);
-            this.selectedPageSize = this.pageSize;
+            this.selectedPageSize = this.pageSize;  // Keep it as an integer for consistency
+            console.log('Initial Page Size from APEX (after parsing):', this.pageSize);
+            console.log('Selected Page Size from APEX (after parsing):', this.selectedPageSize);
         } catch (error) {
-            this.showErrorToast("Initialization Error", "Error during page size initialization.");
+            console.log('fail abc');
+            console.error("Error initializing page size:", error);
         }
+        console.log(3);
     }     
 
     fetchData() {
+        console.log('fetchdata params: ' + this.recordId + ' ' + this.currentPage + ' ' + this.pageSize);
         getOrders({ accountId: this.recordId, pageNumber: this.currentPage, pageSize: this.pageSize })
             .then(result => {
                 this.processFetchedData(result);
             })
             .catch(error => {
+                console.log('Error fetching data:', JSON.stringify(error));
                 this.loading = false;
             });
     }
-
+    
     processFetchedData(result) {
         try {
+            console.log('Fetched data: ', JSON.stringify(result));
             this.ordersTableData = result.orders.map((record) => ({
                 ...record,
                 orderUrl: '/' + record.id,
@@ -119,32 +132,97 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
                 duration: this.getDurationUntilNow(record.lastStatusChangedTimestamp)
             }));
             this.totalRecords = result.totalRecords;
+            console.log('fetchData totalRecords ' + this.totalRecords);
             this.loading = false;
         } catch (error) {
-            this.showErrorToast("Processing Error", "Error processing fetched data.");
+            console.error('Error processing fetched data:', error);
         }
+    }    
+
+    get disablePrevButton() {
+        return this.currentPage <= 1;
+    }
+
+    get disableNextButton() {
+        return this.currentPage >= this.totalPages;
+    }
+
+    get totalPages() {
+        return Math.ceil(this.totalRecords / this.pageSize);
+    }
+
+    get hasPreviousPage() {
+        return this.currentPage > 1;
+    }
+
+    get hasNextPage() {
+        return this.currentPage < this.totalPages;
+    }
+
+    get hasOrders() {
+        return this.ordersTableData && this.ordersTableData.length > 0;
+    }    
+
+    get componentTitle() {
+        return `Orders (${this.totalRecords})`;
+    }
+
+    getRowActions(row, doneCallback) {
+        let actions = [];
+        if (row.status === 'Draft') {
+            actions.push({
+                'label': 'Activate', 'name': 'activate'
+            });
+        }
+        if (row.status === 'Activated') {
+            actions.push({
+                'label': 'Mark Order as Shipped', 'name': 'mark_shipped'
+            });
+        }
+        if (!row.disableDownload) {
+            actions.push({
+                'label': 'Download Invoice', 'name': 'download_invoice'
+            }, {
+                'label': 'Preview Invoice', 'name': 'preview_invoice'
+            });
+        }
+        doneCallback(actions);
     }
 
     handleRowSelection(event) {
         const selectedRows = event.detail.selectedRows;
+        console.log('Selected Rows:', selectedRows);
         this.selectedOrderIds = selectedRows.map(row => row.id);
+        console.log('Selected Order IDs:', this.selectedOrderIds);
     }
 
     handleCheckboxChange(event) {
+        console.log('Received event detail:', event.detail);
+        
         const isChecked = event.detail.checked;
-        const rowId = event.detail.rowId;
-
+        const rowId = event.detail.rowId; // Assuming you've added this to the event detail
+    
+        if (!rowId) {
+            console.error('Row ID not found in event detail');
+            return;
+        }
+    
+        // Find the corresponding row in the ordersTableData array
         const row = this.ordersTableData.find(row => row.id === rowId);
         if (row) {
             row.isSelected = isChecked;
         }
-
+    
+        // Update the selectedOrderIds array based on the checkbox change
         if (isChecked && !this.selectedOrderIds.includes(rowId)) {
             this.selectedOrderIds.push(rowId);
         } else if (!isChecked) {
             this.selectedOrderIds = this.selectedOrderIds.filter(id => id !== rowId);
         }
+    
+        console.log('Updated Selected Order IDs:', this.selectedOrderIds);
     }
+    
 
     handleRowAction(event) {
         const row = event.detail.row;
@@ -185,12 +263,12 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
     }
 
     handleBulkActivate() {
-        this.currentPage = 1;
+        this.currentPage = 1; // Reset to the first page
         this.handleBulkOrderAction('activate');
     }
 
     handleBulkMarkShipped() {
-        this.currentPage = 1;
+        this.currentPage = 1; // Reset to the first page
         this.handleBulkOrderAction('mark_shipped');
     }
 
@@ -210,7 +288,7 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
                 this.showToast(`There was an error updating the order: ${result.errorMessage}`, 'error', 'Error');
             }
         } catch (error) {
-            this.showErrorToast("Order Update Error", "Error updating order.");
+            console.error('## error updating order: ' + JSON.stringify(error));
         }
         return refreshApex(this.wiredOrders);
     }
@@ -239,16 +317,17 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
                 this.showToast(`There was an error updating the orders: ${result.errorMessage}`, 'error', 'Error');
             }
         } catch (error) {
-            this.showErrorToast("Bulk Order Update Error", "Error updating orders.");
+            console.error('## error updating orders: ' + JSON.stringify(error));
         }
 
         return refreshApex(this.wiredOrders);
     }
-
+    
     @wire(getOrders, { accountId: '$recordId', pageNumber: '$currentPage', pageSize: '$pageSize' })
     wiredOrdersData({ error, data }) {
+        console.log('Raw data:', JSON.stringify(data)); // Debugging statement
         if (data) {
-            if (Array.isArray(data.orders)) {
+            if (Array.isArray(data.orders)) { // Check if data.orders is actually an array
                 this.ordersTableData = data.orders.map((record) => ({
                     ...record,
                     orderUrl: '/' + record.id,
@@ -258,15 +337,64 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
                 }));
                 this.totalRecords = data.totalRecords;
             } else {
-                this.showErrorToast("Data Error", "Received data is not in the expected format.");
+                console.error('data.orders is not an array:', data.orders); // Debugging statement
             }
             this.loading = false;
         } else if (error) {
-            this.showErrorToast("Data Loading Error", "Error loading orders.");
+            this.showToast('Error loading orders', 'error', 'Error');
             this.ordersTableData = [];
             this.totalRecords = 0;
             this.loading = false;
         }
+    }    
+
+    showErrorToast(title, message) {
+        const event = new ShowToastEvent({
+            title: title,
+            message: message,
+            variant: 'error',
+        });
+        this.dispatchEvent(event);
+    }
+
+    get offset() {
+        return (this.currentPage - 1) * this.pageSize;
+    }
+
+    handlePreviousPage() {
+        if (this.hasPreviousPage) {
+            this.currentPage--;
+            this.fetchData();
+        }
+    }
+
+    handleNextPage() {
+        if (this.hasNextPage) {
+            this.currentPage++;
+            this.fetchData();
+        }
+    }
+
+    handleRefresh() {
+        this.fetchData();
+    }
+
+    handlePageSizeChange(event) {
+        this.selectedPageSize = parseInt(event.target.value, 10); // Parse string to integer
+        this.pageSize = parseInt(event.target.value, 10); // Parse string to integer
+        this.currentPage = 1; // Reset to the first page
+
+        setPageSize({ newSize: this.pageSize })
+        .then(result => {
+            if (result === 'OK') {
+                this.fetchData();
+            } else {
+                console.error('Failed to set page size:', result);
+            }
+        })
+        .catch(error => {
+            console.error('Error setting page size:', error);
+        });
     }
 
     getDurationUntilNow(timestamp) {
@@ -278,64 +406,5 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
             message: message, variant: variant, title: title
         });
         this.dispatchEvent(event);
-    }
-
-    showErrorToast(title, message) {
-        const event = new ShowToastEvent({
-            title: title,
-            message: message,
-            variant: 'error',
-        });
-        this.dispatchEvent(event);
-    }
-
-    get disablePrevButton() {
-        return this.currentPage <= 1;
-    }
-
-    get disableNextButton() {
-        return this.currentPage >= this.totalPages;
-    }
-
-    get totalPages() {
-        return Math.ceil(this.totalRecords / this.pageSize);
-    }
-
-    get hasPreviousPage() {
-        return this.currentPage > 1;
-    }
-
-    get hasNextPage() {
-        return this.currentPage < this.totalPages;
-    }
-
-    get hasOrders() {
-        return this.ordersTableData && this.ordersTableData.length > 0;
-    }
-
-    get componentTitle() {
-        return `Orders (${this.totalRecords})`;
-    }
-
-    getRowActions(row, doneCallback) {
-        let actions = [];
-        if (row.status === 'Draft') {
-            actions.push({
-                'label': 'Activate', 'name': 'activate'
-            });
-        }
-        if (row.status === 'Activated') {
-            actions.push({
-                'label': 'Mark Order as Shipped', 'name': 'mark_shipped'
-            });
-        }
-        if (!row.disableDownload) {
-            actions.push({
-                'label': 'Download Invoice', 'name': 'download_invoice'
-            }, {
-                'label': 'Preview Invoice', 'name': 'preview_invoice'
-            });
-        }
-        doneCallback(actions);
     }
 }
