@@ -1,4 +1,7 @@
 public with sharing class AccountOrdersController {
+    private static final String ORDER_STATUS_DRAFT = 'Draft';
+    private static final String ORDER_STATUS_ACTIVE = 'Activated';
+    private static final String ORDER_STATUS_SHIPPED = 'Shipped';
     
     public with sharing class OrderDTO {
 
@@ -32,5 +35,15 @@ public with sharing class AccountOrdersController {
         }
 
         return orderDTOs;
+    }
+
+    @AuraEnabled
+    public static Map<String, String> activateOrder(Id orderId) {
+
+    }
+
+    @AuraEnabled
+    public static Map<String, String> markOrderAsShipped(Id orderId) {
+        
     }
 }
