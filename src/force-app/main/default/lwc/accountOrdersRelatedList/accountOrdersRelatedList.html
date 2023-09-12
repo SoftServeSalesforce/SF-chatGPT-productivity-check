@@ -20,6 +20,7 @@
             <template if:true={hasOrders}>
                 <c-orders-data-table data={ordersTableData}
                     key-field="id"
+                    row-id={someRowId}
                     columns={ordersTableColumnsDef}
                     onrowaction={handleRowAction}
                     selected-rows={selectedOrderIds}

@@ -83,7 +83,6 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
     ];
 
     connectedCallback() {
-        console.log('connectedCallback called');
         this.initializePageSize().then(() => {
             this.fetchData();
         }).catch(error => {
@@ -92,24 +91,16 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
     }    
 
     async initializePageSize() {
-        console.log(1);
         try {
-            console.log(2);
             const initialPageSize = await getPageSize();
-            console.log('Initial Page Size from Apex:', initialPageSize);
             this.pageSize = parseInt(initialPageSize, 10);
-            this.selectedPageSize = this.pageSize;  // Keep it as an integer for consistency
-            console.log('Initial Page Size from APEX (after parsing):', this.pageSize);
-            console.log('Selected Page Size from APEX (after parsing):', this.selectedPageSize);
-        } catch (error) {
-            console.log('fail abc');
+            this.selectedPageSize = this.pageSize;
+} catch (error) {
             console.error("Error initializing page size:", error);
         }
-        console.log(3);
     }     
 
     fetchData() {
-        console.log('fetchdata params: ' + this.recordId + ' ' + this.currentPage + ' ' + this.pageSize);
         getOrders({ accountId: this.recordId, pageNumber: this.currentPage, pageSize: this.pageSize })
             .then(result => {
                 this.processFetchedData(result);
@@ -122,7 +113,6 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
     
     processFetchedData(result) {
         try {
-            console.log('Fetched data: ', JSON.stringify(result));
             this.ordersTableData = result.orders.map((record) => ({
                 ...record,
                 orderUrl: '/' + record.id,
@@ -132,7 +122,6 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
                 duration: this.getDurationUntilNow(record.lastStatusChangedTimestamp)
             }));
             this.totalRecords = result.totalRecords;
-            console.log('fetchData totalRecords ' + this.totalRecords);
             this.loading = false;
         } catch (error) {
             console.error('Error processing fetched data:', error);
@@ -190,6 +179,7 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
     }
 
     handleRowSelection(event) {
+        console.log('Selected event detail: ' + event.detail);
         const selectedRows = event.detail.selectedRows;
         console.log('Selected Rows:', selectedRows);
         this.selectedOrderIds = selectedRows.map(row => row.id);
@@ -198,6 +188,10 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
 
     handleCheckboxChange(event) {
         console.log('Received event detail:', event.detail);
+        console.log('Received 1:', event.detail.selectedRows);
+        console.log('Received 2:', event.detail.selectedRows.map(row => row.id));
+        console.log('Received checked:', event.detail.checked);
+        console.log('Received rowId:', event.detail.rowId);
         
         const isChecked = event.detail.checked;
         const rowId = event.detail.rowId; // Assuming you've added this to the event detail
@@ -336,6 +330,7 @@ export default class AccountOrdersRelatedList extends NavigationMixin(LightningE
                     duration: this.getDurationUntilNow(record.lastStatusChangedTimestamp)
                 }));
                 this.totalRecords = data.totalRecords;
+                console.log('Processed ordersTableData:', this.ordersTableData);
             } else {
                 console.error('data.orders is not an array:', data.orders); // Debugging statement
             }
