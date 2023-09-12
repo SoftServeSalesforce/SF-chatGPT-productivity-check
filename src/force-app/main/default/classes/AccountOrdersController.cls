@@ -1,14 +1,24 @@
 public with sharing class AccountOrdersController {
     
     public with sharing class OrderDTO {
+
+        @AuraEnabled
         public Id id;
-        public String name;
+        @AuraEnabled
         public String status;
+        @AuraEnabled
+        public String orderNumber;
+        @AuraEnabled
+        public Date startDate;
+        @AuraEnabled
+        public Decimal amount;
         
         public OrderDTO(Order order) {
             this.id = order.Id;
-            this.name = order.Name;
+            this.orderNumber = order.OrderNumber;
+            this.startDate = order.EffectiveDate;
             this.status = order.Status;
+            this.amount = order.TotalAmount;
         }
     }
 
