@@ -233,6 +233,20 @@ public class AccountOrdersControllerTest {
     }
 
     @isTest
+    static void testactivateSelectedOrdersFailure2() {
+        Exception e;
+        List<Id> emptyOrderIds= new List<Id>();
+        Test.startTest();
+        
+            AccountOrdersController.activateSelectedOrders(null);
+            System.assert(false, NO_ORDERS_PASSED);
+
+        Test.stopTest();
+        Assert.isNotNull(e, 'Exception');
+
+    }
+
+    @isTest
     static void testMarkOrdersAsShippedSuccess() {
         List<Order> testOrders = [SELECT Id FROM Order WHERE Status = 'Activated'];
         List<Id> orderIds = new List<Id>();
@@ -262,6 +276,20 @@ public class AccountOrdersControllerTest {
         } catch (Exception ex) {
             e = ex;
         }
+        Test.stopTest();
+        Assert.isNotNull(e, 'Exception');
+
+    }
+
+    @isTest
+    static void testMarkOrdersAsShippedFailure2() {
+        List<Id> emptyOrderIds= new List<Id>();
+        Exception e;
+        Test.startTest();
+
+            AccountOrdersController.shipSelectedOrders(null);
+            System.assert(false, NO_ORDERS_PASSED);
+
         Test.stopTest();
         Assert.isNotNull(e, 'Exception');
 
