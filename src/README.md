@@ -1,1 +1,5 @@
-unpause
+Application Description:
+
+The application is designed to manage and interact with orders associated with specific accounts in Salesforce. It provides a comprehensive view of orders, allowing users to retrieve orders based on an account ID, paginate through them, and view essential details such as order number, start date, status, amount, and associated documents. The application also offers functionalities to activate orders, mark them as shipped, and manage the number of orders displayed per page through user interface settings.
+
+To set up data for manual testing, a script is provided that generates a set of products, pricebook entries, an account, a contract, orders, order line items, and content files associated with the orders. This script ensures that the application has the necessary data to function correctly and allows testers to validate its features. The script creates orders with different statuses and attaches content files to them in varying patterns, ensuring a comprehensive testing environment.
