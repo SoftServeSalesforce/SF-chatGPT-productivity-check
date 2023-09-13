@@ -15,6 +15,8 @@ public with sharing class AccountOrdersController {
         public Date startDate;
         @AuraEnabled
         public Decimal amount;
+        @AuraEnabled
+        public Id contentDocumentId;
         
         public OrderDTO(Order order) {
             this.id = order.Id;
@@ -22,6 +24,9 @@ public with sharing class AccountOrdersController {
             this.startDate = order.EffectiveDate;
             this.status = order.Status;
             this.amount = order.TotalAmount;
+            if (order.AttachedContentDocuments.size() > 0) {
+                this.contentDocumentId = order.AttachedContentDocuments[0].ContentDocumentId;
+            }
         }
     }
 
@@ -38,12 +43,44 @@ public with sharing class AccountOrdersController {
     }
 
     @AuraEnabled
-    public static Map<String, String> activateOrder(Id orderId) {
-
+    public static Map<String, String> markOrderAsShipped(Id orderId) {
+        Map<String, String> result = new Map<String, String>();
+        List<Order> orders = OrderSelector.selectOrdersById(orderId);
+        if (orders[0].Status == ORDER_STATUS_ACTIVE) {
+            orders[0].Status = ORDER_STATUS_SHIPPED;
+        } else {
+            result.put('status', 'ERROR');
+            result.put('message', 'Invalid Operation for Order #' + orderId);
+            return result;
+        }
+        try {
+            update orders[0];
+            result.put('status', 'OK');
+        } catch (DmlException e) {
+            result.put('status', 'ERROR');
+            result.put('message', 'Invalid Operation for Order #' + orderId);
+        }
+        return result;
     }
 
     @AuraEnabled
-    public static Map<String, String> markOrderAsShipped(Id orderId) {
-        
+    public static Map<String, String> activateOrder(Id orderId) {
+        Map<String, String> result = new Map<String, String>();
+        List<Order> orders = OrderSelector.selectOrdersById(orderId);
+        if (orders[0].Status == ORDER_STATUS_DRAFT) {
+            orders[0].Status = ORDER_STATUS_ACTIVE;
+        } else {
+            result.put('status', 'ERROR');
+            result.put('message', 'Invalid Operation for Order #' + orderId);
+            return result;
+        }
+        try {
+            update orders[0];
+            result.put('status', 'OK');
+        } catch (DmlException e) {
+            result.put('status', 'ERROR');
+            result.put('message', 'Invalid Operation for Order #' + orderId);
+        }
+        return result;
     }
 }
