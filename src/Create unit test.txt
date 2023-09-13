@@ -1,0 +1,733 @@
+User
+I need to cherry pick commit from another branch, currently located on my branch.
+ChatGPT
+To cherry-pick a commit from another branch while you are on your current branch, follow these steps:
+
+Make sure your working directory is clean. Any changes should be committed or stashed away to ensure a smooth cherry-pick.
+
+Ensure you are on the branch where you want to apply the commit:
+
+bash
+Copy code
+git checkout your_branch_name
+Use the git cherry-pick command followed by the commit hash you want to cherry-pick:
+bash
+Copy code
+git cherry-pick d41e67e50d89342d5cc6f6d15097aadf88fbbd52
+If there are no conflicts, the commit will be applied to your current branch. However, if there are conflicts, you will be prompted to resolve them. Once you resolve the conflicts:
+bash
+Copy code
+git add .
+And then:
+
+bash
+Copy code
+git cherry-pick --continue
+Once the cherry-pick is complete, you can push your branch if required:
+bash
+Copy code
+git push origin your_branch_name
+Remember, cherry-picking is essentially taking the changes from a single commit and applying them onto your current branch as a new commit. It does not carry over the commit history from the other branch, just the changes.
+
+
+
+
+User
+I will add my apex controller class below this message. Please do not respond before you get the code. I want you to generate an apex test class with @testSetup method and a test method for each controller class method.
+ChatGPT
+Of course! Please paste your Apex controller class below, and I'll generate the corresponding test class for you.
+
+
+
+
+User
+public with sharing class AccountOrdersController {
+    private static final String ORDER_ACTIVATED_STATUS = 'Activated';
+    private static final String ORDER_SHIPPED_STATUS = 'Shipped';
+
+
+    @AuraEnabled
+    public static List<OrderDTO> getOrders(Id accountId, Integer page, Integer pageSize) {
+        OrderSelector orderSelector = OrderSelector.newInstance();
+        Integer offsetSize = (page - 1) * pageSize;
+
+        List<Order> orders = orderSelector.selectOrdersByAccountId(accountId, pageSize, offsetSize);
+        List<OrderDTO> orderDTOs = new List<OrderDTO>();
+        
+        for(Order ord : orders) {
+            orderDTOs.add(new OrderDTO(ord));
+        }
+
+        return orderDTOs;
+    }
+
+    @AuraEnabled
+    public static Integer getOrdersCount(Id accountId) {
+        OrderSelector orderSelector = OrderSelector.newInstance();
+        Integer orders = orderSelector.countOrdersByAccounId(accountId);
+        return orders;
+    }
+
+    @AuraEnabled
+    public static Integer getUserPageSize() {
+        OrderPageSize__c pref = OrderPageSize__c.getInstance(UserInfo.getUserId());
+        return (pref.Page_Size__c != null) ? Integer.valueOf(pref.Page_Size__c) : 10;
+    }
+
+    @AuraEnabled
+    public static void saveUserPageSize(Integer pageSize) {
+        OrderSelector orderSelector = OrderSelector.newInstance();
+        OrderPageSize__c order = orderSelector.selectUserPageSize();
+        if (order != null) {
+            order.Page_Size__c = pageSize;
+            update order;
+        } else {
+            order = new OrderPageSize__c(
+                SetupOwnerId = UserInfo.getUserId(),
+                Page_Size__c = pageSize
+            );
+            insert order;
+        }
+    }
+
+    @AuraEnabled
+    public static Map<String, String> activateOrder(List<Id> orderIds) {
+        Map<String, String> response = new Map<String, String>();
+
+        try {
+            OrderSelector selector = OrderSelector.newInstance(); 
+            List<Order> ordersToActivate = selector.selectDraftOrderById(orderIds);
+
+            if (ordersToActivate.isEmpty()) {
+                response.put('status', 'ERROR');
+                response.put('ErrorMessage', 'Invalid operation for Order#' + orderIds);
+                return response;
+            }
+
+            for (Order ord : ordersToActivate) {
+                ord.Status = ORDER_ACTIVATED_STATUS;
+            }
+            update ordersToActivate;
+
+            response.put('status', 'OK');
+            response.put('ErrorMessage', null);
+        } catch (Exception e) {
+            response.put('status', 'ERROR');
+            response.put('ErrorMessage', 'An error occured: ' + e.getMessage());
+        }
+        return response;
+    }
+
+    @AuraEnabled
+    public static Map<String, String> markOrderAsShipped(List<Id> orderIds) {
+        Map<String, String> response = new Map<String, String>();
+
+        try {
+            OrderSelector selector = OrderSelector.newInstance(); 
+            List<Order> ordersToMarkShipped = selector.selectActiveOrderById(orderIds);
+            
+            if (ordersToMarkShipped.isEmpty()) {
+                response.put('status', 'ERROR');
+                response.put('ErrorMessage', 'Invalid operation for Order#' + orderIds);
+                return response;
+            }
+
+            for (Order ord : ordersToMarkShipped) {
+                ord.Status = ORDER_SHIPPED_STATUS;
+            }
+            update ordersToMarkShipped;
+
+            response.put('status', 'OK');
+            response.put('ErrorMessage', null);
+        } catch (Exception e) {
+            response.put('status', 'ERROR');
+            response.put('ErrorMessage', 'An error occured: ' + e.getMessage());
+        }
+        return response;
+    }
+
+    public class OrderDTO {
+        @AuraEnabled
+        public Id Id { get; set; }
+        @AuraEnabled
+        public String OrderNumber { get; set; }
+        @AuraEnabled
+        public String Status { get; set; }
+        @AuraEnabled
+        public Decimal TotalAmount { get; set; }
+        @AuraEnabled
+        public Date EffectiveDate { get; set; }
+        @AuraEnabled
+        public Id ContentDocumentId { get; set;}
+        @AuraEnabled
+        public String InvoiceUrl { get; set; }
+        @AuraEnabled
+        public Datetime LastStatusChanged { get; set; }
+        @AuraEnabled
+        public Datetime CreatedDate { get; set;}
+
+        public OrderDTO(Order ord) {
+            this.Id = ord.Id;
+            this.OrderNumber = ord.OrderNumber;
+            this.Status = ord.Status;
+            this.TotalAmount = ord.TotalAmount;
+            this.EffectiveDate = ord.EffectiveDate;
+            this.LastStatusChanged = ord.LastStatusChanged__c;
+            this.CreatedDate = ord.CreatedDate;
+            if (ord.AttachedContentDocuments != null && !ord.AttachedContentDocuments.isEmpty()) {
+                List<AttachedContentDocument> subq = (List<AttachedContentDocument>) ord.AttachedContentDocuments;
+                this.ContentDocumentId = subq[0].ContentDocumentId;
+                this.InvoiceUrl = '/sfc/servlet.shepherd/document/download/' + this.ContentDocumentId;
+            }
+        }
+    }
+}
+ChatGPT
+Given your AccountOrdersController, below is a test class that covers the methods in your controller. It includes a @testSetup method to set up test data and individual test methods for each controller method.
+
+apex
+Copy code
+@isTest
+private class AccountOrdersControllerTest {
+    
+    @testSetup
+    static void setupTestData() {
+        // Create an Account and related Order for testing purposes
+        Account acc = new Account(Name = 'Test Account');
+        insert acc;
+
+        List<Order> testOrders = new List<Order>();
+        for (Integer i = 0; i < 15; i++) {
+            testOrders.add(new Order(
+                AccountId = acc.Id,
+                Status = (i < 10) ? 'Draft' : 'Activated',
+                EffectiveDate = Date.today(),
+                OrderNumber = 'Order ' + i
+            ));
+        }
+        insert testOrders;
+    }
+
+    static testMethod void testGetOrders() {
+        Test.startTest();
+        List<AccountOrdersController.OrderDTO> orderDTOs = AccountOrdersController.getOrders([SELECT Id FROM Account LIMIT 1][0].Id, 1, 10);
+        Test.stopTest();
+
+        System.assertEquals(10, orderDTOs.size(), 'Expected 10 orders in the result');
+    }
+
+    static testMethod void testGetOrdersCount() {
+        Test.startTest();
+        Integer ordersCount = AccountOrdersController.getOrdersCount([SELECT Id FROM Account LIMIT 1][0].Id);
+        Test.stopTest();
+
+        System.assertEquals(15, ordersCount, 'Expected 15 orders in total');
+    }
+
+    static testMethod void testGetUserPageSize() {
+        // Currently, it will return default value as no custom setting is set up in test context
+        Test.startTest();
+        Integer pageSize = AccountOrdersController.getUserPageSize();
+        Test.stopTest();
+
+        System.assertEquals(10, pageSize, 'Expected default page size to be 10');
+    }
+
+    static testMethod void testSaveUserPageSize() {
+        Test.startTest();
+        AccountOrdersController.saveUserPageSize(20);
+        Test.stopTest();
+
+        OrderPageSize__c userSetting = OrderPageSize__c.getInstance(UserInfo.getUserId());
+        System.assertEquals(20, userSetting.Page_Size__c, 'Expected page size to be saved as 20');
+    }
+
+    static testMethod void testActivateOrder() {
+        List<Id> orderIds = [SELECT Id FROM Order WHERE Status = 'Draft' LIMIT 5];
+        Test.startTest();
+        Map<String, String> response = AccountOrdersController.activateOrder(orderIds);
+        Test.stopTest();
+
+        System.assertEquals('OK', response.get('status'), 'Expected successful activation of orders');
+    }
+
+    static testMethod void testMarkOrderAsShipped() {
+        List<Id> orderIds = [SELECT Id FROM Order WHERE Status = 'Activated' LIMIT 5];
+        Test.startTest();
+        Map<String, String> response = AccountOrdersController.markOrderAsShipped(orderIds);
+        Test.stopTest();
+
+        System.assertEquals('OK', response.get('status'), 'Expected successful marking of orders as shipped');
+    }
+}
+Few points:
+
+Always ensure that you run this test class after saving to validate the logic and coverage.
+This assumes that your OrderSelector class methods (selectOrdersByAccountId, countOrdersByAccounId, selectUserPageSize, selectDraftOrderById, and selectActiveOrderById) work as intended. If there are any dependencies or special behaviors within these methods, they might need additional mock data or assertions in the test class.
+Additional edge cases can be added to make testing more comprehensive.
+
+
+
+User
+You can't create an order without a lookup to a contract.
+ChatGPT
+Let's modify our test setup to accommodate this constraint. We'll first create a Contract record before creating the Order records, ensuring each order has a reference to this contract.
+
+Here's the updated @testSetup method:
+
+apex
+Copy code
+@testSetup
+static void setupTestData() {
+    // Create an Account and related Order for testing purposes
+    Account acc = new Account(Name = 'Test Account');
+    insert acc;
+
+    // Create a Contract for the Account
+    Contract con = new Contract(
+        AccountId = acc.Id,
+        StartDate = Date.today().addDays(-10),
+        EndDate = Date.today().addDays(90),
+        Status = 'Activated'
+    );
+    insert con;
+
+    List<Order> testOrders = new List<Order>();
+    for (Integer i = 0; i < 15; i++) {
+        testOrders.add(new Order(
+            AccountId = acc.Id,
+            ContractId = con.Id,  // Setting the Contract lookup
+            Status = (i < 10) ? 'Draft' : 'Activated',
+            EffectiveDate = Date.today(),
+            OrderNumber = 'Order ' + i
+        ));
+    }
+    insert testOrders;
+}
+This updated setup method first creates a Contract related to the test account and then associates each Order record with that contract using the ContractId field. This should bypass the constraint that an Order requires a lookup to a Contract.
+
+
+
+
+User
+You can't assign "Activated" status if order has no assigned products.
+ChatGPT
+Okay, for our test data, let's create a Pricebook, a PricebookEntry, and then add OrderItem records to our Order. This will satisfy the criteria of an Order having products associated with it.
+
+The following is the modified @testSetup method:
+
+apex
+Copy code
+@testSetup
+static void setupTestData() {
+    // Create an Account and related Order for testing purposes
+    Account acc = new Account(Name = 'Test Account');
+    insert acc;
+
+    // Create a Contract for the Account
+    Contract con = new Contract(
+        AccountId = acc.Id,
+        StartDate = Date.today().addDays(-10),
+        EndDate = Date.today().addDays(90),
+        Status = 'Draft'
+    );
+    insert con;
+
+    // Create a Product and a Pricebook Entry
+    Product2 prod = new Product2(Name = 'Test Product', IsActive = true);
+    insert prod;
+    
+    Pricebook2 standardPb = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+    
+    PricebookEntry pbe = new PricebookEntry(Pricebook2Id = standardPb.Id, Product2Id = prod.Id, UnitPrice = 100.00, IsActive = true);
+    insert pbe;
+
+    List<Order> testOrders = new List<Order>();
+    for (Integer i = 0; i < 15; i++) {
+        Order ord = new Order(
+            AccountId = acc.Id,
+            ContractId = con.Id,  // Setting the Contract lookup
+            Status = 'Draft',
+            EffectiveDate = Date.today(),
+            OrderNumber = 'Order ' + i,
+            Pricebook2Id = standardPb.Id
+        );
+        testOrders.add(ord);
+    }
+    insert testOrders;
+
+    // Add OrderItems (products) to the Orders
+    List<OrderItem> orderItems = new List<OrderItem>();
+    for(Order ord : testOrders) {
+        OrderItem oi = new OrderItem(
+            OrderId = ord.Id,
+            PricebookEntryId = pbe.Id,
+            Quantity = 2,
+            UnitPrice = 100.00
+        );
+        orderItems.add(oi);
+    }
+    insert orderItems;
+}
+With this setup, we've added OrderItem records associated with each Order. Each Order now has products associated with it, which should allow it to be activated.
+
+Now, you can proceed with creating the test methods for your controller's methods.
+
+
+
+
+User
+I think there's a built-in method to get default pricebook id inside a test class.
+ChatGPT
+Yes, you're right. Salesforce provides a Test.getStandardPricebookId() method to retrieve the ID of the standard pricebook, specifically for use in test methods. This is particularly useful since the standard pricebook is seeded by Salesforce and exists in all orgs, but it's not queryable by default.
+
+Let's modify the setup method to leverage this:
+
+apex
+Copy code
+@testSetup
+static void setupTestData() {
+    // Create an Account and related Order for testing purposes
+    Account acc = new Account(Name = 'Test Account');
+    insert acc;
+
+    // Create a Contract for the Account
+    Contract con = new Contract(
+        AccountId = acc.Id,
+        StartDate = Date.today().addDays(-10),
+        EndDate = Date.today().addDays(90),
+        Status = 'Draft'
+    );
+    insert con;
+
+    // Create a Product and a Pricebook Entry
+    Product2 prod = new Product2(Name = 'Test Product', IsActive = true);
+    insert prod;
+    
+    Id standardPbId = Test.getStandardPricebookId();
+    
+    PricebookEntry pbe = new PricebookEntry(Pricebook2Id = standardPbId, Product2Id = prod.Id, UnitPrice = 100.00, IsActive = true);
+    insert pbe;
+
+    List<Order> testOrders = new List<Order>();
+    for (Integer i = 0; i < 15; i++) {
+        Order ord = new Order(
+            AccountId = acc.Id,
+            ContractId = con.Id,  // Setting the Contract lookup
+            Status = 'Draft',
+            EffectiveDate = Date.today(),
+            OrderNumber = 'Order ' + i,
+            Pricebook2Id = standardPbId
+        );
+        testOrders.add(ord);
+    }
+    insert testOrders;
+
+    // Add OrderItems (products) to the Orders
+    List<OrderItem> orderItems = new List<OrderItem>();
+    for(Order ord : testOrders) {
+        OrderItem oi = new OrderItem(
+            OrderId = ord.Id,
+            PricebookEntryId = pbe.Id,
+            Quantity = 2,
+            UnitPrice = 100.00
+        );
+        orderItems.add(oi);
+    }
+    insert orderItems;
+}
+Thanks for pointing that out. Using Test.getStandardPricebookId() is a cleaner approach in this scenario.
+
+
+
+
+User
+Maybe use @isTest decorator for test methods instead of testMethod
+ChatGPT
+Absolutely, the @isTest decorator is now the preferred way to define test methods and classes in Apex. The testMethod keyword, which was used in earlier versions of the Apex language, is now considered outdated.
+
+Here's an example of how you can use @isTest for methods:
+
+apex
+Copy code
+@isTest
+static void myTestMethod() {
+    // Your test logic here
+}
+Given your request, I'll proceed to draft the test methods for the AccountOrdersController class using the @isTest decorator for methods.
+
+Test class structure (continued):
+
+apex
+Copy code
+@isTest
+private class AccountOrdersControllerTest {
+
+    @isTest
+    static void testGetOrders() {
+        // This is where you set up any data you need, then call the method and validate results.
+        // Example:
+        Test.startTest();
+        List<AccountOrdersController.OrderDTO> orders = AccountOrdersController.getOrders(<sampleAccountId>, 1, 10);
+        Test.stopTest();
+        
+        System.assertEquals(10, orders.size(), 'Expected 10 orders to be retrieved');
+        // More assertions as needed
+    }
+
+    @isTest
+    static void testGetOrdersCount() {
+        // Similar setup, execution, and assertion steps
+    }
+
+    @isTest
+    static void testGetUserPageSize() {
+        // Similar setup, execution, and assertion steps
+    }
+
+    @isTest
+    static void testSaveUserPageSize() {
+        // Similar setup, execution, and assertion steps
+    }
+
+    @isTest
+    static void testActivateOrder() {
+        // Similar setup, execution, and assertion steps
+    }
+
+    @isTest
+    static void testMarkOrderAsShipped() {
+        // Similar setup, execution, and assertion steps
+    }
+    
+    // Include the setupTestData method as previously shown
+}
+You'd fill out each test method by setting up the needed data context, invoking the controller method you're testing, and then making assertions to validate the behavior. Don't forget to leverage Test.startTest() and Test.stopTest() to reset governor limits and ensure asynchronous processes execute immediately, if necessary.
+
+
+
+
+User
+Deploying your test class to scratch org has generated some feedback: "| Error AccountOrdersControllerTest Field is not writeable: Contract.EndDate (9:24)
+| Error AccountOrdersControllerTest Illegal assignment from List<Order> to List<Id> (105:18)
+| Error AccountOrdersControllerTest Illegal assignment from List<Order> to List<Id> (95:18)
+| Error AccountOrdersControllerTest Field is not writeable: Order.OrderNumber (31:25)
+| Error AccountOrdersControllerTest Field is not writeable: Order.OrderNumber
+| Error AccountOrdersControllerTest Illegal assignment from List<Order> to List<Id>
+| Error AccountOrdersControllerTest Illegal assignment from List<Order> to List<Id>
+| Error AccountOrdersControllerTest Field is not writeable: Contract.EndDate"
+ChatGPT
+Apologies for the oversight. I'll address the feedback step by step:
+
+Field is not writeable: Contract.EndDate: Some fields are not directly writable, meaning they are automatically calculated by Salesforce based on other fields or conditions. We'll need to remove any direct assignment to this field.
+
+Illegal assignment from List<Order> to List<Id>: This error is about trying to assign a list of Order objects to a list of Ids. We'll need to change our approach to extracting the Ids.
+
+Field is not writeable: Order.OrderNumber: If OrderNumber is not writeable, then we should not be trying to set it. Salesforce automatically generates this field when the Order record is created.
+
+Given these feedback points, let's address these issues in the test class:
+
+apex
+Copy code
+@isTest
+private class AccountOrdersControllerTest {
+    
+    @testSetup
+    static void setupTestData() {
+        //... (existing code for creating accounts, etc.)
+
+        List<Order> ordersToInsert = new List<Order>();
+        for (Integer i = 0; i < 10; i++) {
+            Order o = new Order(AccountId = acc.Id, Status = 'Draft', EffectiveDate = Date.today());
+            // Removed setting OrderNumber
+            ordersToInsert.add(o);
+        }
+        insert ordersToInsert;
+        
+        // ... (rest of the test setup code)
+    }
+    
+    //... (rest of your test class methods)
+    
+    @isTest
+    static void testActivateOrder() {
+        // Similar setup, execution, and assertion steps
+        
+        List<Order> draftOrders = [SELECT Id FROM Order WHERE Status = 'Draft'];
+        List<Id> draftOrderIds = new List<Id>();
+        for(Order o : draftOrders) {
+            draftOrderIds.add(o.Id);
+        }
+        
+        // Use draftOrderIds for your test logic
+    }
+
+    @isTest
+    static void testMarkOrderAsShipped() {
+        // Similar setup, execution, and assertion steps
+        
+        List<Order> activeOrders = [SELECT Id FROM Order WHERE Status = 'Activated'];
+        List<Id> activeOrderIds = new List<Id>();
+        for(Order o : activeOrders) {
+            activeOrderIds.add(o.Id);
+        }
+        
+        // Use activeOrderIds for your test logic
+    }
+}
+For the Contract.EndDate error, I am removing the direct assignment. Salesforce will automatically set the EndDate based on the StartDate and the contract term. Ensure you're setting the StartDate and ContractTerm fields when creating the contract, and Salesforce will handle the EndDate calculation.
+
+Please adjust the test methods as per your actual logic and business requirements.
+
+
+
+
+User
+You keep making the same mistake. Order cannot be created without a lookup to a contract.
+ChatGPT
+I apologize for the oversight. Here's the correction to the test setup. I'll create a Contract for each Order in the @testSetup:
+
+apex
+Copy code
+@isTest
+private class AccountOrdersControllerTest {
+    
+    @testSetup
+    static void setupTestData() {
+        // Create an Account
+        Account acc = new Account(Name='Test Account');
+        insert acc;
+
+        // Create a Contract for that Account
+        Contract cont = new Contract(AccountId = acc.Id, StartDate = Date.today(), ContractTerm = 12);
+        insert cont;
+
+        List<Order> ordersToInsert = new List<Order>();
+        for (Integer i = 0; i < 10; i++) {
+            Order o = new Order(AccountId = acc.Id, ContractId = cont.Id, Status = 'Draft', EffectiveDate = Date.today());
+            ordersToInsert.add(o);
+        }
+        insert ordersToInsert;
+
+        // ... (rest of the test setup code)
+    }
+
+    // ... (rest of the test methods)
+}
+In the above setup, every Order record created is linked to the same Contract record. If your business process has multiple contracts per account or one contract per order, please adjust the setup accordingly.
+
+Again, I apologize for the oversight and thank you for pointing it out.
+
+
+
+
+User
+To update order status I need parent contract to be Activated too. I can't activate Contract, because EndDate field is not writeable. I know for a fact that in UI when you create a contract you assing the length of the contract...
+ChatGPT
+I understand your concern. The ContractTerm field is used to automatically set the EndDate based on the StartDate. When a Contract is created with a StartDate and ContractTerm (in months), Salesforce automatically sets the EndDate for you.
+
+When you want to activate the contract, you need to set the Status field to 'Activated'. Here's the corrected setup:
+
+apex
+Copy code
+@isTest
+private class AccountOrdersControllerTest {
+    
+    @testSetup
+    static void setupTestData() {
+        // Create an Account
+        Account acc = new Account(Name='Test Account');
+        insert acc;
+
+        // Create and activate a Contract for that Account
+        Contract cont = new Contract(AccountId = acc.Id, StartDate = Date.today(), ContractTerm = 12, Status = 'Draft');
+        insert cont;
+
+        // Activate the contract
+        cont.Status = 'Activated';
+        update cont;
+
+        List<Order> ordersToInsert = new List<Order>();
+        for (Integer i = 0; i < 10; i++) {
+            Order o = new Order(AccountId = acc.Id, ContractId = cont.Id, Status = 'Draft', EffectiveDate = Date.today());
+            ordersToInsert.add(o);
+        }
+        insert ordersToInsert;
+
+        // ... (rest of the test setup code)
+    }
+
+    // ... (rest of the test methods)
+}
+In the above example, the contract is first inserted with a status of 'Draft'. Then, it's updated to 'Activated'. Ensure that your org's Contract lifecycle process allows this change. If you have any automation or validation rules preventing the contract from being activated, consider deactivating them during test runs or adjusting the test data/setup accordingly.
+
+
+
+
+User
+ContractTerm field worked.
+ChatGPT
+Great to hear! The ContractTerm field is indeed useful for automatically calculating the EndDate based on the StartDate.
+
+Now that you've set up the Contract and linked it to your Order(s), you should be able to proceed with the rest of your test methods and mimic the behavior as it happens in the UI.
+
+Is there anything else related to this that you'd like assistance with, or any other questions on a different topic?
+
+
+
+
+User
+You've created only positive case asserts, I also better test coverage.
+ChatGPT
+Certainly! Including negative test cases is essential for comprehensive test coverage. I'll help you expand the test class to account for these scenarios. I'll point out the negative test cases for you:
+
+Attempting to activate an order that doesn't exist or isn't in the correct status: This should return an error.
+Trying to mark an order as shipped when it isn't in the 'Activated' state: This should also return an error.
+Attempting to get orders for a non-existent Account: You might want to ensure that the method behaves correctly with no results or provides a relevant error message.
+Saving a page size of zero or a negative number: This might be considered invalid input, and you'd want the method to handle it gracefully.
+Calling activateOrder or markOrderAsShipped with an empty list: The methods should handle this case correctly, ideally without making unnecessary SOQL queries.
+Here's how you can add negative test cases for a few of these scenarios:
+
+apex
+Copy code
+@isTest
+static void testActivateOrder_InvalidOrder() {
+    Id fakeOrderId = 'a0Q3h000004zXYZ'; // This ID doesn't exist, but has a valid 15-character format
+    Map<String, String> result = AccountOrdersController.activateOrder(new List<Id>{fakeOrderId});
+    
+    System.assertEquals('ERROR', result.get('status'));
+    System.assert(result.get('ErrorMessage').contains('Invalid operation'), result.get('ErrorMessage'));
+}
+
+@isTest
+static void testMarkOrder_NotActivated() {
+    // Assuming testSetup creates an order that isn't activated
+    List<Order> testOrders = [SELECT Id FROM Order WHERE Status != 'Activated' LIMIT 1];
+    Map<String, String> result = AccountOrdersController.markOrderAsShipped(new List<Id>{testOrders[0].Id});
+    
+    System.assertEquals('ERROR', result.get('status'));
+    System.assert(result.get('ErrorMessage').contains('Invalid operation'), result.get('ErrorMessage'));
+}
+
+@isTest
+static void testGetOrders_NonExistentAccount() {
+    Id fakeAccountId = '0013h00000O2XYZ'; // Fake Account ID with a valid format
+    List<AccountOrdersController.OrderDTO> orders = AccountOrdersController.getOrders(fakeAccountId, 1, 10);
+    
+    System.assertEquals(0, orders.size());
+}
+
+@isTest
+static void testSaveUserPageSize_InvalidInput() {
+    Test.startTest();
+    try {
+        AccountOrdersController.saveUserPageSize(-1); // Trying to save negative page size
+        System.assert(false, 'Expected an exception but none was thrown.');
+    } catch (Exception e) {
+        System.assert(e.getMessage().contains('Invalid page size'), e.getMessage());
+    }
+    Test.stopTest();
+}
+Remember, these are just examples, and they might not fit perfectly into your org's specific rules or logic. You may need to adjust these examples based on your actual org configuration and business logic. It's also a good practice to handle exceptions and validation on the controller side and ensure those cases are tested.
+
+Would you like more cases or any other assistance?
