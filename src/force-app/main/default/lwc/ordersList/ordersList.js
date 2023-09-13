@@ -50,6 +50,6 @@ export default class OrdersList extends LightningElement {
     }
 
     handleRowAction(){
-        
+    
     }
 }
