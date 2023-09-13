@@ -46,9 +46,13 @@ public with sharing class OrderSelector {
     }
 
     public OrderPageSize__c selectUserPageSize() {
-        return [SELECT Page_Size__c
+        try{
+            return [SELECT Page_Size__c
                 FROM OrderPageSize__c
                 WHERE SetupOwnerId = :UserInfo.getUserId()
                 LIMIT 1];
+        } catch (System.QueryException e) {
+            return null;
+        }
     }
 }
