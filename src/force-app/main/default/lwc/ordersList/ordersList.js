@@ -13,7 +13,11 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
     ordersColumns = [
         { label: 'Number', fieldName: 'orderNumber', type: 'text' },
         { label: 'Date', fieldName: 'startDate', type: 'date' },
-        { label: 'Status', fieldName: 'status', type: 'text' },
+        { label: 'Status', type: 'status',
+        typeAttributes: {
+            lastStatusChanged: {fieldName: 'lastStatusChanged'},
+            status: {fieldName: 'status'}
+        } },
         { label: 'Amount', fieldName: 'amount', type: 'currency', 
             typeAttributes: {currencyCode: 'USD'} },
         { type: 'button-icon', label: 'Invoice',

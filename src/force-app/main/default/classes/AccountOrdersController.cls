@@ -10,6 +10,8 @@ public with sharing class AccountOrdersController {
         @AuraEnabled
         public String status;
         @AuraEnabled
+        public Datetime lastStatusChanged;
+        @AuraEnabled
         public String orderNumber;
         @AuraEnabled
         public Date startDate;
@@ -24,6 +26,7 @@ public with sharing class AccountOrdersController {
             this.startDate = order.EffectiveDate;
             this.status = order.Status;
             this.amount = order.TotalAmount;
+            this.lastStatusChanged = order.LastStatusChanged__c;
             if (order.AttachedContentDocuments.size() > 0) {
                 this.contentDocumentId = order.AttachedContentDocuments[0].ContentDocumentId;
             }
