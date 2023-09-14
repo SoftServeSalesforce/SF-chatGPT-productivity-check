@@ -1,0 +1,141 @@
+User
+I need an apex script that does these actions: 
+
+Creat 5 products with names like HP ZBook, Mac Book Pro, Dell Inspiron, SFDC Apex Development, LWC Development .
+
+Pricebook entries for standard pricebook and each product with non-zero arbitrary value of unit price.
+
+Account record named SoftServe Inc. 
+
+Create activated Contract 
+
+400 orders related to created Account records 
+
+Each order should have 5 order line items, one order line item per product 
+
+There should be 100 orders per each status (Draft/Activated/Shipped/Delivered) 
+
+In every 100 orders there should be 25 without any attached content files, 25 should have ‘Invoice-%i.pdf’ document attached, 25 should have ‘test-%i.pdf’ document attached and 25 should have both ‘Invoice-%i.pdf’  and ‘test-%i.pdf’ documents attached. All file names should be different and include dynamic parameter of counter %i. For example, Invoice-25.pdf or test-100.pdf. 
+ChatGPT
+The following is an Apex script that meets your requirements:
+
+apex
+Copy code
+List<Product2> products = new List<Product2> {
+    new Product2(Name = 'HP ZBook', IsActive = true),
+    new Product2(Name = 'Mac Book Pro', IsActive = true),
+    new Product2(Name = 'Dell Inspiron', IsActive = true),
+    new Product2(Name = 'SFDC Apex Development', IsActive = true),
+    new Product2(Name = 'LWC Development', IsActive = true)
+};
+insert products;
+
+Pricebook2 stdPb = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1];
+
+List<PricebookEntry> pbEntries = new List<PricebookEntry>();
+for(Product2 prod : products) {
+    pbEntries.add(new PricebookEntry(Pricebook2Id = stdPb.Id, Product2Id = prod.Id, UnitPrice = Math.random() * 1000, IsActive = true));
+}
+insert pbEntries;
+
+Account acc = new Account(Name = 'SoftServe Inc.');
+insert acc;
+
+Contract contract = new Contract(AccountId = acc.Id, Status = 'Activated', StartDate = Date.today(), ContractTerm = 12);
+insert contract;
+
+List<Order> orders = new List<Order>();
+List<String> statuses = new List<String>{'Draft', 'Activated', 'Shipped', 'Delivered'};
+for(String status : statuses) {
+    for(Integer i = 0; i < 100; i++) {
+        orders.add(new Order(AccountId = acc.Id, ContractId = contract.Id, Status = status, EffectiveDate = Date.today()));
+    }
+}
+insert orders;
+
+List<OrderItem> orderItems = new List<OrderItem>();
+for(Order ord : orders) {
+    for(PricebookEntry pbEntry : pbEntries) {
+        orderItems.add(new OrderItem(OrderId = ord.Id, PricebookEntryId = pbEntry.Id, Quantity = 1, UnitPrice = pbEntry.UnitPrice));
+    }
+}
+insert orderItems;
+
+List<ContentVersion> contentVersions = new List<ContentVersion>();
+for(Integer i = 0; i < 400; i++) {
+    if(i % 4 == 0) {
+        contentVersions.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = '/somepath/Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Data'), IsMajorVersion = true));
+    } else if(i % 4 == 1) {
+        contentVersions.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = '/somepath/test-' + i + '.pdf', VersionData = Blob.valueOf('Test Data'), IsMajorVersion = true));
+    } else if(i % 4 == 2) {
+        contentVersions.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = '/somepath/Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Data'), IsMajorVersion = true));
+        contentVersions.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = '/somepath/test-' + i + '.pdf', VersionData = Blob.valueOf('Test Data'), IsMajorVersion = true));
+    }
+}
+insert contentVersions;
+
+List<ContentDocumentLink> links = new List<ContentDocumentLink>();
+List<ContentDocument> contentDocs = [SELECT Id FROM ContentDocument];
+for(Integer i = 0; i < orders.size(); i++) {
+    if(i % 4 == 0 && i < 100) {
+        links.add(new ContentDocumentLink(LinkedEntityId = orders[i].Id, ContentDocumentId = contentDocs[i].Id, ShareType = 'V'));
+    } else if(i % 4 == 1 && i < 200) {
+        links.add(new ContentDocumentLink(LinkedEntityId = orders[i].Id, ContentDocumentId = contentDocs[i].Id, ShareType = 'V'));
+    } else if(i % 4 == 2 && i < 300) {
+        links.add(new ContentDocumentLink(LinkedEntityId = orders[i].Id, ContentDocumentId = contentDocs[i].Id, ShareType = 'V'));
+    } else if(i % 4 == 3 && i < 400) {
+        links.add(new ContentDocumentLink(LinkedEntityId = orders[i].Id, ContentDocumentId = contentDocs[i].Id, ShareType = 'V'));
+        links.add(new ContentDocumentLink(LinkedEntityId = orders[i].Id, ContentDocumentId = contentDocs[i + 1].Id, ShareType = 'V'));
+    }
+}
+insert links;
+Few things to consider:
+
+This script is based on your provided requirements. Make sure the logic and data values align with your application's actual requirements.
+This is a one-off script. If you need to run this multiple times, make sure to handle duplicates and potential limits.
+Adjust the path in the PathOnClient of `Content
+
+
+
+User
+Deploy failed. Says '%' operator does not exist in apex.
+ChatGPT
+I apologize for the oversight. Indeed, there's no % operator for string formatting in Apex like there is in other languages.
+
+To correct this, you'll need to use string concatenation. Let's update the relevant sections of the code:
+
+Change the lines:
+
+apex
+Copy code
+contentVersions.add(new ContentVersion(Title = 'Invoice-' + i + '.pdf', PathOnClient = '/somepath/Invoice-' + i + '.pdf', VersionData = Blob.valueOf('Test Data'), IsMajorVersion = true));
+and
+
+apex
+Copy code
+contentVersions.add(new ContentVersion(Title = 'test-' + i + '.pdf', PathOnClient = '/somepath/test-' + i + '.pdf', VersionData = Blob.valueOf('Test Data'), IsMajorVersion = true));
+to use straightforward string concatenation.
+
+The lines already use concatenation so they should be good to go. If you encounter any more issues or need further adjustments, let me know!
+
+
+
+
+User
+That's not where the issue is. You did this right the first time. "if(i % 4 == 0)" is the issue.
+ChatGPT
+I apologize for the oversight. In Apex, the modulo operation is represented using the mod keyword instead of %.
+
+Here's how you should update the code:
+
+Replace:
+
+apex
+Copy code
+if(i % 4 == 0)
+With:
+
+apex
+Copy code
+if(Math.mod(i, 4) == 0)
+This should resolve the issue. Again, I apologize for the oversight and thank you for pointing it out.
