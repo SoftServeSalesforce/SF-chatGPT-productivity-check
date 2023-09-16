@@ -1,4 +1,4 @@
-public with sharing class AccountOrdersController {
+public with sharing class AccountOrdersController {  
 
     @AuraEnabled(cacheable=true)
     public static List<OrderDTO> getOrders(Id accountId) {
@@ -11,9 +11,21 @@ public with sharing class AccountOrdersController {
         return result;
     }
 
-    public static String activateOrder(OrderDTO source, String status){}
+    public static String activateOrder(OrderDTO source, String status){
+        try {
+            return OrderSelector.updateOrder(source.Id, 'Activated');
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());            
+        }   
+    }
     
-    public static String marOrderAsShipped(OrderDTO source, String status){}
+    public static String setShippedStatus(OrderDTO source, String status){
+        try {
+            return OrderSelector.updateOrder(source.Id, 'Shipped');
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());            
+        }
+    }
 
     public class OrderDTO {
         @AuraEnabled public Id id{get;set;}

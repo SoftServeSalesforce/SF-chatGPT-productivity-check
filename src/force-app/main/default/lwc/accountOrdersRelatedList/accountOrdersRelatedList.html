@@ -1,11 +1,20 @@
 <template>
     <lightning-card title="Orders Related List">
-        <template if:true={result}>
+        <!-- <template if:true={result}>
             <lightning-datatable  
                  key-field="Id"
                  data={result}
                  columns={columns}>
              </lightning-datatable>
-        </template>
+        </template> -->
+        <div style="width: auto;">
+			<template if:true={data}>
+				<lightning-datatable 
+                    data={data} 
+                    columns={columns} 
+                    key-field="id" 
+					onrowaction={handleRowActions}></lightning-datatable>
+			</template>
+		</div>
     </lightning-card>
 </template>
