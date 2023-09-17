@@ -11,17 +11,19 @@ public with sharing class AccountOrdersController {
         return result;
     }
 
-    public static String activateOrder(OrderDTO source, String status){
+    @AuraEnabled
+    public static String activateOrder(Id source){
         try {
-            return OrderSelector.updateOrder(source.Id, 'Activated');
+            return OrderSelector.updateOrder(source, 'Activated');
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());            
         }   
     }
     
-    public static String setShippedStatus(OrderDTO source, String status){
+    @AuraEnabled
+    public static String setShippedStatus(Id source){
         try {
-            return OrderSelector.updateOrder(source.Id, 'Shipped');
+            return OrderSelector.updateOrder(source, 'Shipped');
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());            
         }
