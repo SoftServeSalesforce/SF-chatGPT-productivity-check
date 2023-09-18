@@ -13,7 +13,7 @@ Furthermore, the component bolsters productivity by empowering users to select o
 
 3. Run "sf project deploy start". Make sure code deployment completes without errors.
 
-4. Run "sf apex run --file script/apex/generateData.apex". Check if all of the necessary records have been inserted without issues.
+4. Run "sf apex run --file scripts/apex/generateData.apex". Check if all of the necessary records have been inserted without issues.
 
 5. Run "sf org open". This will lead you to a new browser tab with your freshly created scratch org.
 
@@ -21,7 +21,15 @@ Furthermore, the component bolsters productivity by empowering users to select o
 
 7. You should get the account default list view. Select "Softserve inc." account.
 
-8. Scroll down to the bottom of the account record page. You should see our custom lwc table with related orders. Check if order numbers are clickable and forward you to the order record page. Make sure "Status" column correctly states the status and times since last order status update. Check if dropdown menu on each record works. Depending on the status of the order and linked document presence, menu options should differ. Use "Invoice" column to download related invoice document if available. Also check if in the same order actions menu has "preview invoice" and "download invoice". Make sure that actions menu has "Activate" option for orders with status "Draft". Also make sure that actions menu has "Mark as shipped" status for orders with status "Activated". Select multiple orders with different status - no option except for "refresh" should be action on the top action bar above the table. Select multiple orders with status "Draft" - option "Activate" above the table should become available. Push the button. Make sure selected orders changed their status. Do the same with "Activated" status orders. Check if pagination works. Change page size, refresh the browser tab to make sure your new preference is stored in the custom settings. 
+8. Scroll down to the bottom of the account record page. You should see our custom lwc table with related orders. 
+⋅⋅* Check if order numbers are clickable and forward you to the order record page. 
+⋅⋅* Make sure "Status" column correctly states the status and time since last order status update. 
+⋅⋅* Check if dropdown menu on each record works. Depending on the status of the order and linked document presence, menu options should differ. 
+⋅⋅* Use "Invoice" column to download related invoice document if available. Also check if in the same order actions menu has "preview invoice" and "download invoice". 
+⋅⋅* Make sure that actions menu has "Activate" option for orders with status "Draft". Also make sure that actions menu has "Mark as shipped" status for orders with status "Activated". 
+⋅⋅* Select multiple orders with different status - no option except for "refresh" should be action on the top action bar above the table. 
+⋅⋅* Select multiple orders with status "Draft" - option "Activate" above the table should become available. Push the button. Make sure selected orders changed their status. Do the same with "Activated" status orders. 
+⋅⋅* Check if pagination works. Change page size, refresh the browser tab to make sure your new preference is stored in the custom settings. 
 
 
 # Salesforce DX Project: Next Steps
