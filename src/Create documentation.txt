@@ -1,0 +1,220 @@
+User
+I need documentation that describes this apex controller method: "public with sharing class AccountOrdersController {
+    private static final String ORDER_ACTIVATED_STATUS = 'Activated';
+    private static final String ORDER_SHIPPED_STATUS = 'Shipped';
+
+
+    @AuraEnabled
+    public static List<OrderDTO> getOrders(Id accountId, Integer page, Integer pageSize) {
+        OrderSelector orderSelector = OrderSelector.newInstance();
+        Integer offsetSize = (page - 1) * pageSize;
+
+        List<Order> orders = orderSelector.selectOrdersByAccountId(accountId, pageSize, offsetSize);
+        List<OrderDTO> orderDTOs = new List<OrderDTO>();
+        
+        for(Order ord : orders) {
+            orderDTOs.add(new OrderDTO(ord));
+        }
+
+        return orderDTOs;
+    }
+
+    @AuraEnabled
+    public static Integer getOrdersCount(Id accountId) {
+        OrderSelector orderSelector = OrderSelector.newInstance();
+        Integer orders = orderSelector.countOrdersByAccounId(accountId);
+        return orders;
+    }
+
+    @AuraEnabled
+    public static Integer getUserPageSize() {
+        OrderPageSize__c pref = OrderPageSize__c.getInstance(UserInfo.getUserId());
+        return (pref.Page_Size__c != null) ? Integer.valueOf(pref.Page_Size__c) : 10;
+    }
+
+    @AuraEnabled
+    public static void saveUserPageSize(Integer pageSize) {
+        OrderSelector orderSelector = OrderSelector.newInstance();
+        OrderPageSize__c order = orderSelector.selectUserPageSize();
+        if (order != null) {
+            order.Page_Size__c = pageSize;
+            update order;
+        } else {
+            order = new OrderPageSize__c(
+                SetupOwnerId = UserInfo.getUserId(),
+                Page_Size__c = pageSize
+            );
+            insert order;
+        }
+    }
+
+    @AuraEnabled
+    public static Map<String, String> activateOrder(List<Id> orderIds) {
+        Map<String, String> response = new Map<String, String>();
+
+        try {
+            OrderSelector selector = OrderSelector.newInstance(); 
+            List<Order> ordersToActivate = selector.selectDraftOrderById(orderIds);
+
+            if (ordersToActivate.isEmpty()) {
+                response.put('status', 'ERROR');
+                response.put('ErrorMessage', 'Invalid operation for Order#' + orderIds);
+                return response;
+            }
+
+            for (Order ord : ordersToActivate) {
+                ord.Status = ORDER_ACTIVATED_STATUS;
+            }
+            update ordersToActivate;
+
+            response.put('status', 'OK');
+            response.put('ErrorMessage', null);
+        } catch (Exception e) {
+            response.put('status', 'ERROR');
+            response.put('ErrorMessage', 'An error occured: ' + e.getMessage());
+        }
+        return response;
+    }
+
+    @AuraEnabled
+    public static Map<String, String> markOrderAsShipped(List<Id> orderIds) {
+        Map<String, String> response = new Map<String, String>();
+
+        try {
+            OrderSelector selector = OrderSelector.newInstance(); 
+            List<Order> ordersToMarkShipped = selector.selectActiveOrderById(orderIds);
+            
+            if (ordersToMarkShipped.isEmpty()) {
+                response.put('status', 'ERROR');
+                response.put('ErrorMessage', 'Invalid operation for Order#' + orderIds);
+                return response;
+            }
+
+            for (Order ord : ordersToMarkShipped) {
+                ord.Status = ORDER_SHIPPED_STATUS;
+            }
+            update ordersToMarkShipped;
+
+            response.put('status', 'OK');
+            response.put('ErrorMessage', null);
+        } catch (Exception e) {
+            response.put('status', 'ERROR');
+            response.put('ErrorMessage', 'An error occured: ' + e.getMessage());
+        }
+        return response;
+    }
+
+    public class OrderDTO {
+        @AuraEnabled
+        public Id Id { get; set; }
+        @AuraEnabled
+        public String OrderNumber { get; set; }
+        @AuraEnabled
+        public String Status { get; set; }
+        @AuraEnabled
+        public Decimal TotalAmount { get; set; }
+        @AuraEnabled
+        public Date EffectiveDate { get; set; }
+        @AuraEnabled
+        public Id ContentDocumentId { get; set;}
+        @AuraEnabled
+        public String InvoiceUrl { get; set; }
+        @AuraEnabled
+        public Datetime LastStatusChanged { get; set; }
+        @AuraEnabled
+        public Datetime CreatedDate { get; set;}
+
+        public OrderDTO(Order ord) {
+            this.Id = ord.Id;
+            this.OrderNumber = ord.OrderNumber;
+            this.Status = ord.Status;
+            this.TotalAmount = ord.TotalAmount;
+            this.EffectiveDate = ord.EffectiveDate;
+            this.LastStatusChanged = ord.LastStatusChanged__c;
+            this.CreatedDate = ord.CreatedDate;
+            if (ord.AttachedContentDocuments != null && !ord.AttachedContentDocuments.isEmpty()) {
+                List<AttachedContentDocument> subq = (List<AttachedContentDocument>) ord.AttachedContentDocuments;
+                this.ContentDocumentId = subq[0].ContentDocumentId;
+                this.InvoiceUrl = '/sfc/servlet.shepherd/document/download/' + this.ContentDocumentId;
+            }
+        }
+    }
+}
+"
+ChatGPT
+Certainly! Here's the documentation for the AccountOrdersController class:
+
+AccountOrdersController
+Overview:
+The AccountOrdersController class provides functionality related to fetching and managing Order records associated with a given Account. This class also provides utility methods for fetching user preferences and managing Order statuses.
+
+Class Variables:
+ORDER_ACTIVATED_STATUS (String): Holds the value 'Activated' representing the status for an activated order.
+ORDER_SHIPPED_STATUS (String): Holds the value 'Shipped' representing the status for a shipped order.
+Methods:
+getOrders:
+
+Description: Fetches paginated Order records related to a given Account.
+Parameters:
+accountId (Id): The Account record Id.
+page (Integer): The current page number.
+pageSize (Integer): The number of records per page.
+Returns: A list of OrderDTO objects, each representing an Order.
+getOrdersCount:
+
+Description: Gets the total number of Order records for a given Account.
+Parameters:
+accountId (Id): The Account record Id.
+Returns: An Integer representing the total count of Orders for the provided Account.
+getUserPageSize:
+
+Description: Fetches the user-defined page size from the OrderPageSize__c custom setting.
+Returns: An Integer representing the user-defined page size. Defaults to 10 if not set.
+saveUserPageSize:
+
+Description: Saves the provided page size into the OrderPageSize__c custom setting for the current user.
+Parameters:
+pageSize (Integer): The page size value to save.
+Returns: None.
+activateOrder:
+
+Description: Activates the provided list of Order Ids. Returns a map with the status of the operation and an optional error message.
+Parameters:
+orderIds (List<Id>): The list of Order Ids to activate.
+Returns: A map with keys 'status' (OK/ERROR) and 'ErrorMessage' (optional error details).
+markOrderAsShipped:
+
+Description: Marks the provided list of Order Ids as Shipped. Returns a map with the status of the operation and an optional error message.
+Parameters:
+orderIds (List<Id>): The list of Order Ids to mark as shipped.
+Returns: A map with keys 'status' (OK/ERROR) and 'ErrorMessage' (optional error details).
+Inner Class: OrderDTO
+This class provides a Data Transfer Object structure for Order records, enhancing them with additional utility fields and transforming them for external consumption.
+
+Properties:
+Id (Id): The Order record Id.
+OrderNumber (String): The Order's number.
+Status (String): The Order's status.
+TotalAmount (Decimal): The total amount of the Order.
+EffectiveDate (Date): The date the Order becomes effective.
+ContentDocumentId (Id): The Id of the first attached content document.
+InvoiceUrl (String): The URL to download the attached invoice document.
+LastStatusChanged (Datetime): The last time the order's status was changed.
+CreatedDate (Datetime): The date the Order was created.
+This documentation provides an overview and details of the AccountOrdersController class, helping developers understand the class's functionality and how to use its methods.
+
+
+
+
+User
+Ok. Let's start again. I need a two-paragraph description of an LWC app that adds a table of related orders to an account record custom flexipage. Lets you click on an order name and go directly to the order record page. Lets you view or download latest invoice attached to the order. Lets you select single or multiple orders to update their status. Also provides pagination with possibility to store page size in custom settings, so it will keep its value the next time lwc table is loaded. It also calculates time since the last change of the status of the order and displays that information in the table.
+ChatGPT
+Certainly!
+
+The Account Orders Manager is an innovative Lightning Web Component (LWC) designed to seamlessly integrate with custom Account flexipages, enriching them with a dynamic table that lists related orders. The table not only showcases order details but also allows users to instantly navigate to a specific order record by simply clicking on its name. For each order, users can quickly view or download the latest attached invoice, ensuring essential financial data is always at their fingertips.
+
+Furthermore, the component bolsters productivity by empowering users to select one or multiple orders and effortlessly update their statuses. To enhance the user experience, the table includes an intelligent pagination system, with the added ability to customize and store the preferred page size in custom settings. This ensures that users are greeted with their desired view every time they access the LWC table. As an additional insight-driven feature, the table computes the duration since the last status modification for each order and displays this valuable information, helping users track the timeliness and progression of their orders.
+
+
+
+

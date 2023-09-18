@@ -286,6 +286,7 @@ export default class AccountOrders extends NavigationMixin(LightningElement) {
     }
 
     async handlePageSizeChange(event) {
+        this.currentPage = 1;
         this.pageSize = event.target.value;
         await setPageSize({pageSize: this.pageSize});
         this.refreshView.call(this);
