@@ -1,8 +1,39 @@
-<template>    
-    <c-orders-list-datatable 
-        data={ordersData}
-        key-field="id"
-        columns={ordersColumns}
-        onrowaction={handleRowAction}
-    ></c-orders-list-datatable>
+<template>
+    <lightning-layout multiple-rows="true">
+        <lightning-layout-item class="slds-size_full">
+            <lightning-layout class="slds-page-header" vertical-align="center" horizontal-align="spread">
+                <lightning-layout-item >
+                    <div>
+                        Orders
+                    </div>
+                </lightning-layout-item>
+
+                <lightning-layout-item>
+                    <lightning-quick-action-panel>
+                        <lightning-button label="Activate"
+                                            onclick={handleActivateOrders}
+                                            disabled={disableMarkROwsAsActive}
+                                            ></lightning-button>
+                        <lightning-button label="Mark as Shipped"
+                                            class="slds-m-left_x-small"
+                                            onclick={handleMarkOrdersAsShipped}
+                                            disabled={disableMarkRowsAsShipped}></lightning-button>
+                        <lightning-button label="Refresh"
+                                            class="slds-m-left_x-small"
+                                            onclick={handleRefresh}></lightning-button>
+                    </lightning-quick-action-panel>
+                </lightning-layout-item>
+            </lightning-layout>
+        </lightning-layout-item>
+
+        <lightning-layout-item class="slds-size_full">
+        <c-orders-list-datatable 
+            data={ordersData}
+            key-field="id"
+            columns={ordersColumns}
+            onrowaction={handleRowAction}
+            onrowselection={handleRowSelection}
+        ></c-orders-list-datatable>
+        </lightning-layout-item>
+    </lightning-layout>
 </template>

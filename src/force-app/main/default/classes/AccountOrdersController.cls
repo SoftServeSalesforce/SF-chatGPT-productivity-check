@@ -46,43 +46,55 @@ public with sharing class AccountOrdersController {
     }
 
     @AuraEnabled
-    public static Map<String, String> markOrderAsShipped(Id orderId) {
+    public static Map<String, String> markOrderAsShipped(List<Id> orderIds) {
         Map<String, String> result = new Map<String, String>();
-        List<Order> orders = OrderSelector.selectOrdersById(orderId);
-        if (orders[0].Status == ORDER_STATUS_ACTIVE) {
-            orders[0].Status = ORDER_STATUS_SHIPPED;
-        } else {
-            result.put('status', 'ERROR');
-            result.put('message', 'Invalid Operation for Order #' + orderId);
-            return result;
+        List<Order> orders = OrderSelector.selectOrdersByIds(orderIds);
+        result.put('status', 'OK');
+        result.put('message', '');
+        for (Order order : orders){
+            if (order.Status == ORDER_STATUS_ACTIVE) {
+                order.Status = ORDER_STATUS_SHIPPED;
+            } else {
+                result.put('status', 'ERROR');
+                result.put('message', 'Invalid Operation for Order #' + order.Id);
+                return result;
+            }
         }
+        
         try {
-            update orders[0];
+            update orders;
             result.put('status', 'OK');
         } catch (DmlException e) {
             result.put('status', 'ERROR');
-            result.put('message', 'Invalid Operation for Order #' + orderId);
+            result.put('message', e.getMessage());
         }
+
         return result;
     }
 
     @AuraEnabled
-    public static Map<String, String> activateOrder(Id orderId) {
+    public static Map<String, String> activateOrder(List<Id> orderIds) {
         Map<String, String> result = new Map<String, String>();
-        List<Order> orders = OrderSelector.selectOrdersById(orderId);
-        if (orders[0].Status == ORDER_STATUS_DRAFT) {
-            orders[0].Status = ORDER_STATUS_ACTIVE;
-        } else {
-            result.put('status', 'ERROR');
-            result.put('message', 'Invalid Operation for Order #' + orderId);
-            return result;
+        List<Order> orders = OrderSelector.selectOrdersByIds(orderIds);
+        result.put('status', 'OK');
+        result.put('message', '');
+        String message = '';
+        for (Order order : orders){            
+            if (order.Status == ORDER_STATUS_DRAFT) {
+                order.Status = ORDER_STATUS_ACTIVE;
+            } else {
+                result.put('status', 'ERROR');
+                result.put('message', 'Invalid Operation for Order #' + order.Id);
+                return result;
+            }
         }
+
         try {
-            update orders[0];
+            update orders;
             result.put('status', 'OK');
         } catch (DmlException e) {
             result.put('status', 'ERROR');
-            result.put('message', 'Invalid Operation for Order #' + orderId);
+            result.put('message', e.getMessage());
         }
         return result;
     }

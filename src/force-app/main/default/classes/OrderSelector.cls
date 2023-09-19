@@ -10,10 +10,10 @@ public with sharing class OrderSelector {
                 WHERE AccountId = :accountId];
     }
 
-    public static List<Order> selectOrdersById(Id orderId) {
+    public static List<Order> selectOrdersByIds(List<Id> orderIds) {
         return [SELECT Status
                 FROM Order
-                WHERE Id = :orderId];
+                WHERE Id IN :orderIds];
     }
 
 }

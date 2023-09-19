@@ -2,13 +2,17 @@ import { api, wire, LightningElement } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder'
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped'
+import { refreshApex } from "@salesforce/apex";
 import {NavigationMixin} from 'lightning/navigation'
 import {ShowToastEvent} from 'lightning/platformShowToastEvent';
+import LightningConfirm from 'lightning/confirm';
 
 export default class OrdersList extends NavigationMixin(LightningElement) {
     @api recordId;
 
     ordersData = [];
+    selectedRows = [];
+    wiredOrdersValue;
 
     ordersColumns = [
         { label: 'Number', fieldName: 'orderNumber', type: 'text' },
@@ -32,12 +36,38 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
     ];
 
     @wire(getOrders, {accountId: '$recordId'})
-    wiredOrders({ error, data }) {
+    wiredOrders(value) {
+        this.wiredOrdersValue = value;
+        const { data, error } = value;
         if (data) {
             this.ordersData = data.map(order => ({...order, disableDownload: !order.contentDocumentId}) );
         } else if (error) {
             console.error('error loading orders');
         }
+    }
+
+    get disableMarkRowsAsShipped(){
+        if (this.selectedRows.length === 0){
+            return true;
+        }
+        for (let row of this.selectedRows) {
+            if (row.status !== 'Activated') {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    get disableMarkROwsAsActive(){
+        if (this.selectedRows.length === 0){
+            return true;
+        }
+        for (let row of this.selectedRows) {
+            if (row.status !== 'Draft') {
+                return true;
+            }
+        }
+        return false;
     }
 
     getActions(row, doneCallback){
@@ -96,8 +126,16 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
     }
 
     async handleActivateOrderAction(orderId){        
+        this.activateOrders([orderId]);
+    }
+
+    async handleMarkOrderAsShippedAction(orderId){
+        this.markOrdersAsShipped([orderId])
+    }
+
+    async activateOrders(orderIds){        
         try {
-            let result = await activateOrder({orderId: orderId});
+            let result = await activateOrder({orderIds: orderIds});
             if (result.status === 'ERROR') {
                 this.showToast(`${result.message}`, 'error', 'Error');
             }
@@ -109,9 +147,9 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
         }
     }
 
-    async handleMarkOrderAsShippedAction(orderId){
+    async markOrdersAsShipped(orderIds){
         try {
-            let result = await markOrderAsShipped({orderId: orderId});
+            let result = await markOrderAsShipped({orderIds: orderIds});
             if (result.status === 'ERROR') {
                 this.showToast(`${result.message}`, 'error', 'Error');
             }
@@ -120,6 +158,26 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
             }
         } catch (error) {
             console.error('error updating order: ' + JSON.stringify(error));
+        }
+    }
+
+    async handleActivateOrders(){
+        const result = await LightningConfirm.open({
+            message: `Do you confirm to activate ${this.selectedRows.length} of Draft order(s)?`,
+            label: 'Confirm',
+        });
+        if (result){  
+            this.activateOrders(this.selectedRows.map(e => e.id));
+        }
+    }
+
+    async handleMarkOrdersAsShipped(){
+        const result = await LightningConfirm.open({
+            message: `Do you confirm to mark as sent ${this.selectedRows.length} of Draft order(s)?`,
+            label: 'Confirm',
+        });
+        if (result){
+            this.markOrdersAsShipped(this.selectedRows.map(e => e.id));
         }
     }
 
@@ -129,5 +187,13 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
             message: message, variant: variant, title: title
         });
         this.dispatchEvent(event);
+    }
+
+    handleRowSelection(event){
+        this.selectedRows = event.detail.selectedRows;
+    }
+
+    handleRefresh() {
+        refreshApex(this.wiredOrdersValue);
     }
 }
