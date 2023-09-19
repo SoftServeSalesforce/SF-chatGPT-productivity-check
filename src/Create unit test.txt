@@ -1,0 +1,388 @@
+User
+pleses create apex unit tests for this class:
+public with sharing class AccountOrdersController {
+    private static final String ORDER_STATUS_DRAFT = 'Draft';
+    private static final String ORDER_STATUS_ACTIVE = 'Activated';
+    private static final String ORDER_STATUS_SHIPPED = 'Shipped';
+    
+    public with sharing class OrderDTO {
+
+        @AuraEnabled
+        public Id id;
+        @AuraEnabled
+        public String status;
+        @AuraEnabled
+        public Datetime lastStatusChanged;
+        @AuraEnabled
+        public String orderNumber;
+        @AuraEnabled
+        public Date startDate;
+        @AuraEnabled
+        public Decimal amount;
+        @AuraEnabled
+        public Id contentDocumentId;
+        
+        public OrderDTO(Order order) {
+            this.id = order.Id;
+            this.orderNumber = order.OrderNumber;
+            this.startDate = order.EffectiveDate;
+            this.status = order.Status;
+            this.amount = order.TotalAmount;
+            this.lastStatusChanged = order.LastStatusChanged__c;
+            if (order.AttachedContentDocuments.size() > 0) {
+                this.contentDocumentId = order.AttachedContentDocuments[0].ContentDocumentId;
+            }
+        }
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<OrderDTO> getOrders(Id accountId, Integer limitSize, Integer offsetSize) {       
+        List<Order> orders = OrderSelector.selectOrdersByAccountId(accountId, limitSize, offsetSize);
+        
+        List<OrderDTO> orderDTOs = new List<OrderDTO>();
+        for(Order ord : orders) {
+            orderDTOs.add(new OrderDTO(ord));
+        }
+
+        return orderDTOs;
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static Integer getOrdersNumber(Id accountId) {       
+        return OrderSelector.countOrdersByAccountId(accountId);
+    }
+
+    @AuraEnabled
+    public static Map<String, String> markOrderAsShipped(List<Id> orderIds) {
+        Map<String, String> result = new Map<String, String>();
+        List<Order> orders = OrderSelector.selectOrdersByIds(orderIds);
+        result.put('status', 'OK');
+        result.put('message', '');
+        for (Order order : orders){
+            if (order.Status == ORDER_STATUS_ACTIVE) {
+                order.Status = ORDER_STATUS_SHIPPED;
+            } else {
+                result.put('status', 'ERROR');
+                result.put('message', 'Invalid Operation for Order #' + order.Id);
+                return result;
+            }
+        }
+        
+        try {
+            update orders;
+            result.put('status', 'OK');
+        } catch (DmlException e) {
+            result.put('status', 'ERROR');
+            result.put('message', e.getMessage());
+        }
+
+        return result;
+    }
+
+    @AuraEnabled
+    public static Map<String, String> activateOrder(List<Id> orderIds) {
+        Map<String, String> result = new Map<String, String>();
+        List<Order> orders = OrderSelector.selectOrdersByIds(orderIds);
+        result.put('status', 'OK');
+        result.put('message', '');
+        String message = '';
+        for (Order order : orders){            
+            if (order.Status == ORDER_STATUS_DRAFT) {
+                order.Status = ORDER_STATUS_ACTIVE;
+            } else {
+                result.put('status', 'ERROR');
+                result.put('message', 'Invalid Operation for Order #' + order.Id);
+                return result;
+            }
+        }
+
+        try {
+            update orders;
+            result.put('status', 'OK');
+        } catch (DmlException e) {
+            result.put('status', 'ERROR');
+            result.put('message', e.getMessage());
+        }
+        return result;
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static Integer getPageSize() {
+        OredsListPageSettings__c settings = OredsListPageSettings__c.getInstance(UserInfo.getUserId());
+        if(settings == null || settings.PageSize__c == null || settings.PageSize__c <= 0) {
+            throw new AuraHandledException('Please setup page size custom setting');
+        }
+        return (Integer) settings.PageSize__c;
+    }
+
+    @AuraEnabled
+    public static void setPageSize(Integer pageSize) {
+        if(pageSize <= 0) {
+            throw new AuraHandledException('Invalid page size');
+        }
+
+        OredsListPageSettings__c settings = OredsListPageSettings__c.getInstance(UserInfo.getUserId());        
+        if (settings == null) {
+            settings = new OredsListPageSettings__c();
+            settings.SetupOwnerId = UserInfo.getUserId();
+        }
+
+        settings.PageSize__c = pageSize;
+        upsert(settings);
+    }
+}
+ChatGPT
+
+Sure, I'll guide you on creating unit tests for the given class.
+
+    Test Data Setup Method:
+
+    Here's a common approach where you start by creating a helper method to set up test data.
+
+apex
+
+@isTest
+private class TestAccountOrdersController {
+    static Account testAccount;
+    static List<Order> testOrders;
+
+    static void setupData() {
+        testAccount = new Account(Name = 'Test Account');
+        insert testAccount;
+
+        testOrders = new List<Order>{
+            new Order(AccountId = testAccount.Id, Status = 'Draft', OrderNumber = '123', EffectiveDate = Date.today()),
+            new Order(AccountId = testAccount.Id, Status = 'Activated', OrderNumber = '456', EffectiveDate = Date.today())
+        };
+        insert testOrders;
+    }
+}
+
+    Test getOrders Method:
+
+apex
+
+@isTest static void testGetOrders() {
+    setupData();
+
+    Test.startTest();
+    List<AccountOrdersController.OrderDTO> orderDTOs = AccountOrdersController.getOrders(testAccount.Id, 2, 0);
+    Test.stopTest();
+
+    System.assertEquals(2, orderDTOs.size(), 'Expected 2 orders to be returned.');
+}
+
+    Test getOrdersNumber Method:
+
+apex
+
+@isTest static void testGetOrdersNumber() {
+    setupData();
+
+    Test.startTest();
+    Integer orderCount = AccountOrdersController.getOrdersNumber(testAccount.Id);
+    Test.stopTest();
+
+    System.assertEquals(2, orderCount, 'Expected 2 orders for the account.');
+}
+
+    Test markOrderAsShipped Method:
+
+apex
+
+@isTest static void testMarkOrderAsShipped() {
+    setupData();
+
+    Test.startTest();
+    Map<String, String> result = AccountOrdersController.markOrderAsShipped(new List<Id>{testOrders[1].Id});
+    Test.stopTest();
+
+    System.assertEquals('OK', result.get('status'), 'Expected status to be OK.');
+    Order updatedOrder = [SELECT Status FROM Order WHERE Id = :testOrders[1].Id LIMIT 1];
+    System.assertEquals('Shipped', updatedOrder.Status, 'Expected order status to be Shipped.');
+}
+
+    Test activateOrder Method:
+
+apex
+
+@isTest static void testActivateOrder() {
+    setupData();
+
+    Test.startTest();
+    Map<String, String> result = AccountOrdersController.activateOrder(new List<Id>{testOrders[0].Id});
+    Test.stopTest();
+
+    System.assertEquals('OK', result.get('status'), 'Expected status to be OK.');
+    Order updatedOrder = [SELECT Status FROM Order WHERE Id = :testOrders[0].Id LIMIT 1];
+    System.assertEquals('Activated', updatedOrder.Status, 'Expected order status to be Activated.');
+}
+
+You would continue in a similar manner for getPageSize and setPageSize. Ensure you also write negative test cases, not just the positive scenarios illustrated above. For instance, you'd test what happens when an order is already "Shipped" and you try to activate it, and so on.
+
+Also, note that your actual class relies on a selector class (OrderSelector). In true unit testing fashion, you might want to mock this selector to ensure that your tests only test the logic of AccountOrdersController and aren't influenced by the behavior of the selector. This can be achieved using mocking frameworks like fflib or by using Apex stubs. However, the tests provided here are straightforward and don't incorporate mocking for simplicity.
+User
+continue
+ChatGPT
+
+    Test getPageSize and setPageSize Methods:
+
+Before testing these methods, you'd need to consider the Custom Setting OredsListPageSettings__c. We should add this to our setupData() method:
+
+apex
+
+@isTest
+private class TestAccountOrdersController {
+
+    // ... [previous setupData content]
+
+    static void setupPageSizeSetting(Integer pageSize) {
+        OredsListPageSettings__c settings = new OredsListPageSettings__c();
+        settings.SetupOwnerId = UserInfo.getUserId();
+        settings.PageSize__c = pageSize;
+        upsert settings;
+    }
+}
+
+Testing getPageSize:
+
+apex
+
+@isTest static void testGetPageSize() {
+    Integer expectedPageSize = 5;
+    setupPageSizeSetting(expectedPageSize);
+
+    Test.startTest();
+    Integer pageSize = AccountOrdersController.getPageSize();
+    Test.stopTest();
+
+    System.assertEquals(expectedPageSize, pageSize, 'Expected the retrieved page size to match the set value.');
+}
+
+Testing setPageSize:
+
+apex
+
+@isTest static void testSetPageSize() {
+    Integer newPageSize = 10;
+
+    Test.startTest();
+    AccountOrdersController.setPageSize(newPageSize);
+    Test.stopTest();
+
+    OredsListPageSettings__c settings = OredsListPageSettings__c.getInstance(UserInfo.getUserId());
+    System.assertEquals(newPageSize, (Integer) settings.PageSize__c, 'Expected the page size to be updated in custom settings.');
+}
+
+Negative Tests:
+
+It's crucial to also include tests for expected failures, like setting an invalid page size:
+
+apex
+
+@isTest static void testInvalidPageSize() {
+    Integer invalidPageSize = -5;
+    Exception exception;
+    
+    Test.startTest();
+    try {
+        AccountOrdersController.setPageSize(invalidPageSize);
+    } catch (AuraHandledException e) {
+        exception = e;
+    }
+    Test.stopTest();
+
+    System.assertNotEquals(null, exception, 'Expected an exception to be thrown for an invalid page size.');
+}
+
+Lastly, when writing tests, always check your class and method coverage to ensure you've adequately covered the logic. Salesforce requires a minimum of 75% code coverage to deploy, but aim for higher coverage and more importantly, meaningful tests that validate the behavior of your code.
+
+This should give you a good start on testing the AccountOrdersController class. Modify and expand upon these tests as needed based on the actual logic and requirements in your Salesforce org.
+User
+in test setup I also need to create a product and realate it to the order, can you plese show an example
+ChatGPT
+
+Absolutely, associating a product with an order involves creating a Pricebook2, a PricebookEntry for the product in that price book, and an OrderItem for the order based on the PricebookEntry.
+
+Here's an example of how you can enhance the setupData() method to also create a product and relate it to the order:
+
+apex
+
+@isTest
+private class TestAccountOrdersController {
+    static Account testAccount;
+    static List<Order> testOrders;
+    static Product2 testProduct;
+    static PricebookEntry testPricebookEntry;
+
+    static void setupData() {
+        testAccount = new Account(Name = 'Test Account');
+        insert testAccount;
+
+        testOrders = new List<Order>{
+            new Order(AccountId = testAccount.Id, Status = 'Draft', OrderNumber = '123', EffectiveDate = Date.today()),
+            new Order(AccountId = testAccount.Id, Status = 'Activated', OrderNumber = '456', EffectiveDate = Date.today())
+        };
+        insert testOrders;
+
+        // Create a product
+        testProduct = new Product2(Name = 'Test Product', IsActive = true);
+        insert testProduct;
+
+        // Get the standard pricebook ID (it's a default pricebook every org should have)
+        Id standardPricebookId = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1].Id;
+
+        // Add product to standard pricebook
+        testPricebookEntry = new PricebookEntry(
+            Pricebook2Id = standardPricebookId, 
+            Product2Id = testProduct.Id, 
+            UnitPrice = 100, 
+            IsActive = true
+        );
+        insert testPricebookEntry;
+
+        // Add product to order as OrderItem
+        OrderItem orderItem = new OrderItem(
+            OrderId = testOrders[0].Id, 
+            PricebookEntryId = testPricebookEntry.Id, 
+            Quantity = 1, 
+            UnitPrice = testPricebookEntry.UnitPrice
+        );
+        insert orderItem;
+    }
+}
+
+With the above modifications, you have a product that is associated with one of the test orders. Adjust the quantity, price, or other details as needed for your tests.
+User
+2 / 2
+show example how to create OrderItem and relate it to the existing order
+ChatGPT
+
+Certainly! Here's a simple example of how you can create an OrderItem and relate it to an existing order:
+
+Assuming you have an existing Order record and a PricebookEntry record, the OrderItem creation would look like this:
+
+apex
+
+Order existingOrder = [SELECT Id, Pricebook2Id FROM Order WHERE Id = :someOrderId LIMIT 1]; 
+
+// Assuming you have a Product added to the same Pricebook as the Order's Pricebook
+PricebookEntry existingPBE = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :existingOrder.Pricebook2Id AND Product2.Name = 'Your Product Name' LIMIT 1];
+
+OrderItem newItem = new OrderItem(
+    OrderId = existingOrder.Id,
+    PricebookEntryId = existingPBE.Id,
+    Quantity = 1,
+    UnitPrice = 100.0 // or some relevant price
+);
+insert newItem;
+
+For context:
+
+    An Order in Salesforce has an associated Pricebook2 (via the Pricebook2Id field).
+    Each Product2 (or simply product) that you want to add to an order must first be added to a Pricebook2, creating a PricebookEntry.
+    An OrderItem represents a line item on an order and is associated with an Order and a PricebookEntry.
+
+So to add a product to an order, you're essentially adding a PricebookEntry (which represents that product in a specific pricebook) to the order as an OrderItem.
+
+If you don't already have a PricebookEntry for your product in the order's pricebook, you'd need to create one first. But in the example above, I've assumed you already have an appropriate PricebookEntry and just need to create the OrderItem.
