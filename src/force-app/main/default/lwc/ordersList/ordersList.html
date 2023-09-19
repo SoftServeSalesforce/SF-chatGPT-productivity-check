@@ -27,6 +27,24 @@
         </lightning-layout-item>
 
         <lightning-layout-item class="slds-size_full">
+            <lightning-layout class="slds-page-header" vertical-align="center" horizontal-align="spread">
+                <lightning-layout-item >
+                    <span>Page: {currentPage} of {totalPages} </span>
+                    <button onclick={handlePreviousPage} disabled={isFirstPage}>Previous</button>
+                    <button onclick={handleNextPage} disabled={isLastPage}>Next</button>
+                </lightning-layout-item>
+                <lightning-layout-item >
+                    <lightning-combobox name="pageSize"
+                                        label="Select Page Size"
+                                        value={pageSize}
+                                        options={pageSizeOptions}
+                                        onchange={handlePageSizeChange}>
+                    </lightning-combobox>
+                </lightning-layout-item>
+            </lightning-layout>
+        </lightning-layout-item>
+
+        <lightning-layout-item class="slds-size_full">
         <c-orders-list-datatable 
             data={ordersData}
             key-field="id"

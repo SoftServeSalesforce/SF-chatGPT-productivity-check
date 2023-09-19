@@ -98,4 +98,29 @@ public with sharing class AccountOrdersController {
         }
         return result;
     }
+
+    @AuraEnabled(cacheable=true)
+    public static Integer getPageSize() {
+        OredsListPageSettings__c settings = OredsListPageSettings__c.getInstance(UserInfo.getUserId());
+        if(settings == null || settings.PageSize__c == null || settings.PageSize__c <= 0) {
+            throw new AuraHandledException('Please setup page size custom setting');
+        }
+        return (Integer) settings.PageSize__c;
+    }
+
+    @AuraEnabled
+    public static void setPageSize(Integer pageSize) {
+        if(pageSize <= 0) {
+            throw new AuraHandledException('Invalid page size');
+        }
+
+        OredsListPageSettings__c settings = OredsListPageSettings__c.getInstance(UserInfo.getUserId());        
+        if (settings == null) {
+            settings = new OredsListPageSettings__c();
+            settings.SetupOwnerId = UserInfo.getUserId();
+        }
+
+        settings.PageSize__c = pageSize;
+        upsert(settings);
+    }
 }

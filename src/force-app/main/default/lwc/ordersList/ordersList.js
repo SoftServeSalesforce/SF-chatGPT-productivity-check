@@ -2,6 +2,8 @@ import { api, wire, LightningElement } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder'
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped'
+import getPageSize from '@salesforce/apex/AccountOrdersController.getPageSize';
+import setPageSize from '@salesforce/apex/AccountOrdersController.setPageSize';
 import { refreshApex } from "@salesforce/apex";
 import {NavigationMixin} from 'lightning/navigation'
 import {ShowToastEvent} from 'lightning/platformShowToastEvent';
@@ -13,6 +15,8 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
     ordersData = [];
     selectedRows = [];
     wiredOrdersValue;
+    pageSize;
+    currentPage = 1;
 
     ordersColumns = [
         { label: 'Number', fieldName: 'orderNumber', type: 'text' },
@@ -35,6 +39,13 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
         { type: 'action', typeAttributes: { rowActions: this.getActions } }
     ];
 
+    pageSizeOptions = [
+        { label: '10', value: 10 },
+        { label: '20', value: 20 },
+        { label: '50', value: 50 },
+        { label: '100', value: 100 }                
+      ];
+
     @wire(getOrders, {accountId: '$recordId'})
     wiredOrders(value) {
         this.wiredOrdersValue = value;
@@ -43,6 +54,16 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
             this.ordersData = data.map(order => ({...order, disableDownload: !order.contentDocumentId}) );
         } else if (error) {
             console.error('error loading orders');
+        }
+    }
+
+    @wire(getPageSize) 
+    wiredPageSize({ data, error }) {
+        if (data) {
+            this.pageSize = data;
+            console.log(data);
+        } else if (error) {
+            console.error('error getting page size: ' + error.message);
         }
     }
 
@@ -68,6 +89,18 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
             }
         }
         return false;
+    }
+
+    get totalPages(){
+        return Math.ceil(this.ordersData.length/this.pageSize)
+    }
+
+    get isFirstPage(){
+        return (this.currentPage === 1);
+    }
+
+    get isLastPage(){
+        return (this.currentPage === this.totalPages);
     }
 
     getActions(row, doneCallback){
@@ -181,7 +214,6 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
         }
     }
 
-    
     showToast(message, variant, title) {
         const event = new ShowToastEvent({
             message: message, variant: variant, title: title
@@ -195,5 +227,17 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
 
     handleRefresh() {
         refreshApex(this.wiredOrdersValue);
+    }
+    
+    handlePageSizeChange() {
+
+    }
+
+    handlePreviousPage() {
+        
+    }
+
+    handleNextPage() {
+        
     }
 }
