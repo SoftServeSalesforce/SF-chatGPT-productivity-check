@@ -1,0 +1,105 @@
+User
+How to retrive custom setting in apex?
+ChatGPT
+
+To retrieve a custom setting in Apex, you can use different approaches depending on the type of custom setting: List or Hierarchy.
+1. List Custom Settings:
+
+List Custom Settings are similar to custom objects, and you can use SOQL queries to retrieve their data.
+
+Assuming you have a List Custom Setting named MyListSetting__c:
+
+apex
+
+MyListSetting__c myListSettingRecord = [SELECT Name, CustomField__c FROM MyListSetting__c WHERE Name = 'SpecificValue' LIMIT 1];
+System.debug(myListSettingRecord.CustomField__c);
+
+Replace 'SpecificValue' with the name of the specific list custom setting record you wish to retrieve.
+2. Hierarchy Custom Settings:
+
+Hierarchy Custom Settings provide a way to store data that can be used across the organization, by profile, or by a specific user. It utilizes a built-in caching mechanism that allows you to access these settings without consuming SOQL queries.
+
+Assuming you have a Hierarchy Custom Setting named MyHierarchySetting__c:
+
+apex
+
+// Retrieve for the org-wide default
+MyHierarchySetting__c orgDefault = MyHierarchySetting__c.getOrgDefaults();
+
+// Retrieve for a specific profile
+MyHierarchySetting__c profileSetting = MyHierarchySetting__c.getInstance(ProfileId);
+
+// Retrieve for a specific user
+MyHierarchySetting__c userSetting = MyHierarchySetting__c.getInstance(UserId);
+
+Replace ProfileId and UserId with the actual IDs as necessary. The getInstance() method first checks for values at the user level, then profile level, and finally the organization level. If no user-specific or profile-specific values are found, the org-wide default values are returned.
+
+Note: Always ensure that you handle null checks or exceptions when accessing custom settings in case they don't exist or haven't been initialized.
+
+In conclusion, the approach you choose depends on the type of custom setting you're dealing with, but both methods are straightforward and allow for easy data retrieval in Apex.
+User
+How to update hierarchy custom setting from Apex?
+ChatGPT
+
+Updating a Hierarchy Custom Setting from Apex is similar to updating a record in a custom or standard object. However, remember that hierarchy custom settings have a special behavior where they can be set at an organization-wide level, by profile, or by a specific user.
+
+Here's how you can update a Hierarchy Custom Setting named MyHierarchySetting__c:
+1. Update Org-Wide Default Value:
+
+apex
+
+// Retrieve the org-wide default
+MyHierarchySetting__c orgDefault = MyHierarchySetting__c.getOrgDefaults();
+orgDefault.CustomField__c = 'NewValue';
+upsert orgDefault;
+
+2. Update for a Specific Profile:
+
+When updating for a specific profile, you need to specify the SetupOwnerId to the profile's ID.
+
+apex
+
+// Profile ID you want to set the custom setting for
+Id specificProfileId = 'theProfileId';
+
+MyHierarchySetting__c profileSetting = MyHierarchySetting__c.getInstance(specificProfileId);
+profileSetting.CustomField__c = 'NewValue';
+upsert profileSetting;
+
+3. Update for a Specific User:
+
+Similarly, when updating for a specific user, you need to specify the SetupOwnerId to the user's ID.
+
+apex
+
+// User ID you want to set the custom setting for
+Id specificUserId = 'theUserId';
+
+MyHierarchySetting__c userSetting = MyHierarchySetting__c.getInstance(specificUserId);
+userSetting.CustomField__c = 'NewValue';
+upsert userSetting;
+
+Important Points:
+
+    The upsert DML operation is used because if the specific setting (org-wide, profile-specific, or user-specific) does not already exist, it will be created. If it does exist, it will be updated.
+
+    Ensure you're cautious with DML operations, especially in triggers or high-volume contexts, to avoid hitting governor limits.
+
+    Always ensure that the custom setting and its fields are accessible and editable by the executing context/user.
+
+By using the above methods, you can programmatically update hierarchy custom settings in your Apex code.
+User
+how to round number upwads in js
+ChatGPT
+
+In JavaScript, you can use the Math.ceil() function to round a number upwards to the nearest integer.
+
+Here's a simple example:
+
+javascript
+
+let number = 5.1;
+let roundedNumber = Math.ceil(number);
+console.log(roundedNumber); // Outputs: 6
+
+If number is 5.1 or 5.9, the output will still be 6 because Math.ceil() always rounds up.

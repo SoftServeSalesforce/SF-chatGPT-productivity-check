@@ -1,5 +1,6 @@
 import { api, wire, LightningElement } from 'lwc';
 import getOrders from '@salesforce/apex/AccountOrdersController.getOrders';
+import getOrdersNumber from '@salesforce/apex/AccountOrdersController.getOrdersNumber';
 import activateOrder from '@salesforce/apex/AccountOrdersController.activateOrder'
 import markOrderAsShipped from '@salesforce/apex/AccountOrdersController.markOrderAsShipped'
 import getPageSize from '@salesforce/apex/AccountOrdersController.getPageSize';
@@ -17,6 +18,9 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
     wiredOrdersValue;
     pageSize;
     currentPage = 1;
+    limitSize;
+    offsetSize = 0;
+    totalOrdersNumber = 0;
 
     ordersColumns = [
         { label: 'Number', fieldName: 'orderNumber', type: 'text' },
@@ -40,13 +44,13 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
     ];
 
     pageSizeOptions = [
-        { label: '10', value: 10 },
-        { label: '20', value: 20 },
-        { label: '50', value: 50 },
-        { label: '100', value: 100 }                
+        { label: '10', value: '10' },
+        { label: '20', value: '20' },
+        { label: '50', value: '50' },
+        { label: '100', value: '100' }                
       ];
 
-    @wire(getOrders, {accountId: '$recordId'})
+    @wire(getOrders, {accountId: '$recordId', limitSize: '$limitSize', offsetSize: '$offsetSize'})
     wiredOrders(value) {
         this.wiredOrdersValue = value;
         const { data, error } = value;
@@ -60,10 +64,19 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
     @wire(getPageSize) 
     wiredPageSize({ data, error }) {
         if (data) {
-            this.pageSize = data;
-            console.log(data);
+            this.pageSize = '' + data;
+            this.limitSize = data;
         } else if (error) {
             console.error('error getting page size: ' + error.message);
+        }
+    }
+
+    @wire(getOrdersNumber, {accountId: '$recordId'})
+    wiredTotalOrdersNumber({ data, error }) {
+        if (data) {
+            this.totalOrdersNumber = data;
+        } else if (error) {
+            console.error('error getting orders number: ' + error.message);
         }
     }
 
@@ -92,7 +105,7 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
     }
 
     get totalPages(){
-        return Math.ceil(this.ordersData.length/this.pageSize)
+        return Math.ceil(this.totalOrdersNumber/this.pageSize)
     }
 
     get isFirstPage(){
@@ -101,6 +114,13 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
 
     get isLastPage(){
         return (this.currentPage === this.totalPages);
+    }
+
+    setLimitSize(){
+        this.limitSize = this.currentPage * this.pageSize;
+    }
+    setOffsetSize(){
+        this.offsetSize = (this.currentPage - 1) * this.pageSize;
     }
 
     getActions(row, doneCallback){
@@ -229,15 +249,32 @@ export default class OrdersList extends NavigationMixin(LightningElement) {
         refreshApex(this.wiredOrdersValue);
     }
     
-    handlePageSizeChange() {
-
+    handlePageSizeChange(event) {
+        this.pageSize = event.target.value;
+        setPageSize({pageSize: this.pageSize}).catch(error => {
+            console.error('Failed to save page size: ', error);
+        });
+        this.currentPage = 1;
+        this.setLimitSize();
+        this.setOffsetSize();
+        this.handleRefresh();   
     }
 
     handlePreviousPage() {
-        
+        if (this.currentPage > 1) {
+            this.currentPage -= 1;
+        }
+        this.setLimitSize();
+        this.setOffsetSize();
+        this.handleRefresh();         
     }
 
-    handleNextPage() {
-        
+    async handleNextPage() {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage += 1;
+        }
+        this.setLimitSize();
+        this.setOffsetSize();
+        this.handleRefresh(); 
     }
 }

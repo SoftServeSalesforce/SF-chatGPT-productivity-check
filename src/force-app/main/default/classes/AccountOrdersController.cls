@@ -34,8 +34,8 @@ public with sharing class AccountOrdersController {
     }
 
     @AuraEnabled(cacheable=true)
-    public static List<OrderDTO> getOrders(Id accountId) {       
-        List<Order> orders = OrderSelector.selectOrdersByAccountId(accountId);
+    public static List<OrderDTO> getOrders(Id accountId, Integer limitSize, Integer offsetSize) {       
+        List<Order> orders = OrderSelector.selectOrdersByAccountId(accountId, limitSize, offsetSize);
         
         List<OrderDTO> orderDTOs = new List<OrderDTO>();
         for(Order ord : orders) {
@@ -43,6 +43,11 @@ public with sharing class AccountOrdersController {
         }
 
         return orderDTOs;
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static Integer getOrdersNumber(Id accountId) {       
+        return OrderSelector.countOrdersByAccountId(accountId);
     }
 
     @AuraEnabled

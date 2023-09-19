@@ -1,11 +1,7 @@
 public with sharing class OrderSelector {
     
-    public static List<Order> selectOrdersByAccountId(Id accountId) {
-        return [SELECT OrderNumber, Status, TotalAmount, EffectiveDate, LastStatusChanged__c,
-                    (SELECT Id, ContentDocumentId 
-                    FROM AttachedContentDocuments
-                    WHERE Title LIKE 'Invoice%' 
-                    ORDER BY CreatedDate DESC) 
+    public static Integer countOrdersByAccountId(Id accountId) {
+        return [SELECT COUNT()
                 FROM Order
                 WHERE AccountId = :accountId];
     }
