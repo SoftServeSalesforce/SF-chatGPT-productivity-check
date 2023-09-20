@@ -1,0 +1,133 @@
+User
+o	Write apex code inside the created file to generate data, including:
+	5 products with names like HP ZBook, Mac Book Pro, Dell Inspiron, SFDC Apex Development, LWC Development
+	Pricebook entries for standard pricebook and each product with non-zero arbitrary value of unit price chosen by developer
+	Account record SoftServe Inc.
+	Create activated Contract
+	400 orders related to created Account records
+	Each order should have 5 order line items, one order line item per product
+	There should be 100 orders per each status (Draft/Activated/Shipped/Delivered)
+	In every 100 orders there should be 25 without any attached content files, 25 should have ‘Invoice-%i.pdf’ document attached, 25 should have ‘test-%i.pdf’ document attached and 25 should have both ‘Invoice-%i.pdf’  and ‘test-%i.pdf’ documents attached. All file names should be different and include dynamic parameter of counter %i. For example, Invoice-25.pdf or test-100.pdf
+ChatGPT
+
+This is a comprehensive request. Let's tackle it step-by-step. We'll create a single method to generate all of this data.
+
+apex
+
+public class TestDataGenerator {
+    
+    public static void generateTestData() {
+        // 1. Create 5 products
+        List<Product2> products = new List<Product2>{
+            new Product2(Name = 'HP ZBook', IsActive = true),
+            new Product2(Name = 'Mac Book Pro', IsActive = true),
+            new Product2(Name = 'Dell Inspiron', IsActive = true),
+            new Product2(Name = 'SFDC Apex Development', IsActive = true),
+            new Product2(Name = 'LWC Development', IsActive = true)
+        };
+        insert products;
+
+        // 2. Create Pricebook entries for standard pricebook and each product
+        Id standardPricebookId = [SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1].Id;
+        List<PricebookEntry> pbeList = new List<PricebookEntry>();
+        for(Product2 product : products) {
+            pbeList.add(new PricebookEntry(
+                Pricebook2Id = standardPricebookId, 
+                Product2Id = product.Id, 
+                UnitPrice = Math.round(Math.random() * 1000) + 1, // Arbitrary non-zero price
+                IsActive = true
+            ));
+        }
+        insert pbeList;
+
+        // 3. Create Account record
+        Account acc = new Account(Name = 'SoftServe Inc.');
+        insert acc;
+
+        // 4. Create activated Contract
+        Contract con = new Contract(
+            AccountId = acc.Id, 
+            StartDate = Date.today(), 
+            ContractTerm = 12, 
+            Status = 'Activated'
+        );
+        insert con;
+
+        // 5. Create 400 orders and their order items
+        List<Order> ordersList = new List<Order>();
+        List<OrderItem> orderItemsList = new List<OrderItem>();
+        List<ContentVersion> contentVersions = new List<ContentVersion>();
+        List<String> statuses = new List<String>{'Draft', 'Activated', 'Shipped', 'Delivered'};
+        
+        for(Integer s=0; s<4; s++) { // For each status
+            for(Integer i=1; i<=100; i++) {
+                Order ord = new Order(
+                    AccountId = acc.Id, 
+                    ContractId = con.Id, 
+                    Status = statuses[s], 
+                    EffectiveDate = Date.today(), 
+                    OrderNumber = 'Order-' + s + '-' + i
+                );
+                ordersList.add(ord);
+                
+                // 6. Attach Content Files as per criteria
+                if(i > 25 && i <= 50) {
+                    contentVersions.add(createContentVersion('Invoice-' + (s*100 + i) + '.pdf'));
+                } else if(i > 50 && i <= 75) {
+                    contentVersions.add(createContentVersion('test-' + (s*100 + i) + '.pdf'));
+                } else if(i > 75) {
+                    contentVersions.add(createContentVersion('Invoice-' + (s*100 + i) + '.pdf'));
+                    contentVersions.add(createContentVersion('test-' + (s*100 + i) + '.pdf'));
+                }
+            }
+        }
+        insert ordersList;
+        insert contentVersions;
+        List<ContentDocumentLink> cdlList = new List<ContentDocumentLink>();
+        for(Integer i=0; i<ordersList.size(); i++) {
+            for(ContentVersion cv : contentVersions) {
+                cdlList.add(new ContentDocumentLink(
+                    ContentDocumentId = cv.ContentDocumentId,
+                    LinkedEntityId = ordersList[i].Id,
+                    ShareType = 'V'
+                ));
+            }
+        }
+        insert cdlList;
+        
+        // Create order items
+        for(Order ord : ordersList) {
+            for(PricebookEntry pbe : pbeList) {
+                orderItemsList.add(new OrderItem(
+                    OrderId = ord.Id, 
+                    PricebookEntryId = pbe.Id, 
+                    Quantity = 1, 
+                    UnitPrice = pbe.UnitPrice
+                ));
+            }
+        }
+        insert orderItemsList;
+    }
+    
+    private static ContentVersion createContentVersion(String fileName) {
+        return new ContentVersion(
+            Title = fileName,
+            PathOnClient = '/' + fileName,
+            VersionData = Blob.valueOf('Test Content for ' + fileName),
+            IsMajorVersion = true
+        );
+    }
+}
+
+Steps Explanation:
+
+    Products are created.
+    Pricebook entries for each product are created using the standard pricebook.
+    An Account is created.
+    An activated contract is created for the account.
+    Four batches of 100 orders are created each with a different status (Draft/Activated/Shipped/Delivered).
+    Depending on the order sequence, files are attached to orders.
+
+Usage: To generate the test data, you'd simply call TestDataGenerator.generateTestData();.
+
+Note: Ensure your org's governor and DML limits are not breached during this operation. Adjust the numbers if required. This code assumes all required fields and dependencies are already set up in your Salesforce org. Modify the code if there are any additional required fields or any dependencies to be considered.
