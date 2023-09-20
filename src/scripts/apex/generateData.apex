@@ -111,19 +111,25 @@
         }
         for(Integer i=300; i<400; i++) {
             ordersList[i].Status = statuses[3];
-                if(i >= 325 && i <= 350) {
-                    contentVersions.add(createContentVersion('Invoice-' + i + '.pdf', ordersList[i].Id));
-                } else if(i > 350 && i <= 375) {
-                    contentVersions.add(createContentVersion('test-' + i + '.pdf', ordersList[i].Id));
-                } else if(i > 375) {
-                    contentVersions.add(createContentVersion('Invoice-' + i + '.pdf', ordersList[i].Id));
-                    contentVersions.add(createContentVersion('test-' + i + '.pdf', ordersList[i].Id));
-                }
+                // if(i >= 325 && i <= 350) {
+                //     contentVersions.add(createContentVersion('Invoice-' + i + '.pdf', ordersList[i].Id));
+                // } else if(i > 350 && i <= 375) {
+                //     contentVersions.add(createContentVersion('test-' + i + '.pdf', ordersList[i].Id));
+                // } else if(i > 375) {
+                //     contentVersions.add(createContentVersion('Invoice-' + i + '.pdf', ordersList[i].Id));
+                //     contentVersions.add(createContentVersion('test-' + i + '.pdf', ordersList[i].Id));
+                // }
         }
 
         update ordersList;
 
         insert contentVersions;
+
+        List<Id> contentVersionsIds = new List<Id>();
+        for (ContentVersion cv : contentVersions) {
+            contentVersionsIds.add(cv.Id);
+        }
+        contentVersions = [SELECT ContentDocumentId, Description FROM ContentVersion WHERE Id IN :contentVersionsIds];
         List<ContentDocumentLink> cdlList = new List<ContentDocumentLink>();
 
          for(ContentVersion cv : contentVersions) {
@@ -133,5 +139,5 @@
                     ShareType = 'V'
                 ));
             }
-    
+
         insert cdlList;
