@@ -1,21 +1,16 @@
-Task 1 with GPT
-# Salesforce DX Project: Next Steps
+## **Application Overview**
 
-Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+This application introduces a dynamic **Lightning Web Component (LWC)** designed primarily for displaying and managing orders associated with specific Salesforce accounts. Tailored to optimize the user experience, the component simplifies order viewing by presenting them in an intuitive interface, streamlining user interactions and enhancing overall order management efficiency.
 
-## How Do You Plan to Deploy Your Changes?
+## **Features and Functionality**
 
-Do you want to deploy a set of changes, or create a self-contained application? Choose a [development model](https://developer.salesforce.com/tools/vscode/en/user-guide/development-models).
+Beyond just displaying orders, the component provides seamless functionalities to work directly with the orders - whether it's updating their statuses or performing batch operations. Embedded within the component are user-friendly actions like **'Activate'**, **'Mark as Shipped'**, and **'Refresh'**, granting users the flexibility and power to manage orders with just a few clicks. The application stands as an invaluable tool for businesses looking to streamline their order management processes on the Salesforce platform.
 
-## Configure Your Salesforce DX Project
+## **Testing & Sample Data Generation**
 
-The `sfdx-project.json` file contains useful configuration information for your project. See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) in the _Salesforce DX Developer Guide_ for details about this file.
+To facilitate manual testing and provide a comprehensive view of the application's capabilities, we've included an Apex script that generates a rich set of sample data. By running this script, you can populate your Salesforce org with example orders, products, and related records, allowing for a hands-on experience with the LWC component.
 
-## Read All About It
+To execute the script and generate the testing data, use the following Salesforce CLI command:
 
-- [Salesforce Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
-- [Salesforce CLI Setup Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_intro.htm)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
-
-Start Case 2
+```sh
+sfdx force:apex:execute -f scripts/apex/generateData.apex
