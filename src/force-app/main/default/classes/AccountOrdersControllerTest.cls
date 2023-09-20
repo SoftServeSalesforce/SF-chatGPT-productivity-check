@@ -118,6 +118,26 @@ private class AccountOrdersControllerTest {
     }
 
     @isTest
+    static void testActivateOrder_Null() {
+ 
+        Test.startTest();
+        Map<String, String> result = AccountOrdersController.activateOrder(null);
+        Test.stopTest();
+        System.assertEquals('ERROR', result.get('status'));
+        System.assert(result.get('ErrorMessage').contains('Invalid operation'), 'Error message ' + result.get('ErrorMessage') + ' does not contain `Invalid Operation` text literal');
+    }
+
+    @isTest
+    static void testMarkOrderAsShipped_Null() {
+ 
+        Test.startTest();
+        Map<String, String> result = AccountOrdersController.markOrderAsShipped(null);
+        Test.stopTest();
+        System.assertEquals('ERROR', result.get('status'));
+        System.assert(result.get('ErrorMessage').contains('Invalid operation'), 'Error message ' + result.get('ErrorMessage') + ' does not contain `Invalid Operation` text literal');
+    }
+
+    @isTest
     static void testMarkOrderAsShipped() {
         List<Order> orders = [SELECT Id FROM Order WHERE Status = 'Draft'];
         List<Id> activeOrderIds = new List<Id>();
