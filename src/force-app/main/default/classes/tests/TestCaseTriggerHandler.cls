@@ -143,24 +143,8 @@ private class TestCaseTriggerHandler {
         FeaturesEnabler__c enabler = new FeaturesEnabler__c(
             Case_PreventStatusChangeByNotAnOwner__c = true
         );
-        //We do care what records are just to ensure that they were properly passed
-        //to corresponding service methods.
-        Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
-        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
-        List<Case> newRecords = new List<Case>{
-            new Case(
-                Id = caseId,
-                Status = Constants.CASE_STATUS_NEW,
-                OwnerId = ownerId
-            )
-        };
-        Map<Id,Case> oldRecords = new Map<Id,Case> {
-            caseId => new Case(
-                Id = caseId,
-                Status = Constants.CASE_STATUS_CLOSED,
-                OwnerId = ownerId
-            )
-        };
+        List<Case> newRecords = new List<Case>{};
+        Map<Id,Case> oldRecords = new Map<Id,Case> {};
         //Stub data.
         mocks.startStubbing();
         mocks.when(mockedSelector.getFeaturesEnabler()).thenReturn(enabler);
@@ -195,24 +179,8 @@ private class TestCaseTriggerHandler {
         FeaturesEnabler__c enabler = new FeaturesEnabler__c(
             Case_PreventStatusChangeByNotAnOwner__c = false
         );
-        //We do care what records are just to ensure that they were not passed
-        //to corresponding service methods.
-        Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
-        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
-        List<Case> newRecords = new List<Case>{
-            new Case(
-                Id = caseId,
-                Status = Constants.CASE_STATUS_NEW,
-                OwnerId = ownerId
-            )
-        };
-        Map<Id,Case> oldRecords = new Map<Id,Case> {
-            caseId => new Case(
-                Id = caseId,
-                Status = Constants.CASE_STATUS_CLOSED,
-                OwnerId = ownerId
-            )
-        };
+        List<Case> newRecords = new List<Case>{};
+        Map<Id,Case> oldRecords = new Map<Id,Case> {};
         //Stub data.
         mocks.startStubbing();
         mocks.when(mockedSelector.getFeaturesEnabler()).thenReturn(enabler);
