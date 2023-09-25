@@ -4,7 +4,6 @@
     <excludeButtons>ChangeOwnerOne</excludeButtons>
     <excludeButtons>ChangeRecordType</excludeButtons>
     <excludeButtons>Clone</excludeButtons>
-    <excludeButtons>CloseCase</excludeButtons>
     <excludeButtons>CreateGroupAction</excludeButtons>
     <excludeButtons>GenerateKnowledge</excludeButtons>
     <excludeButtons>MassAccept</excludeButtons>
@@ -158,6 +157,11 @@
             <actionName>Delete</actionName>
             <actionType>StandardButton</actionType>
             <sortOrder>1</sortOrder>
+        </platformActionListItems>
+        <platformActionListItems>
+            <actionName>CloseCase</actionName>
+            <actionType>StandardButton</actionType>
+            <sortOrder>2</sortOrder>
         </platformActionListItems>
     </platformActionList>
     <quickActionList/>
