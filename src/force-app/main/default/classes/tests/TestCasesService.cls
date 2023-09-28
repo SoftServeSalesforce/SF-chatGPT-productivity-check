@@ -132,4 +132,38 @@ private class TestCasesService {
             );
         }
     }
+
+    @IsTest
+    static void testPreventStatusChangeByNotAnOwner_InactiveOwner() {
+        // Setup data for a case where the previous owner is inactive.
+        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
+        Case newCase = new Case(OwnerId = ownerId, Status = Constants.CASE_STATUS_NEW);
+        Case oldCase = new Case(OwnerId = ownerId, Status = Constants.CASE_STATUS_CLOSED);
+        Profile sysAdminProfile = [SELECT Id FROM Profile WHERE Name = 'System Administrator' LIMIT 1];
+
+        User inactiveUser = new User(
+            FirstName = 'inactive',
+            LastName = 'user',
+            Email = 'inactive@example.com',
+            Username = 'testinactiveuser@example.com',
+            Alias = 'inac',
+            TimeZoneSidKey = 'America/Los_Angeles',
+            LocaleSidKey = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            ProfileId = sysAdminProfile.Id,
+            LanguageLocaleKey = 'en_US',
+            IsActive = false
+        );
+        insert inactiveUser;
+        oldCase.OwnerId = inactiveUser.Id;
+
+        List<Case> newRecords = new List<Case> { newCase };
+        Map<Id, Case> oldRecords = new Map<Id, Case> { newCase.Id => oldCase };
+
+        Test.startTest();
+        CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        Test.stopTest();
+
+        System.assert(!newCase.hasErrors(), 'Owner should be able to change status');
+    }
 }
