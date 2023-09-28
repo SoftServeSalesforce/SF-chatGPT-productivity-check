@@ -43,15 +43,46 @@ private class TestCasesService {
     }
 
     /**
+     * @description testPreventStatusChangeByNotAnOwner_Positive: Test method needed to ensure
+     * that 'preventStatusChangeByNotAnOwner' method of 'CasesService' class does not prevent 
+     * non-Owner from changing Case Status in case previous owner is inactive.
+     */
+    @IsTest
+    private static void testPreventStatusChangeByNotAnOwner_OwnerInactive_Positive() {
+        //Setup data.
+        Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
+        User user = TestDataBuilderUtils.createInactiveTestUser();
+        Id ownerId = user.Id;
+        Case newCase = new Case(
+            Id = caseId,
+            Status = Constants.CASE_STATUS_NEW,
+            OwnerId = ownerId
+        );
+        Case oldCase = new Case(
+            Id = caseId,
+            Status = Constants.CASE_STATUS_CLOSED,
+            OwnerId = ownerId
+        );
+        List<Case> newRecords = new List<Case> { newCase };
+        Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
+        //Execute scenario.
+        CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        //Verify outcomes.
+        System.assert(!newCase.hasErrors());
+    }
+
+    /**
      * @description testPreventStatusChangeByNotAnOwner_Negative: Test method needed to ensure
      * that 'preventStatusChangeByNotAnOwner' method of 'CasesService' class prevent non-Owner
-     * from changing Case Status by adding expected error.
+     * from changing Case Status in case previous owner is Active by adding expected error.
      */
     @IsTest
     private static void testPreventStatusChangeByNotAnOwner_Negative() {
         //Setup data.
         Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
-        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
+        User user = TestDataBuilderUtils.createActiveTestUser();
+        Id ownerId = user.Id;
+
         Case newCase = new Case(
             Id = caseId,
             Status = Constants.CASE_STATUS_NEW,
@@ -89,7 +120,8 @@ private class TestCasesService {
         Id caseIdPositive = fflib_IDGenerator.generate(Case.SObjectType);
         Id caseIdNegative = fflib_IDGenerator.generate(Case.SObjectType);
         Id ownerIdPositive = UserInfo.getUserId();
-        Id ownerIdNegative = fflib_IDGenerator.generate(User.SObjectType);
+        User user = TestDataBuilderUtils.createActiveTestUser();
+        Id ownerIdNegative = user.Id;
         Case newCasePositive = new Case(
             Id = caseIdPositive,
             Status = Constants.CASE_STATUS_NEW,
