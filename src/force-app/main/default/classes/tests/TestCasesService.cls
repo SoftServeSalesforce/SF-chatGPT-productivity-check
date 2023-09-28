@@ -51,16 +51,19 @@ private class TestCasesService {
     private static void testPreventStatusChangeByNotAnOwner_Negative() {
         //Setup data.
         Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
-        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
+
+        User realUser = TestDataFactory.createUsers(1, null, new List<String>{'Features Enabler'}, new User(), true)[0];
+        User adminUser = TestDataFactory.createUsers(1, null, new List<String>(), new User(), true)[0];
+
         Case newCase = new Case(
             Id = caseId,
             Status = Constants.CASE_STATUS_NEW,
-            OwnerId = ownerId
+            OwnerId = realUser.Id
         );
         Case oldCase = new Case(
             Id = caseId,
             Status = Constants.CASE_STATUS_CLOSED,
-            OwnerId = ownerId
+            OwnerId = adminUser.Id
         );
         List<Case> newRecords = new List<Case> { newCase };
         Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
@@ -88,27 +91,31 @@ private class TestCasesService {
         //Setup data.
         Id caseIdPositive = fflib_IDGenerator.generate(Case.SObjectType);
         Id caseIdNegative = fflib_IDGenerator.generate(Case.SObjectType);
-        Id ownerIdPositive = UserInfo.getUserId();
-        Id ownerIdNegative = fflib_IDGenerator.generate(User.SObjectType);
+        Id activeOwnerId = UserInfo.getUserId();
+        User activeUser = TestDataFactory.createUsers(1, null, new List<String>{'Features Enabler'}, new User(), true)[0];
+        User nonActiveUser = TestDataFactory.createUsers(1, null, new List<String>(), new User(), true)[0];
+        nonActiveUser.isActive = false;
+        update nonActiveUser; 
+        List<Case> cases = new List<Case>();        
         Case newCasePositive = new Case(
             Id = caseIdPositive,
             Status = Constants.CASE_STATUS_NEW,
-            OwnerId = ownerIdPositive
+            OwnerId = nonActiveUser.Id
         );
         Case newCaseNegative = new Case(
             Id = caseIdNegative,
             Status = Constants.CASE_STATUS_NEW,
-            OwnerId = ownerIdNegative
+            OwnerId = activeUser.Id
         );
         Case oldCasePositive = new Case(
             Id = caseIdPositive,
             Status = Constants.CASE_STATUS_CLOSED,
-            OwnerId = ownerIdPositive
+            OwnerId = nonActiveUser.Id
         );
         Case oldCaseNegative = new Case(
             Id = caseIdNegative,
             Status = Constants.CASE_STATUS_CLOSED,
-            OwnerId = ownerIdNegative
+            OwnerId = activeUser.Id
         );
         List<Case> newRecords = new List<Case> { 
             newCasePositive,
@@ -118,7 +125,6 @@ private class TestCasesService {
             caseIdPositive => oldCasePositive,
             caseIdNegative => oldCaseNegative
         }; 
-        //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.
         System.assert(!newCasePositive.hasErrors(), Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR);
