@@ -3,12 +3,12 @@ start - 28.9 14:00
 pause - 28.9 15:00
 unpause - 28.9 18:00
 
-end - 28.9 
+end - 28.9 19:08
 
-total -
+total - 128
 
 development - 30
 testing - 60
 documentation - 30
-repository updates -
+repository updates - 8
 
