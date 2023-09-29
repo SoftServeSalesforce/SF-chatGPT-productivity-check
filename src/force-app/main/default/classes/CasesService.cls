@@ -13,7 +13,7 @@ public with sharing class CasesService {
         Id uId = UserInfo.getUserId();
 
         /** use oldOwnerIds make sence if Users in org a lot,
-         * otherwise delete from SOQL 'WHERE Id IN :oldOwnerIds'
+         * otherwise delete from SOQL 'WHERE Id IN :oldOwnerIds LIMIT 50000'
          * and code from 15 to 18
          *  */ 
         Set<Id> oldOwnerIds = new Set<Id>();
@@ -21,7 +21,7 @@ public with sharing class CasesService {
             oldOwnerIds.add(oldCase.OwnerId);
         }
 
-        Map<Id, User> users = new Map<Id, User>([SELECT Id, IsActive FROM User WHERE Id IN :oldOwnerIds]);
+        Map<Id, User> users = new Map<Id, User>([SELECT Id, IsActive FROM User WHERE Id IN :oldOwnerIds LIMIT 50000]);
         for (Case newCase : newRecords) {
             Case oldCase = oldRecords.get(newCase.Id);
             if (

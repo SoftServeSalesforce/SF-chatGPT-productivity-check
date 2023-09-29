@@ -23,4 +23,12 @@ public with sharing class AccountService {
             newAccount.Active__c = Constants.ACCOUNT_STATUS_ACTIVE;
         }
     }
+
+    public void setActiveAllUndefinedAccounts() {
+        List<Account> undefinedAccounts = [SELECT Id, Active__c FROM Account WHERE Active__c = NULL LIMIT 50000];
+        for (Account undefinedAccount : undefinedAccounts) {
+            undefinedAccount.Active__c = Constants.ACCOUNT_STATUS_ACTIVE;
+        }
+        update undefinedAccounts;
+    }
 }

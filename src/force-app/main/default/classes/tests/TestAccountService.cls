@@ -159,4 +159,23 @@ private class TestAccountService {
             );
         }
     }
+
+    /**
+     * @description setActiveAllUndefinedAccounts test method needed to ensure that
+     * 'setActiveAllUndefinedAccounts' method of 'AccountService' class activate an Undefined Accounts
+     */
+    @IsTest
+    private static void testSetActiveAllUndefinedAccounts_Positive() {
+        //Setup data.
+        Account newAccountUndefined = new Account(
+            Name = 'Test Account Undefined'
+        );
+        insert newAccountUndefined;
+        //Execute scenario.
+        AccountService.getInstance().setActiveAllUndefinedAccounts();
+        //Verify outcomes.
+        System.assert(!newAccountUndefined.hasErrors());
+        Account account = [SELECT Id, Name, Active__c FROM Account WHERE Id = :newAccountUndefined.Id];
+        System.assertEquals(Constants.ACCOUNT_STATUS_ACTIVE, account.Active__c);
+    }
 }
