@@ -1,12 +1,12 @@
 start - 29.9 14:00
 
 
-end - 29.9
+end - 29.9 15:30
 
 
-total - 
+total - 90
 
 development - 25
 testing - 40
 documentation - 17
-repository updates - 
+repository updates -  8
