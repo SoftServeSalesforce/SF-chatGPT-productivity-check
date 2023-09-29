@@ -1,0 +1,12 @@
+start - 29.9 14:00
+
+
+end - 29.9
+
+
+total - 
+
+development - 25
+testing - 40
+documentation - 17
+repository updates - 

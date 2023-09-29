@@ -1,0 +1,78 @@
+---------------------------------------------------------------------------------------------
+
+Change Description:
+    Implementing a new feature that ensures accounts are always active by default and prevents updates to inactive accounts.
+    This is achieved through the introduction of an Apex Trigger, Handler, and Service classes.
+
+---------------------------------------------------------------------------------------------
+
+Pre-deployment Steps:
+
+    1. Backup Current State:
+        Before deploying any changes, ensure you have a complete backup of the current Salesforce configuration and codebase,
+        including metadata and data.
+    2. Review Changes:
+        Thoroughly review the new code made in Apex Trigger, Handler, and Service classes, 
+        and associated test classes to ensure they align with the requirements.
+    3. Review Dependencies:
+        Identify any potential dependencies or integrations with external systems that might be affected by these changes.
+
+---------------------------------------------------------------------------------------------
+
+Metadata Changes Listing:
+
+    Apex Classes:
+        AccountService.cls - created new class
+        AccountHandler.cls - created new class
+    Apex Trigger:
+        AccountTrigger.trigger - created new trigger
+    Test Classes:
+        TestAccountService.cls - created new test class
+        TestAccountHandler.cls - created new test class
+        TestAccountTrigger.cls - created new test class  
+
+---------------------------------------------------------------------------------------------
+
+Deployment Steps:
+    1. Deploy to Sandbox:
+        Deploy the changes to a sandbox environment first to ensure everything works as expected in a controlled environment. 
+        Run all test cases to confirm successful deployment.
+    2. User Acceptance Testing (UAT):
+        Engage relevant users or stakeholders to perform User Acceptance Testing (UAT) in the sandbox environment. 
+        Validate that the changes meet their requirements and expectations.
+    3. Code Review:
+        Have experienced developers review the code changes to ensure code quality and best practices are maintained.
+    4. Deployment to Production:
+        Once UAT and code review are successful, deploy the changes to the production environment during a scheduled maintenance window 
+        to minimize disruption.
+
+---------------------------------------------------------------------------------------------
+
+Post-deployment Steps:
+
+    1. Monitoring:
+        Continuously monitor the production environment for any unexpected issues, errors, or performance concerns.
+        Be prepared to address any immediate issues.
+    2. User Training:
+        If necessary, provide training to end-users or support teams to ensure they are aware of the new functionality 
+        and any changes in their workflows.
+    3. Documentation: 
+        Update documentation, including system documentation and user manuals, to reflect the changes made.
+    4. Communication:
+        Communicate the successful deployment and any relevant information to the broader organization, 
+        including stakeholders, users, and support teams.
+    5. Post-Deployment Review:
+        Conduct a post-deployment review to assess the success of the deployment, 
+        gather feedback from users, and identify any lessons learned for future deployments.
+    6. Backup Data:
+        Perform a backup of the production data following the deployment to ensure data integrity.
+    7. Incident Handling:
+        Be prepared to handle and respond to any post-deployment incidents promptly. 
+        Implement a process for reporting and resolving issues.
+    8. Scheduled Maintenance:
+        Consider scheduling follow-up maintenance windows for any necessary fixes, improvements, 
+        or optimizations based on feedback and monitoring results.
+    9. Regression Testing:
+        Periodically conduct regression testing to ensure that the changes have not introduced any new issues over time.
+
+---------------------------------------------------------------------------------------------
