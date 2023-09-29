@@ -12,7 +12,7 @@ public with sharing class AccountService {
     public void preventUpdateInactiveAccounts(List<Account> newRecords, Map<Id,Account> oldRecords) {
         for (Account newAccount : newRecords) {
             Account oldAccount = oldRecords.get(newAccount.Id);
-            if (oldAccount.Active__c == 'No') {
+            if (oldAccount.Active__c == Constants.ACCOUNT_STATUS_INACTIVE) {
                 newAccount.Active__c.addError(Constants.ERROR_UPDATE_INACTIVE_ACCOUNT);
             }
         }
@@ -20,7 +20,7 @@ public with sharing class AccountService {
 
     public void setActiveNewAccounts(List<Account> newRecords) {
         for (Account newAccount : newRecords) {
-            newAccount.Active__c = 'Yes';
+            newAccount.Active__c = Constants.ACCOUNT_STATUS_ACTIVE;
         }
     }
 }
