@@ -2,6 +2,12 @@ public with sharing class TestDataFactory {
 
     public class TestDataFactoryException extends Exception {}
 
+    public static final Integer SETTINGS_SELECTOR_EXECUTIONS_AT_RUN = 1;
+    public static final Integer SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREUPDATE = 1;
+    public static final Integer SETTINGS_SELECTOR_EXECUTIONS_ON_BEFORE_UPDATE_WHEN_ACTIVE = 
+        SETTINGS_SELECTOR_EXECUTIONS_AT_RUN
+        + SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREUPDATE;
+
      // static var for generating random a-zA-Z0-9 strings
     static Integer[] charset;
     // static initialization brace for random string generation
@@ -42,16 +48,21 @@ public with sharing class TestDataFactory {
         return users;
     }
 
-    public static SObject createSObject(SObject sObj, String defaultClassName) {
-        System.debug('createSObject start  ');
+    public static SObject createSObject(SObject sObj, String defaultClassName, Boolean doInsert) {
+        SObject retObject = createSObject(sObj, defaultClassName);
+        if (doInsert) {
+            insert retObject;
+        }
+        return retObject;
+    }
+
+    public static SObject createSObject(SObject sObj, String defaultClassName) {       
         // Create an instance of the defaults class so we can get the Map of field defaults
-        Type t = Type.forName(defaultClassName);
-        System.debug('Type t  ' + t);
+        Type t = Type.forName(defaultClassName);        
         if (t == null) {
             Throw new TestDataFactoryException('Invalid defaults class.');
         }
-        FieldDefaults defaults = (FieldDefaults)t.newInstance();
-        System.debug('defaults  ' + defaults);
+        FieldDefaults defaults = (FieldDefaults)t.newInstance();        
         addFieldDefaults(sObj, defaults.getFieldDefaults());
         return sObj;
     }
@@ -59,7 +70,6 @@ public with sharing class TestDataFactory {
     private static void addFieldDefaults(SObject sObj, Map<Schema.SObjectField, Object> defaults) {
         // Loop through the map of fields and if they weren't specifically assigned, fill them.
         Map<String, Object> populatedFields = sObj.getPopulatedFieldsAsMap();
-        System.debug('populatedFields ' + populatedFields);
         for (Schema.SObjectField field : defaults.keySet()) {
             if (!populatedFields.containsKey(String.valueOf(field))) {
                 sObj.put(field, defaults.get(field));
@@ -122,4 +132,14 @@ public with sharing class TestDataFactory {
             };
         }
     }   
+
+    public class AccountDefaults implements FieldDefaults {
+        public Map<Schema.SObjectField, Object> getFieldDefaults() {
+            return new Map<Schema.SObjectField, Object> {
+                    Account.Name => 'Test Account',
+                    Account.BillingCountry => 'Germany',
+                    Account.ShippingCountry => 'Germany'
+            };
+        }
+    }
 }
