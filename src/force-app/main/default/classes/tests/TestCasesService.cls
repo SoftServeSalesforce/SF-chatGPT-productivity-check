@@ -135,20 +135,9 @@ private class TestCasesService {
 
     @IsTest
     private static void testPreventStatusChangeByNotAnOwner_InactiveOwner_Positive() {
-        Id adminProfileId = [SELECT Id FROM Profile WHERE Name = :Constants.ADMIN_PROFILE_NAME LIMIT 1][0].Id;
-        User inactiveUser = new User(
-            FirstName = 'Test',
-            LastName = 'Testenko',
-            UserName = 'preventTest@test.com',
-            Email = 'preventTest@test.org',
-            Alias = 'ttest',
-            IsActive = false,
-            ProfileId = adminProfileId,
-            LanguageLocaleKey = 'en_US',
-            EmailEncodingKey = 'UTF-8',
-            LocaleSidKey = 'en_US',
-            TimeZoneSidKey = 'America/Los_Angeles'
-        );
+        Id adminProfileId = getAdminProfileId();
+
+        User inactiveUser = createUser(false);
         insert inactiveUser;
 
         Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
@@ -171,31 +160,19 @@ private class TestCasesService {
 
     @isTest
     private static void testPreventStatusChangeByNotAnOwner_InactiveOwner_Negative() {
-        Id adminProfileId = [SELECT Id FROM Profile WHERE Name = :Constants.ADMIN_PROFILE_NAME LIMIT 1][0].Id;
-        User inactiveUser = new User(
-            FirstName = 'Test',
-            LastName = 'Testenko',
-            UserName = 'preventTest@test.com',
-            Email = 'preventTest@test.org',
-            Alias = 'ttest',
-            IsActive = true,
-            ProfileId = adminProfileId,
-            LanguageLocaleKey = 'en_US',
-            EmailEncodingKey = 'UTF-8',
-            LocaleSidKey = 'en_US',
-            TimeZoneSidKey = 'America/Los_Angeles'
-        );
-        insert inactiveUser;
+        Id adminProfileId = getAdminProfileId();
+        User activeUser = createUser(true);
+        insert activeUser;
 
         Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
         Case oldCase = new Case(
             Id = caseId,
-            OwnerId = inactiveUser.Id,
+            OwnerId = activeUser.Id,
             Status = Constants.CASE_STATUS_NEW
         );
         Case newCase = new Case(
             Id = caseId,
-            OwnerId = inactiveUser.Id,
+            OwnerId = activeUser.Id,
             Status = Constants.CASE_STATUS_CLOSED
         );
         Map<Id, Case> oldRecords = new Map<Id, Case> { caseId => oldCase };
@@ -209,5 +186,25 @@ private class TestCasesService {
             errors[0].getMessage(),
             Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
         );
+    }
+
+    private static User createUser(Boolean isActive) {
+        return new User(
+            FirstName = 'Test',
+            LastName = 'Testenko',
+            UserName = 'preventTest@test.com',
+            Email = 'preventTest@test.org',
+            Alias = 'ttest',
+            IsActive = isActive,
+            ProfileId = adminProfileId,
+            LanguageLocaleKey = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            LocaleSidKey = 'en_US',
+            TimeZoneSidKey = 'America/Los_Angeles'
+        );
+    }
+
+    private static Id getAdminProfileId() {
+        return [SELECT Id FROM Profile WHERE Name = :Constants.ADMIN_PROFILE_NAME LIMIT 1][0].Id;
     }
 }
