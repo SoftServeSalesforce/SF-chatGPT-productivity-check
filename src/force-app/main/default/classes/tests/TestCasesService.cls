@@ -135,8 +135,6 @@ private class TestCasesService {
 
     @IsTest
     private static void testPreventStatusChangeByNotAnOwner_InactiveOwner_Positive() {
-        Id adminProfileId = getAdminProfileId();
-
         User inactiveUser = createUser(false);
         insert inactiveUser;
 
@@ -160,7 +158,6 @@ private class TestCasesService {
 
     @isTest
     private static void testPreventStatusChangeByNotAnOwner_InactiveOwner_Negative() {
-        Id adminProfileId = getAdminProfileId();
         User activeUser = createUser(true);
         insert activeUser;
 
@@ -189,6 +186,7 @@ private class TestCasesService {
     }
 
     private static User createUser(Boolean isActive) {
+        Id adminProfileId = getAdminProfileId();
         return new User(
             FirstName = 'Test',
             LastName = 'Testenko',
