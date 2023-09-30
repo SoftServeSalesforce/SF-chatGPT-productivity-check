@@ -1,0 +1,20 @@
+Change description:
+    Implemented necessary additions and changes to the code base to avoid
+    modifying Case records if current user is not the owner of the record
+    and current owner of the record is an active user. 
+
+Pre-deployment steps:
+    Said a short prayer.
+
+Metadata changes:
+    Created UserSelector class with specific method to query existing deactivated users.
+    Updated CasesService method preventStatusChangeByNotAnOwner with additional condition. 
+    Updated Constants class with new addition.
+    Created test class TestUserSelector.
+    Updated test class TestCasesService with two additional test methods.
+
+Post-deployment steps:
+    Tested new functionality via UI to ensure metadata changes are successful.
+    Ran Apex unit tests to make sure they were successful.
+    Filled out necessary documentation.
+    

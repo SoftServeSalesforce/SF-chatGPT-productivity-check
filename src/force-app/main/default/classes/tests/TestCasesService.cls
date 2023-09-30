@@ -132,4 +132,82 @@ private class TestCasesService {
             );
         }
     }
+
+    @IsTest
+    private static void testPreventStatusChangeByNotAnOwner_InactiveOwner_Positive() {
+        Id adminProfileId = [SELECT Id FROM Profile WHERE Name = :Constants.ADMIN_PROFILE_NAME LIMIT 1][0].Id;
+        User inactiveUser = new User(
+            FirstName = 'Test',
+            LastName = 'Testenko',
+            UserName = 'preventTest@test.com',
+            Email = 'preventTest@test.org',
+            Alias = 'ttest',
+            IsActive = false,
+            ProfileId = adminProfileId,
+            LanguageLocaleKey = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            LocaleSidKey = 'en_US',
+            TimeZoneSidKey = 'America/Los_Angeles'
+        );
+        insert inactiveUser;
+
+        Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
+        Case oldCase = new Case(
+            Id = caseId,
+            OwnerId = inactiveUser.Id,
+            Status = Constants.CASE_STATUS_NEW
+        );
+        Case newCase = new Case(
+            Id = caseId,
+            OwnerId = inactiveUser.Id,
+            Status = Constants.CASE_STATUS_CLOSED
+        );
+        Map<Id, Case> oldRecords = new Map<Id, Case> { caseId => oldCase };
+        List<Case> newRecords = new List<Case>{ newCase };
+        
+        CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        System.assert(!newCase.hasErrors());
+    }
+
+    @isTest
+    private static void testPreventStatusChangeByNotAnOwner_InactiveOwner_Negative() {
+        Id adminProfileId = [SELECT Id FROM Profile WHERE Name = :Constants.ADMIN_PROFILE_NAME LIMIT 1][0].Id;
+        User inactiveUser = new User(
+            FirstName = 'Test',
+            LastName = 'Testenko',
+            UserName = 'preventTest@test.com',
+            Email = 'preventTest@test.org',
+            Alias = 'ttest',
+            IsActive = true,
+            ProfileId = adminProfileId,
+            LanguageLocaleKey = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            LocaleSidKey = 'en_US',
+            TimeZoneSidKey = 'America/Los_Angeles'
+        );
+        insert inactiveUser;
+
+        Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
+        Case oldCase = new Case(
+            Id = caseId,
+            OwnerId = inactiveUser.Id,
+            Status = Constants.CASE_STATUS_NEW
+        );
+        Case newCase = new Case(
+            Id = caseId,
+            OwnerId = inactiveUser.Id,
+            Status = Constants.CASE_STATUS_CLOSED
+        );
+        Map<Id, Case> oldRecords = new Map<Id, Case> { caseId => oldCase };
+        List<Case> newRecords = new List<Case>{ newCase };
+        
+        CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        System.assert(newCase.hasErrors(), Constants.ERROR_RECORD_SHOULD_BE_ERRORED);
+        List<Database.Error> errors = newCase.getErrors();
+        System.assertEquals(
+            Constants.ERROR_PLEASE_CLAIM_CASE_BEFORE_CHANGING_ITS_STATUS,
+            errors[0].getMessage(),
+            Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
+        );
+    }
 }
