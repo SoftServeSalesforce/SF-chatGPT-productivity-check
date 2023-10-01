@@ -1,0 +1,20 @@
+Change description:
+    Added new functionality to make sure that all created accounts are active
+    by default and prevent modifying of inactive accounts.
+
+Pre-deployment steps:
+
+Metadata changes:
+    Added 3 fields to FeaturesEnabler custom setting.
+    Updated Constants class.
+    Created AccountTrigger trigger on Account.
+    Created AccountTriggerHandler class.
+    Created AccountService class.
+    Created test class TestAccountTrigger.
+    Created test class TestAccountTriggerHandler.
+    Created test class TestAccountService.
+
+Post_deployment steps:
+    Tested deployed functionality via UI to make sure that everything works
+    as planned. Ran Apex unit tests to provide code coverage. Filled out
+    necessary documentation.
