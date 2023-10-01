@@ -13,5 +13,7 @@ public with sharing class Constants {
     @TestVisible
     private static final String ERROR_RECORD_SHOULD_BE_ERRORED = 'Record should be errored.';
     @TestVisible
+    private static final String ERROR_RECORD_SHOULD_NOT_BE_ERRORED = 'Record should not be errored.';
+    @TestVisible
     private static final String ERROR_RECORD_HAS_UNEXPECTED_ERROR = 'Record has unexpected error.';
 }
