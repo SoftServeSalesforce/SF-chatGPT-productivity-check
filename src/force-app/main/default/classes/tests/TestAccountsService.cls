@@ -86,8 +86,7 @@ private class TestAccountsService {
         Id acctId = fflib_IDGenerator.generate(Account.SObjectType);
         Account newAcct = new Account(
             Id = acctId,
-            Phone = ACCOUNT_PHONE_NUMBER_TWO,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_YES
+            Phone = ACCOUNT_PHONE_NUMBER_TWO
         );
 
         Account oldAcct = new Account(
@@ -115,8 +114,7 @@ private class TestAccountsService {
         Id acctId = fflib_IDGenerator.generate(Account.SObjectType);
         Account newAcct = new Account(
             Id = acctId,
-            Phone = ACCOUNT_PHONE_NUMBER_TWO,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_NO
+            Phone = ACCOUNT_PHONE_NUMBER_TWO
         );
 
         Account oldAcct = new Account(
@@ -131,14 +129,7 @@ private class TestAccountsService {
         AccountsService.getInstance().preventUpdatesOnInactive(newRecords, oldRecords);
         // Verify outcomes.
         Assert.isTrue(newAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_BE_ERRORED);
-        List<Database.Error> errors = newAcct.getErrors();
-        for (Database.Error error : errors) {
-            Assert.areEqual(
-                Constants.ERROR_CANT_UPDATE_INACTIVE_ACCOUNT,
-                error.getMessage(),
-                Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
-            );
-        }
+        assertDatabaseErrorsAreCorrect(newAcct.getErrors());
     }
     
     /**
@@ -153,8 +144,7 @@ private class TestAccountsService {
         Id positiveAcctId = fflib_IDGenerator.generate(Account.SObjectType);
         Account newNegativeAcct = new Account(
             Id = negativeAcctId,
-            Phone = ACCOUNT_PHONE_NUMBER_TWO,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_NO
+            Phone = ACCOUNT_PHONE_NUMBER_TWO
         );
 
         Account oldNegativeAcct = new Account(
@@ -164,8 +154,7 @@ private class TestAccountsService {
         );
         Account newPositiveAcct = new Account(
             Id = positiveAcctId,
-            Phone = ACCOUNT_PHONE_NUMBER_TWO,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_YES
+            Phone = ACCOUNT_PHONE_NUMBER_TWO
         );
 
         Account oldPositiveAcct = new Account(
@@ -184,50 +173,9 @@ private class TestAccountsService {
         // Verify outcomes.
         Assert.isFalse(newPositiveAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_NOT_BE_ERRORED);
         Assert.isTrue(newNegativeAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_BE_ERRORED);
-        List<Database.Error> errors = newNegativeAcct.getErrors();
-        for (Database.Error error : errors) {
-            Assert.areEqual(
-                Constants.ERROR_CANT_UPDATE_INACTIVE_ACCOUNT,
-                error.getMessage(),
-                Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
-            );
-        }
+        assertDatabaseErrorsAreCorrect(newNegativeAcct.getErrors());
     }
 
-    /**
-     * @description testPreventUpdatesOnInactive_Negative: Test method needed to ensure
-     * that 'preventUpdatesOnInactive' method of 'AccountsService' class prevent inactive
-     * Accounts from changind Active field back to 'Yes' without permission.
-     */
-    @IsTest
-    private static void testPreventUpdatesOnInactive_Negative_ActiveFieldUpdate() {
-        // Setup data.
-        Id acctId = fflib_IDGenerator.generate(Account.SObjectType);
-        Account newAcct = new Account(
-            Id = acctId,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_YES
-        );
-
-        Account oldAcct = new Account(
-            Id = acctId,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_NO
-        );
-
-        List<Account> newRecords = new List<Account>{ newAcct };
-        Map<Id, Account> oldRecords = new Map<Id, Account>{ acctId => oldAcct };
-        // Execute scenario.
-        AccountsService.getInstance().preventUpdatesOnInactive(newRecords, oldRecords);
-        // Verify outcomes.
-        Assert.isTrue(newAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_BE_ERRORED);
-        List<Database.Error> errors = newAcct.getErrors();
-        for (Database.Error error : errors) {
-            Assert.areEqual(
-                Constants.ERROR_CANT_UPDATE_INACTIVE_ACCOUNT,
-                error.getMessage(),
-                Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
-            );
-        }
-    }
 
     /**
      * @description testPreventUpdatesOnInactive_Negative_WhenPermissionAssigned: Test method needed to ensure
@@ -240,8 +188,7 @@ private class TestAccountsService {
         Id acctId = fflib_IDGenerator.generate(Account.SObjectType);
         Account newAcct = new Account(
             Id = acctId,
-            Phone = ACCOUNT_PHONE_NUMBER_TWO,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_NO
+            Phone = ACCOUNT_PHONE_NUMBER_TWO
         );
 
         Account oldAcct = new Account(
@@ -253,25 +200,10 @@ private class TestAccountsService {
         List<Account> newRecords = new List<Account>{ newAcct };
         Map<Id, Account> oldRecords = new Map<Id, Account>{ acctId => oldAcct };
         // Execute scenario.
-        User testUser = TestDataFactory.getInstance().createUser(USER_EMAIL);
-        System.runAs(testUser) {
-            activateAccountReactivatePermission(testUser.Id);
-        }
-        Test.startTest();
-        System.runAs(testUser) {
-            AccountsService.getInstance().preventUpdatesOnInactive(newRecords, oldRecords);
-        }
-        Test.stopTest();
+        executePermissionAssignedScenario(newRecords, oldRecords);
         // Verify outcomes.
         Assert.isTrue(newAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_BE_ERRORED);
-        List<Database.Error> errors = newAcct.getErrors();
-        for (Database.Error error : errors) {
-            Assert.areEqual(
-                Constants.ERROR_CANT_UPDATE_INACTIVE_ACCOUNT,
-                error.getMessage(),
-                Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
-            );
-        }
+        assertDatabaseErrorsAreCorrect(newAcct.getErrors());
     }
 
     /**
@@ -299,56 +231,12 @@ private class TestAccountsService {
         List<Account> newRecords = new List<Account>{ newAcct };
         Map<Id, Account> oldRecords = new Map<Id, Account>{ acctId => oldAcct };
         // Execute scenario.
-        User testUser = TestDataFactory.getInstance().createUser(USER_EMAIL);
-        System.runAs(testUser) {
-            activateAccountReactivatePermission(testUser.Id);
-        }
-        Test.startTest();
-        System.runAs(testUser) {
-            AccountsService.getInstance().preventUpdatesOnInactive(newRecords, oldRecords);
-        }
-        Test.stopTest();
+        executePermissionAssignedScenario(newRecords, oldRecords);
         // Verify outcomes.
         Assert.isFalse(newAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_NOT_BE_ERRORED);
         
     }
 
-    /**
-     * @description testPreventUpdatesOnInactive_Negative_WhenPermissionAssigned: Test method needed to ensure
-     * that 'preventUpdatesOnInactive' method of 'AccountsService' class allows inactive
-     * Accounts changes if Active field is going to be set to 'Yes' with only Active field update
-     * and user has permission to reactivate accounts.
-     */
-    @IsTest
-    private static void testPreventUpdatesOnInactive_Positive_ActiveFieldUpdate_WhenPermissionAssigned() {
-        // Setup data.
-        Id acctId = fflib_IDGenerator.generate(Account.SObjectType);
-        Account newAcct = new Account(
-            Id = acctId,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_YES
-        );
-
-        Account oldAcct = new Account(
-            Id = acctId,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_NO
-        );
-
-        List<Account> newRecords = new List<Account>{ newAcct };
-        Map<Id, Account> oldRecords = new Map<Id, Account>{ acctId => oldAcct };
-        // Execute scenario.
-        User testUser = TestDataFactory.getInstance().createUser(USER_EMAIL);
-        System.runAs(testUser) {
-            activateAccountReactivatePermission(testUser.Id);
-        }
-        Test.startTest();
-        System.runAs(testUser) {
-            AccountsService.getInstance().preventUpdatesOnInactive(newRecords, oldRecords);
-        }
-        Test.stopTest();
-        // Verify outcomes.
-        Assert.isFalse(newAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_NOT_BE_ERRORED);
-        
-    }
     /**
      * @description testPreventUpdatesOnInactive_Negative_WhenPermissionAssigned: 
      * Test method needed to ensure that 'preventUpdatesOnInactive' 
@@ -362,8 +250,7 @@ private class TestAccountsService {
         Id positiveAcctId = fflib_IDGenerator.generate(Account.SObjectType);
         Account newNegativeAcct = new Account(
             Id = negativeAcctId,
-            Phone = ACCOUNT_PHONE_NUMBER_TWO,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_NO
+            Phone = ACCOUNT_PHONE_NUMBER_TWO
         );
 
         Account oldNegativeAcct = new Account(
@@ -380,7 +267,7 @@ private class TestAccountsService {
         Account oldPositiveAcct = new Account(
             Id = positiveAcctId,
             Phone = ACCOUNT_PHONE_NUMBER_ONE,
-            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_YES
+            Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_NO
         );
 
         List<Account> newRecords = new List<Account>{ newNegativeAcct, newPositiveAcct };
@@ -389,26 +276,11 @@ private class TestAccountsService {
             positiveAcctId => oldPositiveAcct 
         };
         // Execute scenario.
-        User testUser = TestDataFactory.getInstance().createUser(USER_EMAIL);
-        System.runAs(testUser) {
-            activateAccountReactivatePermission(testUser.Id);
-        }
-        Test.startTest();
-        System.runAs(testUser) {
-            AccountsService.getInstance().preventUpdatesOnInactive(newRecords, oldRecords);
-        }
-        Test.stopTest();
+        executePermissionAssignedScenario(newRecords, oldRecords);
         // Verify outcomes.
         Assert.isFalse(newPositiveAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_NOT_BE_ERRORED);
         Assert.isTrue(newNegativeAcct.hasErrors(), Constants.ERROR_RECORD_SHOULD_BE_ERRORED);
-        List<Database.Error> errors = newNegativeAcct.getErrors();
-        for (Database.Error error : errors) {
-            Assert.areEqual(
-                Constants.ERROR_CANT_UPDATE_INACTIVE_ACCOUNT,
-                error.getMessage(),
-                Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
-            );
-        }
+        assertDatabaseErrorsAreCorrect(newNegativeAcct.getErrors());
     }
 
     private static void activateAccountReactivatePermission(Id userId) {
@@ -429,5 +301,27 @@ private class TestAccountsService {
         );
 
         insert new List<SObject>{ sea, psa };
+    }
+
+    private static void assertDatabaseErrorsAreCorrect(List<Database.Error> errors) {
+        for (Database.Error error : errors) {
+            Assert.areEqual(
+                Constants.ERROR_CANT_UPDATE_INACTIVE_ACCOUNT,
+                error.getMessage(),
+                Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
+            );
+        }
+    }
+
+    private static void executePermissionAssignedScenario(List<Account> newRecords, Map<Id, Account> oldRecords) {
+        User testUser = TestDataFactory.getInstance().createUser(USER_EMAIL);
+        System.runAs(testUser) {
+            activateAccountReactivatePermission(testUser.Id);
+        }
+        Test.startTest();
+        System.runAs(testUser) {
+            AccountsService.getInstance().preventUpdatesOnInactive(newRecords, oldRecords);
+        }
+        Test.stopTest();
     }
 }
