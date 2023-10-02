@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Account_MakeActiveOnInsert__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Enable/Disable activation of new accounts before they are inserted</description>
+    <externalId>false</externalId>
+    <label>Account.MakeActiveOnInsert</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>
