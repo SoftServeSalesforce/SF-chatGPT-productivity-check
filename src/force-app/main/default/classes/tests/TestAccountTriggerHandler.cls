@@ -51,10 +51,7 @@ private class TestAccountTriggerHandler {
         //Execute scenario.
         AccountTriggerHandler.getInstance().run(newRecords, oldRecords, operation);
         //Verify outcomes.
-        ((CustomSettingsSelector) mocks.verify(
-            mockedSelector,
-            SETTINGS_SELECTOR_EXECUTIONS_ON_BEFORE_INSERT_WHEN_ACTIVE
-        )).getFeaturesEnabler();
+        verifySelectorExecutions(mocks, mockedSelector, SETTINGS_SELECTOR_EXECUTIONS_ON_BEFORE_INSERT_WHEN_ACTIVE);
     }
 
     /**
@@ -83,10 +80,7 @@ private class TestAccountTriggerHandler {
         //Execute scenario.
         AccountTriggerHandler.getInstance().run(newRecords, oldRecords, operation);
         //Verify outcomes.
-        ((CustomSettingsSelector) mocks.verify(
-            mockedSelector,
-            SETTINGS_SELECTOR_EXECUTIONS_ON_BEFORE_UPDATE_WHEN_ACTIVE
-        )).getFeaturesEnabler();
+        verifySelectorExecutions(mocks, mockedSelector, SETTINGS_SELECTOR_EXECUTIONS_ON_BEFORE_UPDATE_WHEN_ACTIVE);
     }
 
     /**
@@ -122,10 +116,7 @@ private class TestAccountTriggerHandler {
         }
         //Verify outcomes.
         System.assertEquals(expected, actual, Constants.ERROR_UNEXPECTED_TRIGGER_HANDLER_OPERATION_MESSAGE);
-        ((CustomSettingsSelector) mocks.verify(
-            mockedSelector,
-            SETTINGS_SELECTOR_EXECUTIONS_AT_RUN
-        )).getFeaturesEnabler();
+        verifySelectorExecutions(mocks, mockedSelector, SETTINGS_SELECTOR_EXECUTIONS_AT_RUN);
     }
 
     /**
@@ -156,10 +147,7 @@ private class TestAccountTriggerHandler {
         //Execute scenario.
         AccountTriggerHandler.getInstance().run(newRecords, oldRecords, operation);
         //Verify outcomes.
-        ((CustomSettingsSelector) mocks.verify(
-            mockedSelector,
-            SETTINGS_SELECTOR_EXECUTIONS_AT_RUN
-        )).getFeaturesEnabler();
+        verifySelectorExecutions(mocks, mockedSelector, SETTINGS_SELECTOR_EXECUTIONS_AT_RUN);
     }
 
     /**
@@ -187,10 +175,8 @@ private class TestAccountTriggerHandler {
         //Execute scenario.
         AccountTriggerHandler.getInstance().onBeforeInsert(newRecords);
         //Verify outcomes.
-        ((CustomSettingsSelector) mocks.verify(
-            mockedSelector,
-            SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREINSERT
-        )).getFeaturesEnabler();
+        verifySelectorExecutions(mocks, mockedSelector, SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREINSERT);
+
         ((AccountsService) mocks.verify(
             mockedService
         )).makeActive((List<Account>)newRecords);
@@ -221,10 +207,8 @@ private class TestAccountTriggerHandler {
         //Execute scenario.
         AccountTriggerHandler.getInstance().onBeforeInsert(newRecords);
         //Verify outcomes.
-        ((CustomSettingsSelector) mocks.verify(
-            mockedSelector,
-            SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREINSERT
-        )).getFeaturesEnabler();
+        verifySelectorExecutions(mocks, mockedSelector, SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREINSERT);
+
         ((AccountsService) mocks.verify(
             mockedService,
             fflib_ApexMocks.NEVER
@@ -259,10 +243,8 @@ private class TestAccountTriggerHandler {
         //Execute scenario.
         AccountTriggerHandler.getInstance().onBeforeUpdate(newRecords, oldRecords);
         //Verify outcomes.
-        ((CustomSettingsSelector) mocks.verify(
-            mockedSelector,
-            SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREUPDATE
-        )).getFeaturesEnabler();
+        verifySelectorExecutions(mocks, mockedSelector, SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREUPDATE);
+
         ((AccountsService) mocks.verify(
             mockedService
         )).preventUpdatesOnInactive((List<Account>)newRecords, (Map<Id,Account>)oldRecords);
@@ -285,19 +267,17 @@ private class TestAccountTriggerHandler {
         FeaturesEnabler__c enabler = new FeaturesEnabler__c(
             Account_PreventUpdatesOnInactive__c = false
         );
-        List<Account> newRecords = new List<Account>{};
-        Map<Id,Account> oldRecords = new Map<Id,Account> {};
         //Stub data.
         mocks.startStubbing();
         mocks.when(mockedSelector.getFeaturesEnabler()).thenReturn(enabler);
         mocks.stopStubbing();
+        // Prepare dummy data.
+        List<Account> newRecords = new List<Account>{};
+        Map<Id,Account> oldRecords = new Map<Id,Account> {};
         //Execute scenario.
         AccountTriggerHandler.getInstance().onBeforeUpdate(newRecords, oldRecords);
         //Verify outcomes.
-        ((CustomSettingsSelector) mocks.verify(
-            mockedSelector,
-            SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREUPDATE
-        )).getFeaturesEnabler();
+        verifySelectorExecutions(mocks, mockedSelector, SETTINGS_SELECTOR_EXECUTIONS_AT_ONBEFOREUPDATE);
         ((AccountsService) mocks.verify(
             mockedService,
             fflib_ApexMocks.NEVER
@@ -305,5 +285,16 @@ private class TestAccountTriggerHandler {
             (List<Account>)fflib_Match.anyList(),
             (Map<Id,Account>)fflib_Match.anyObject()
         );
+    }
+
+    private static void verifySelectorExecutions(
+        fflib_ApexMocks mocks,
+        CustomSettingsSelector mockedSelector,
+        Integer expectedExecutions
+    ) {
+        ((CustomSettingsSelector) mocks.verify(
+            mockedSelector,
+            expectedExecutions
+        )).getFeaturesEnabler();
     }
 }
