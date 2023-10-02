@@ -1,0 +1,10 @@
+Rollut plan: 
+
+1. Changes - Modified 'preventStatusChangeByNotAnOwner' adding usage of new class 'UserSelector' thats selecting inactive users for cases
+Now you can change status of case without being owner of the Case in case that woner is inactive. 
+Added TestUtility for new testing class TestUserSelector as well as two new methods in TestCasesService, one new added constant
+2. Pre-deployment Steps
+3. Metadata Changes:
+- Apex Classes(UserSelector, TestUserSelector ,CaseService.cls, TestCaseService, Constants, TestUtility)
+3. Post-Deployment Steps
+------------
