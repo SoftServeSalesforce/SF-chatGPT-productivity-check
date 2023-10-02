@@ -1,0 +1,26 @@
+Step 1: Create a New Scratch Org & Authenticate
+
+Step 2: Deploy entire force-app folder
+
+Step 3: Execute below commands in given order to create the Customer Support Agent User:
+
+	1. Set the JSON file path and profile ID replacement:
+
+	$jsonFilePath = "user1.json"
+	$profileIdReplacement = (Get-Content "profileId.json" | ConvertFrom-Json).result.records[0].Id
+
+	//verify the id got returned
+	echo $profileIdReplacement
+	
+	2. Set the Profile Id to a valid one by running those commands.
+
+	$jsonContent = Get-Content $jsonFilePath | Out-String | ConvertFrom-Json
+	$jsonContent.ProfileId = $profileIdReplacement
+	$jsonContent | ConvertTo-Json | Set-Content $jsonFilePath
+	
+	3. Create the user.
+	sfdx force:user:create -f user1.json
+
+	4. Verify if all fields on the user were populated correctly & assign the user with a permission set group manually
+	
+Step 4: Create a default custom setting record manually (setting name: 'Features Enabler') with both checkboxes checked.

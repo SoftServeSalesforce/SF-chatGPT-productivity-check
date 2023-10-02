@@ -1,0 +1,2 @@
+this part is incomplete due to multiple problems and lack of time to finish
+failing to properly implement the communication between lwc & aura via aura event & opening the case creation tab with prepopulated data

@@ -1,6 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
     <flexiPageRegions>
+        <itemInstances>
+            <componentInstance>
+                <componentInstanceProperties>
+                    <name>eager</name>
+                    <type>decorator</type>
+                    <value>true</value>
+                </componentInstanceProperties>
+                <componentInstanceProperties>
+                    <name>height</name>
+                    <type>decorator</type>
+                    <value>185</value>
+                </componentInstanceProperties>
+                <componentInstanceProperties>
+                    <name>icon</name>
+                    <type>decorator</type>
+                    <value>fallback</value>
+                </componentInstanceProperties>
+                <componentInstanceProperties>
+                    <name>label</name>
+                    <type>decorator</type>
+                    <value>Create Actions</value>
+                </componentInstanceProperties>
+                <componentInstanceProperties>
+                    <name>scrollable</name>
+                    <type>decorator</type>
+                    <value>true</value>
+                </componentInstanceProperties>
+                <componentInstanceProperties>
+                    <name>width</name>
+                    <type>decorator</type>
+                    <value>340</value>
+                </componentInstanceProperties>
+                <componentName>createActionsAuraContainer</componentName>
+                <identifier>createActionsAuraContainer</identifier>
+            </componentInstance>
+        </itemInstances>
         <name>utilityItems</name>
         <type>Region</type>
     </flexiPageRegions>
@@ -13,7 +49,7 @@
         <name>one:utilityBarTemplateDesktop</name>
         <properties>
             <name>isLeftAligned</name>
-            <value>true</value>
+            <value>false</value>
         </properties>
     </template>
     <type>UtilityBar</type>

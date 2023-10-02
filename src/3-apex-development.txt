@@ -1,0 +1,15 @@
+Change #1 (AccountService):
+    - Created the AccountService class to manage Account-related logic.
+    - Implemented the preventInactiveUpdate method to prevent updates to inactive Accounts by checking the Active__c field.
+
+Change #2 (AccountTriggerHandler):
+    - Created the AccountTriggerHandler class to handle trigger logic for Account objects.
+    - Calls the preventInactiveUpdate method from AccountService when triggered.
+
+Change #3 (AccountSelector):
+    - Introduced the AccountSelector class.
+    - Implemented the getActiveAccounts method to retrieve active Account records from the database.
+
+Change #4 (unit tests):
+    - Created test class & methods to validate the AccountService, AccountTriggerHandler, and AccountSelector functionality.
+    - Ensured 80%+ coverage was provided.

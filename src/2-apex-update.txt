@@ -1,0 +1,15 @@
+
+Change #1 (UserSelector):
+    - Created the UserSelector class to include a getActiveUsers method for retrieving active UserSelector
+
+Change #2 (CaseService):
+    1.  Refactored the logic within the preventStatusChangeByNotAnOwner method to:
+        - Create a map called caseOwners to store the Id of the case as the key and the OwnerId as the value for cases where the status is changed.
+        - Retrieve a list of activeUsers using UserSelector.getInstance().getActiveUsers based on the OwnerId values from the caseOwners map.
+        - Create a map called activeOwners to store the Id of the user as the key and the user object as the value for active users.
+        - Loop through the newRecords and check if the case's status has changed, the owner is not the current user, and the owner exists in the activeOwners map. If these conditions are met, an error is thrown.
+
+Change #3 (CaseServiceTest): 
+    1. Added comments for improved readability.
+    2. Adjusted the setup data to create an inactive user for the "testPreventStatusChangeByNotAnOwner_Inactive" scenario.
+    3. Created a new test method, "testPreventStatusChangeByNotAnOwner_Inactive," to test the case where an inactive owner tries to change the case status.
