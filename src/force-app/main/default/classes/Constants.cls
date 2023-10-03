@@ -6,6 +6,10 @@ public with sharing class Constants {
     public static final String CASE_STATUS_CLOSED = 'Closed';
     public static final String ERROR_PLEASE_CLAIM_CASE_BEFORE_CHANGING_ITS_STATUS = 'Please claim case before changing its status!';
 
+    public static final String YES = 'Yes';
+    public static final String NO = 'No';
+    public static final String ERROR_INACTIVE_ACCOUNT_UPDATE_MESSAGE = 'Inactive account can not be update!';
+
     @TestVisible
     private static final String ERROR_INSTANCE_SHOULD_BE_NULL = 'Instance should be null.';
     @TestVisible
