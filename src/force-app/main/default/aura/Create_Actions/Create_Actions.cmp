@@ -1,0 +1,6 @@
+<aura:component implements="force:hasRecordId,flexipage:availableForAllPageTypes"
+access="global">
+    <div>         
+        <c:createCase recordId="{!v.recordId}" oncreatecase="{!c.handleCreateCase}"></c:createCase>
+    </div>
+</aura:component>

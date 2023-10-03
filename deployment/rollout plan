@@ -1,0 +1,15 @@
+1. Checkout branch https://github.com/SoftServeSalesforce/SF-chatGPT-productivity-check/tree/uc3_mmaksy
+
+2. Deploy project to your org using 'sf project deploy start' command.
+
+3. After deployment - create new active user to properly test functionality: 
+
+    User License: Salesforce; 
+
+    Profile: Customer Support; 
+
+4. Assign user to  'Customer Support Member' Permission Group;  
+
+5. Go to Custom Settings and create a 'Features Enabler' record to test accordingly.
+
+6. Through Setup -> App Manager, select 'Customer Support' app, click edit Utility items tab click add utility item and select 'Create Actions' component, save.

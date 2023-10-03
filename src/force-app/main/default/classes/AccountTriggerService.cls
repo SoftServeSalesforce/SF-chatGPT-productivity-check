@@ -22,13 +22,13 @@ public with sharing class AccountTriggerService {
 
     private void setAccountsAsActive(List<Account> newRecords) {
         for(Account acc : newRecords) {
-            acc.Active__c = 'true';
+            acc.IsActive__c = true;
         }      
     }
 
     private void validateActiveAccounts(List<Account> newRecords, Map<Id,Account> oldRecords) {
         for(Account acc : newRecords) {
-            if(oldRecords.get(acc.Id).Active__c== null || !Boolean.valueOf(oldRecords.get(acc.Id).Active__c)) {
+            if(!oldRecords.get(acc.Id).IsActive__c) {
                 acc.addError(Constants.ERROR_NON_ACTIVE_ACCOUNT_UPDATE);
             }
         }      

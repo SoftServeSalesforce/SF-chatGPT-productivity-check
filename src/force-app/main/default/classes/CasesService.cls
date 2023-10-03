@@ -1,4 +1,5 @@
 public with sharing class CasesService {
+
     @TestVisible
     private static CasesService instance;   
 
@@ -7,7 +8,7 @@ public with sharing class CasesService {
             instance = new CasesService();
         }
         return instance;
-    }
+    }    
 
     public void preventStatusChangeByNotAnOwner(List<Case> newRecords, Map<Id,Case> oldRecords) {
         Id uId = UserInfo.getUserId();
@@ -19,6 +20,26 @@ public with sharing class CasesService {
                 if(isStatusUpdateRestricted(uId, caseOwners.get(oldCase.OwnerId))) {  
                     newCase.addError(Constants.ERROR_PLEASE_CLAIM_CASE_BEFORE_CHANGING_ITS_STATUS);
                 }
+            }
+        }
+    }
+
+    public static CreateCaseController.CaseDTO handleGetRecordData(Id recordId) {
+        SObjectType type = recordId.getSObjectType();
+        switch on String.valueOf(type)
+        {
+            when 'Account' {                
+                return new CreateCaseController.CaseDTO(recordId, null, null);
+            }
+            when 'Contact' {
+                Contact con = ContactSelector.getContactById(recordId);
+                return new CreateCaseController.CaseDTO(con.AccountId, con.Id, null);
+            }
+            when 'Case' {
+                return new CreateCaseController.CaseDTO(CaseSelector.getCaseById(recordId));
+            }
+            when else { 
+                throw new AuraHandledException(Constants.ERROR_UNSUPPORTED_OBJECT_TYPE);
             }
         }
     }

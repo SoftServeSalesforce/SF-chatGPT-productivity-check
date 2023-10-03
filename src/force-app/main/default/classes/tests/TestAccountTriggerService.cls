@@ -1,5 +1,6 @@
 @IsTest
-private class TestAccountTriggerService {    
+private class TestAccountTriggerService {
+    
 
     @IsTest
     static void testSetAccountsAsActiveSuccess() { 
@@ -13,7 +14,7 @@ private class TestAccountTriggerService {
         Account account = (Account) TestDataFactory.createSObject(
                 new Account(
                         Name = 'Test Account',
-                        Active__c = 'false'
+                        IsActive__c = false
                 ),
                 'TestDataFactory.AccountDefaults',
                 false
@@ -27,18 +28,17 @@ private class TestAccountTriggerService {
                 false
         );
         accounts.add(accountWithActiveNull);        
-        Assert.areEqual('false', account.Active__c, 'Active property set to false');
-        Assert.areEqual(null, accountWithActiveNull.Active__c, 'Active property should be null');
+        Assert.areEqual(false, account.IsActive__c, 'Active property set to false');        
         mocks.startStubbing();
             mocks.when(mockedSelector.getFeaturesEnabler()).thenReturn(enabler);
         mocks.stopStubbing();
         Test.startTest();
             insert accounts;
         Test.stopTest();
-        List<Account> insertedAccounts = [SELECT Id, Active__c FROM Account WHERE Name IN ('Test Account', 'Test Account2')];
+        List<Account> insertedAccounts = [SELECT Id, IsActive__c FROM Account WHERE Name IN ('Test Account', 'Test Account2')];
         Assert.areEqual(2, insertedAccounts.size(), 'Expected 2 accounts to be inserted');        
         for(Account acc : insertedAccounts) {            
-            Assert.areEqual('true', acc.Active__c, 'Active property updated to true');
+            Assert.areEqual(true, acc.IsActive__c, 'Active property updated to true');
         }        
     }
 
@@ -54,20 +54,20 @@ private class TestAccountTriggerService {
         Account account = (Account) TestDataFactory.createSObject(
                 new Account(
                         Name = 'Test Account',
-                        Active__c = 'false'
+                        IsActive__c = false
                 ),
                 'TestDataFactory.AccountDefaults',
                 false
         );        
-        Assert.areEqual('false', account.Active__c, 'Active property set to false');        
+        Assert.areEqual(false, account.IsActive__c, 'Active property set to false');        
         mocks.startStubbing();
             mocks.when(mockedSelector.getFeaturesEnabler()).thenReturn(enabler);
         mocks.stopStubbing();
         Test.startTest();
             insert account;
         Test.stopTest();
-        Account insertedAccount = [SELECT Id, Active__c FROM Account WHERE Name = 'Test Account' LIMIT 1];
-        Assert.areEqual('false', insertedAccount.Active__c, 'Active property should not be updated');      
+        Account insertedAccount = [SELECT Id, IsActive__c FROM Account WHERE Name = 'Test Account' LIMIT 1];
+        Assert.areEqual(false, insertedAccount.IsActive__c, 'Active property should not be updated');      
     }
 
     @IsTest
@@ -84,7 +84,7 @@ private class TestAccountTriggerService {
         Account account = (Account) TestDataFactory.createSObject(
                 new Account(
                         Name = 'Test Account',
-                        Active__c = 'true'
+                        IsActive__c = true
                 ),
                 'TestDataFactory.AccountDefaults',
                 false
@@ -118,13 +118,13 @@ private class TestAccountTriggerService {
         Account account = (Account) TestDataFactory.createSObject(
                 new Account(
                         Name = 'Test Account',
-                        Active__c = 'true'
+                        IsActive__c = true
                 ),
                 'TestDataFactory.AccountDefaults',
                 false
         );
         insert account;
-        account.Active__c = 'false';
+        account.IsActive__c = false;
         update account;        
         Exception e;
         Test.startTest();
