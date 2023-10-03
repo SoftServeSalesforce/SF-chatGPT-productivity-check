@@ -52,3 +52,4 @@ None.
 
 # Post-Deployment Manual Steps
 After deployment run all tests and ensure that all tests executed successfully.
+Using SFDC Setup on target environment navigate to the "Apex Classes" menu, locate the Apex Class named CreateActionsController, then click on the "Security" link next to it and move "Customer Support" profile from Available Profiles to Enabled Profiles and press save.
