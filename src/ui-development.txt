@@ -1,0 +1,10 @@
+Rollut plan: 
+
+1. Changes - created console utility bar to help with the process of case creation for agents
+2. Pre-deployment  
+-------------------------
+3. Metadata Changes:
+- flexipages - new Customer_Support_UtilityBar
+- Apex Classes(CreateCasesAgentController, TestCreateCasesAgentController)
+3. Post-Deployment Steps
+--------------------------
