@@ -1,1 +1,10 @@
-unpause
+Rollut plan: 
+
+1. Changes - customizably by custom settings now you can enable functionality so that allatounts will be made active on Account_AlwaysActiveWhenInsert__c
+Fucntionality that will block the update if account is not active also can be enabled with custom settings
+2. Pre-deployment Steps
+3. Metadata Changes:
+ - Custom Settings - new fields(Account_Trigger__c, Account_AlwaysActiveWhenInsert__c, Account_PreventFromUpdatingInactive__c)
+- Apex Classes(AccountService, AccountTrigger ,TestAccountService, TestAccountTriggerHandler, AccountTriggerHandler, TestUtility - modified)
+3. Post-Deployment Steps
+------------
