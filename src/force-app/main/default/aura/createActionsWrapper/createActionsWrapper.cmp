@@ -1,0 +1,4 @@
+<aura:component implements="force:hasRecordId,flexipage:availableForAllPageTypes" access="global">
+    <aura:handler name="change" value="{!v.recordId}" action="{!c.onRecordIdChange}"/>
+    <c:createActions recordId="{!v.recordId}" />
+</aura:component>	

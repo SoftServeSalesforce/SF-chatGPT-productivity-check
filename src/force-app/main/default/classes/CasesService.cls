@@ -11,17 +11,12 @@ public with sharing class CasesService {
 
     public void preventStatusChangeByNotAnOwner(List<Case> newRecords, Map<Id,Case> oldRecords) {
         Id uId = UserInfo.getUserId();
-
-        /** use oldOwnerIds make sence if Users in org a lot,
-         * otherwise delete from SOQL 'WHERE Id IN :oldOwnerIds LIMIT 50000'
-         * and code from 15 to 18
-         *  */ 
         Set<Id> oldOwnerIds = new Set<Id>();
         for (Case oldCase : oldRecords.values()) {
             oldOwnerIds.add(oldCase.OwnerId);
         }
 
-        Map<Id, User> users = new Map<Id, User>([SELECT Id, IsActive FROM User WHERE Id IN :oldOwnerIds LIMIT 50000]);
+        Map<Id, User> users = new Map<Id, User>([SELECT Id, IsActive FROM User WHERE Id IN :oldOwnerIds]);
         for (Case newCase : newRecords) {
             Case oldCase = oldRecords.get(newCase.Id);
             if (
