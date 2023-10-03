@@ -13,6 +13,9 @@ public with sharing class CreateActionsController {
 
     @AuraEnabled
     public static CaseDefaultData getAccountContactName(final Id recordId) {
+        if (recordId == null) {
+            return null;
+        }
         String objectType = recordId.getSObjectType().getDescribe().getName();
         if (objectType == 'Account') {
             return new CaseDefaultData(recordId, null);
