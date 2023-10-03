@@ -1,0 +1,19 @@
+a.	Change description:
+        1.	Create Console Utility Bar component called “Create Actions” for “Customer Support” app
+        2.  “Create Case” action in Console Utility Bar component allows create new cases with prepopulated Account and Contact Nane if it possible
+b.	Pre-deployment steps:
+    None
+c.	Metadata changes listing:
+        LWC:
+            createActions
+        Aura:
+            createActionsWrapper bundle
+        Apex Classes:
+            CreateActionsController.cls
+            TestCreateActionsController.cls
+        Permission Set
+            Manage_Casses (add permission for CreateActionsController Apex Class) 
+        flexipage    
+            Customer_Support_UtilityBar.flexipage (add 'Create Actions' component)
+d.	Post-deployment steps:
+    None
