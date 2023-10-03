@@ -1,3 +1,64 @@
 Start: 03 Oct 2023, 8:10
 Pause 03 Oct 2023, 8:57
 Back to work 03 Oct 2023, 9:55
+Done 03 Oct 2023 12:37
+Total time: 47 min before pause + 167 min after pause = 214 min test dev from it 71 min
+Development: 143 min
+Test Development: 71 min
+
+AI Usage:
+*** createActionsWrapperAura - minor autocompletion
+***
+*** createActions LWC
+handlePublishCreateActions(url) {
+    let payload = {buildUrl: url};
+    publish(this.messageContext, createActions, payload);
+
+}
+
+handleDisplayToast(title, message, variant) {
+    const evt = new ShowToastEvent({
+        title: title,
+        message: message,
+        variant: variant,
+    });
+    this.dispatchEvent(evt);
+}
+***
+*** ContactSelector.cls full autocompletion
+public with sharing class ContactSelector {
+    @TestVisible
+    private static ContactSelector instance;
+
+    public static ContactSelector getInstance() {
+        if (instance == null) {
+            instance = new ContactSelector();
+        }
+        return instance;
+    }
+
+    public Contact getContactWithAccountId(Id contactId) {
+        return [SELECT Id, AccountId FROM Contact WHERE Id = :contactId WITH SECURITY_ENFORCED LIMIT 1];
+    }
+}
+***
+*** CreateActionsUnsupportedException.cls none
+***
+*** CreateActionsController.cls constants autocompletion
+@TestVisible
+private static final String CREATE_CASE_SUPPORTED_SOBJECT_TYPE_CASE = 'Case';
+@TestVisible
+private static final String CREATE_CASE_SUPPORTED_SOBJECT_TYPE_CONTACT = 'Contact';
+@TestVisible
+private static final String CREATE_CASE_SUPPORTED_SOBJECT_TYPE_ACCOUNT = 'Account';
+
+private NewCaseDetailsResponse(){
+   this.caseOrigin = Constants.CASE_CREATE_DEFAULT_ORIGIN;
+}
+        if(recordSObjectType == null || recordSObjectType.equals(CREATE_CASE_SUPPORTED_SOBJECT_TYPE_CASE)) {
+        if(recordSObjectType.equals(CREATE_CASE_SUPPORTED_SOBJECT_TYPE_ACCOUNT)) {
+        if(recordSObjectType.equals(CREATE_CASE_SUPPORTED_SOBJECT_TYPE_CONTACT)) {
+        throw new CreateActionsUnsupportedException(
+            Constants.ERROR_UNSUPPORTED_OBJECT_TYPE + recordSObjectType
+        );
+***

@@ -53,6 +53,20 @@ public with sharing class TestDataFactory {
         return cs;
     }
 
+    public Account createAccount(String name) {
+        Account acct = new Account();
+        acct.Name = name;
+        insert acct;
+        return acct;
+    }
+
+    public Contact createContact(String lastName) {
+        Contact c = new Contact();
+        c.LastName = lastName;
+        insert c;
+        return c;
+    }
+
     public List<Case> createCases(Id ownerId, Integer numberOfCases) {
         List<Case> cases = new List<Case>();
         for (Integer i = 0; i < numberOfCases; i++) {
