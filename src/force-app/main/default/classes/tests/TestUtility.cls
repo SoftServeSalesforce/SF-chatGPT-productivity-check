@@ -47,4 +47,22 @@ public with sharing class TestUtility {
         return casesToInsert;
     }
 
+    public static List<Account> insertAccounts(Boolean actives, Integer numOfAccounts) {
+        List<Account> accountsToInsert = new List<Account>();
+        for (Integer i = 0; i < numOfAccounts; i++) {
+            Account singleAccount = new Account();
+            singleAccount.Name = 'Test Account :' + i;
+            singleAccount.BillingCountry = 'Germany';
+            singleAccount.ShippingCountry = 'Germany';
+            singleAccount.Active__c = actives ? 'true' : 'false';
+            
+            accountsToInsert.add(singleAccount);
+        }
+        if(accountsToInsert.size() > 0) {
+            insert accountsToInsert;
+        }
+        
+        return accountsToInsert;
+    }
+
 }
