@@ -1,0 +1,17 @@
+Change description:
+    Created aura component that lets "Customer Support" app users to created
+    new case records right inside the app, using app's utility bar.
+
+Pre-deployment steps:
+
+Metadata changes:
+    Created "createCase" aura component.
+    Created "childCreateCase" lwc component.
+    Created 'Create Case' lightning message channel.
+    Added method to "CasesService" apex class.
+    Updated "TestCasesService" test class.
+
+Post-deployment steps:
+    Tested deployed functionality using app's UI to insure correct 
+    implementation. Ran Apex unit tests to provide code coverage. 
+    Updated necessary documentation.

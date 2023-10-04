@@ -5,3 +5,7 @@ end date: 30/09/2023 19:30
 - New functionality development (Apex)
 start date: 1/10/2023 17:00
 end date: 1/10/2023 20:00
+
+- New functionality development (Console Utility Bar Component)
+start data: 3/10/23 12:00
+end date: 3/10/23 17:00
