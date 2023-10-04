@@ -1,7 +1,13 @@
 ({
-    // myAction : function(component, event, helper) {
+    doInit: function(component, event, helper) {
+        var utilityAPI = component.find("utilitybar");
+        utilityAPI.getAllUtilityInfo().then(function (response) {
+            if (typeof response !== 'undefined') {
+                        utilityAPI.openUtility();
+            }
+        });
+    },
 
-    // }
     handleMessage: function(cmp, message, helper) {
         if (message != null) {
             const sobjName = cmp.get("v.sObjectName");

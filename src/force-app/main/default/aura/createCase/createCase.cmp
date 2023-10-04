@@ -1,5 +1,9 @@
 <aura:component implements="force:hasRecordId,flexipage:availableForAllPageTypes" access="global">
     <lightning:workspaceAPI aura:id="workspace" />
+    <aura:handler name="init" 
+                    value="{!this}"
+                    action="{!c.doInit}" />
+    <lightning:utilityBarAPI aura:id="utilitybar" />
     <lightning:messageChannel type="Create_Case__c"
                                 onMessage="{!c.handleMessage}"/>
     <c:childCreateCase sobjectId="{!v.recordId}" 
