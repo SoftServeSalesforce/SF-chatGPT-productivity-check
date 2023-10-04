@@ -29,7 +29,9 @@ Metadata Changes Listing:
     Test Classes:
         TestAccountService.cls - created new test class
         TestAccountHandler.cls - created new test class
-        TestAccountTrigger.cls - created new test class  
+        TestAccountTrigger.cls - created new test class
+    Custom Settings:
+        FutureEnabler__c - updated with new fields
 
 ---------------------------------------------------------------------------------------------
 

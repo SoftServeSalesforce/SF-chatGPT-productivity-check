@@ -1,0 +1,17 @@
+start 03.10 19:40
+
+pause 03.10 21:10 (1 30)
+
+unpause 04.10 13:00
+pause 04.10 14:30 (1 30)
+
+unpause 04.10 16:30
+
+end 18:23
+
+total
+
+development -
+testing - 
+documentation -
+repository updates -

@@ -31,4 +31,24 @@ public with sharing class CasesService {
         }
     }
     
+    public static CreateActionsController.CaseDTO handleGetRecordDetails(Id recordId) {
+        SObjectType objectType = recordId.getSObjectType();
+
+        switch on String.valueOf(objectType) {
+            when 'Account' {
+                return new CreateActionsController.CaseDTO(recordId, null, null);
+            }
+            when 'Contact' {
+                Contact con = ContactSelector.getContactById(recordId);
+                return new CreateActionsController.CaseDTO(con.AccountId, con.Id, null);
+            }
+            when 'Case' {
+                Case selectedCase = CaseSelector.getCaseById(recordId);
+                return new CreateActionsController.CaseDTO(selectedCase.AccountId, selectedCase.ContactId, selectedCase.Origin);
+            }
+            when else {
+                throw new AuraHandledException('Unsupported object type: ' + objectType);
+            }
+        }
+    }
 }
