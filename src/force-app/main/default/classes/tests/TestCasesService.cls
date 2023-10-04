@@ -185,6 +185,14 @@ private class TestCasesService {
         );
     }
 
+    @isTest
+    private static void testGetSobjectTypeById_Positive() {
+        Account acc = new Account(Name='test Account');
+        insert acc;
+        String accName = CasesService.getSobjectTypeById(acc.Id);
+        System.assertEquals('Account', accName, 'SObject Name does not match');
+    }
+
     private static User createUser(Boolean isActive) {
         Id adminProfileId = getAdminProfileId();
         return new User(

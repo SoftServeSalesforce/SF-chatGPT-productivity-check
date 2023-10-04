@@ -24,4 +24,15 @@ public with sharing class CasesService {
             }
         }
     }
+
+    @AuraEnabled
+    public static String getSobjectTypeById(Id recordId) {
+        try {
+            String objApiName = recordId.getSobjectType().getDescribe().getName();
+            return objApiName;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+
+    }
 }
