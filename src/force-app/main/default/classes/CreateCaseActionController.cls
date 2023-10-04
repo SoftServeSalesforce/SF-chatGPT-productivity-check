@@ -1,4 +1,6 @@
 public with sharing class CreateCaseActionController {
+
+    public static final String BASE_URL = '/lightning/o/Case/new?&defaultFieldValues=Origin=';
     
     public class CreateCaseActionDTO {
 
@@ -13,14 +15,14 @@ public with sharing class CreateCaseActionController {
 
         public CreateCaseActionDTO(String origin) {
             this.caseOrigin = origin;
-            url='/lightning/o/Case/new?&defaultFieldValues=Origin='+ origin;      
+            url=BASE_URL+ origin;      
            
         }
 
         public CreateCaseActionDTO(Id accountId) {
             this.caseOrigin = Constants.CASE_ORIGIN_WEB;  
             this.accountId = accountId;
-            url='/lightning/o/Case/new?&defaultFieldValues=Origin='+ Constants.CASE_ORIGIN_WEB+
+            url=BASE_URL+ Constants.CASE_ORIGIN_WEB+
             ',AccountId='+accountId;
             
            
@@ -31,12 +33,12 @@ public with sharing class CreateCaseActionController {
             this.accountId = accountId;
             this.contactId = contactId;
             if(accountId!=null){
-                url='/lightning/o/Case/new?&defaultFieldValues=Origin='+ 
+                url=BASE_URL+ 
                 Constants.CASE_ORIGIN_WEB+
                 ',AccountId='+accountId+
                 ',ContactId='+contactId;
             }else{
-                url='/lightning/o/Case/new?&defaultFieldValues=Origin='+ 
+                url=BASE_URL+ 
                 Constants.CASE_ORIGIN_WEB+
                 ',ContactId='+contactId;
             }   
@@ -46,7 +48,7 @@ public with sharing class CreateCaseActionController {
 
     }
 
-    class unsupportedTypeException extends Exception{}
+    class UnsupportedTypeException extends Exception{}
 
 
     
@@ -73,7 +75,7 @@ public with sharing class CreateCaseActionController {
 
         } catch (Exception e) {
            
-            throw new unsupportedTypeException(Constants.UNSUPPORTED_OBJECT_TYPE);
+            throw new UnsupportedTypeException(Constants.UNSUPPORTED_OBJECT_TYPE);
         }
 
     }
