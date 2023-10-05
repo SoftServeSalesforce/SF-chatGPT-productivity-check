@@ -1,0 +1,15 @@
+<aura:component implements="force:hasRecordId,flexipage:availableForAllPageTypes" access="global">
+    <lightning:utilityBarAPI aura:id="utilitybar" />
+    <lightning:workspaceAPI aura:id="workspace" />
+    
+
+    <c:utilityBarCreateActions recordId="{!v.recordId}"/>
+
+    <lightning:messageChannel type="utilityBarcreateActions__c"
+                            aura:id="utilityBarcreateActionsSmc" 
+                            scope="APPLICATION"
+                          onMessage="{!c.handleChanged}"
+                     />
+   
+
+</aura:component>	
