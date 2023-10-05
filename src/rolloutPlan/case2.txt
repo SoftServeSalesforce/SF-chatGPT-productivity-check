@@ -1,0 +1,25 @@
+Pre-release Manual Changes
+    none
+
+Deployment Package Changes
+    Apex Classes:
+        TestAccountService
+        TestAccountTrigger
+        TestAccountTriggerHandler
+        AccountService
+        AccountTriggerHandler
+        Constants
+
+    Triggers:
+        AccountTrigger
+
+    Profiles:
+        Customer Support
+
+    Custom Fields:
+        FeaturesEnabler__c.Account_Trigger__c
+        FeaturesEnabler__c.Account_PreventUpdateInactiveAccount__c
+        FeaturesEnabler__c.Account_NewAccountAlwaysActive__c    
+
+Post-release Manual Changes
+    Update Default Organization Level Value of “Features Enabler” Custom Setting with Account.Trigger, Account.PreventUpdateInactiveAccount and Account.NewAccountAlwaysActive checked;

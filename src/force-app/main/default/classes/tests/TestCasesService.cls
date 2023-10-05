@@ -23,19 +23,31 @@ private class TestCasesService {
     private static void testPreventStatusChangeByNotAnOwner_Positive() {
         //Setup data.
         Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
-        Id ownerId = UserInfo.getUserId();
+        User inactiveUser = new User(
+            Id = fflib_IDGenerator.generate(User.SObjectType),
+            IsActive = false
+        );
+        //set inactive user as owner object
         Case newCase = new Case(
             Id = caseId,
             Status = Constants.CASE_STATUS_NEW,
-            OwnerId = ownerId
+            OwnerId = inactiveUser.Id
         );
         Case oldCase = new Case(
             Id = caseId,
             Status = Constants.CASE_STATUS_CLOSED,
-            OwnerId = ownerId
+            OwnerId = inactiveUser.Id
         );
         List<Case> newRecords = new List<Case> { newCase };
-        Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
+        Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase };
+        fflib_ApexMocks mocks = new fflib_ApexMocks();
+        UserSelector userSelector = (UserSelector) mocks.mock(UserSelector.class);
+        // mock userSelector.getUsersByIds method
+        mocks.startStubbing();
+        mocks.when(userSelector.getUsersByIds(new List<Id> {inactiveUser.Id})).thenReturn(new List<User>{inactiveUser});
+        mocks.stopStubbing();
+        // set mock userSelector in CasesService class
+        CasesService.getInstance().userSelector = userSelector;
         //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.
@@ -51,19 +63,31 @@ private class TestCasesService {
     private static void testPreventStatusChangeByNotAnOwner_Negative() {
         //Setup data.
         Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
-        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
+        User activeUser = new User(
+            Id = fflib_IDGenerator.generate(User.SObjectType),
+            IsActive = true
+        );
         Case newCase = new Case(
             Id = caseId,
             Status = Constants.CASE_STATUS_NEW,
-            OwnerId = ownerId
+            OwnerId = activeUser.Id
         );
         Case oldCase = new Case(
             Id = caseId,
             Status = Constants.CASE_STATUS_CLOSED,
-            OwnerId = ownerId
+            OwnerId = activeUser.Id
         );
         List<Case> newRecords = new List<Case> { newCase };
         Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
+
+        fflib_ApexMocks mocks = new fflib_ApexMocks();
+        UserSelector userSelector = (UserSelector) mocks.mock(UserSelector.class);
+        // mock userSelector.getUsersByIds method
+        mocks.startStubbing();
+        mocks.when(userSelector.getUsersByIds(new List<Id> {activeUser.Id})).thenReturn(new List<User>{activeUser});
+        mocks.stopStubbing();
+        // set mock userSelector in CasesService class
+        CasesService.getInstance().userSelector = userSelector;
         //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.
@@ -85,30 +109,35 @@ private class TestCasesService {
      */
     @IsTest
     private static void testPreventStatusChangeByNotAnOwner_Mixed() {
-        //Setup data.
         Id caseIdPositive = fflib_IDGenerator.generate(Case.SObjectType);
         Id caseIdNegative = fflib_IDGenerator.generate(Case.SObjectType);
-        Id ownerIdPositive = UserInfo.getUserId();
-        Id ownerIdNegative = fflib_IDGenerator.generate(User.SObjectType);
+        User inactiveUser = new User(
+            Id = fflib_IDGenerator.generate(User.SObjectType),
+            IsActive = false
+        );
+        User activeUser = new User(
+            Id = fflib_IDGenerator.generate(User.SObjectType),
+            IsActive = true
+        );
         Case newCasePositive = new Case(
             Id = caseIdPositive,
             Status = Constants.CASE_STATUS_NEW,
-            OwnerId = ownerIdPositive
+            OwnerId = inactiveUser.Id
         );
         Case newCaseNegative = new Case(
             Id = caseIdNegative,
             Status = Constants.CASE_STATUS_NEW,
-            OwnerId = ownerIdNegative
+            OwnerId = activeUser.Id
         );
         Case oldCasePositive = new Case(
             Id = caseIdPositive,
             Status = Constants.CASE_STATUS_CLOSED,
-            OwnerId = ownerIdPositive
+            OwnerId = inactiveUser.Id
         );
         Case oldCaseNegative = new Case(
             Id = caseIdNegative,
             Status = Constants.CASE_STATUS_CLOSED,
-            OwnerId = ownerIdNegative
+            OwnerId = activeUser.Id
         );
         List<Case> newRecords = new List<Case> { 
             newCasePositive,
@@ -118,6 +147,14 @@ private class TestCasesService {
             caseIdPositive => oldCasePositive,
             caseIdNegative => oldCaseNegative
         }; 
+        fflib_ApexMocks mocks = new fflib_ApexMocks();
+        UserSelector userSelector = (UserSelector) mocks.mock(UserSelector.class);
+        mocks.startStubbing();
+        mocks.when(userSelector.getUsersByIds(new List<Id> {inactiveUser.Id, activeUser.Id})).thenReturn(new List<User>{inactiveUser, activeUser});
+        mocks.stopStubbing();
+         // set mock userSelector in CasesService class
+         CasesService.getInstance().userSelector = userSelector;
+
         //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.

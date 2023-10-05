@@ -3,7 +3,7 @@
     <applicationVisibilities>
         <application>Customer_Support</application>
         <default>false</default>
-        <visible>false</visible>
+        <visible>true</visible>
     </applicationVisibilities>
     <classAccesses>
         <apexClass>CaseTriggerHandler</apexClass>
@@ -35,6 +35,18 @@
     </classAccesses>
     <classAccesses>
         <apexClass>TestCustomSettingsSelector</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>CreateCaseController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>TestCreateCaseController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>UserSelector</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>

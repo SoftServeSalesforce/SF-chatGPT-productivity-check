@@ -1,0 +1,22 @@
+Pre-release Manual Changes
+    none
+
+Deployment Package Changes
+    Apex Classes:
+        TestCreateCaseController
+        CreateCaseController
+
+    Aura Components:
+        CreateCaseUtilityBar
+
+    LWC:
+        createNewCase    
+
+    Profiles:
+        Customer Support
+
+    FlexiPage:
+        Customer_Support_UtilityBar
+
+Post-release Manual Changes
+    none

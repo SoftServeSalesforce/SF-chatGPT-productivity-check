@@ -1,0 +1,14 @@
+Pre-release Manual Changes
+    none
+
+Deployment Package Changes
+    Apex Classes:
+        TestCasesService
+        TestUserSelector
+        CasesService
+        UserSelector 
+    Profiles:
+        Customer Support
+
+Post-release Manual Changes
+    Create Default Organization Level Value of “Features Enabler” Custom Setting with Case.Trigger and Case.Case.PreventStatusChangeByNotAnOwner checked;
