@@ -1,0 +1,6 @@
+Existing functionality update:
+- implemented new UserSelector apex class with one method that returns all IDs of inactive Users in Org
+- refactored preventStatusChangeByNotAnOwner() method from CaseServiceto use newly created Selector class and logic improvement 
+- pre-deployment steps
+- changed metadata: CaseService.cls, TestCaseService.cls, UserSelector.cls, TestUserSelector.cls, apex_update.txt, rollout_plan.txt
+- post-deployment steps
