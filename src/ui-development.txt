@@ -6,6 +6,9 @@ Rollut plan:
 3. Metadata Changes:
 - flexipages - new Customer_Support_UtilityBar
 - Apex Classes(CreateCasesAgentController, TestCreateCasesAgentController)
-3. Post-Deployment Steps
---------------------------
+- Aura Component - CreateCaseUtilityBar
+- LwC Component - CreateNewCase
+- updates on Profile - Customer Support
+4. Post-Deployment Steps
+After deployment you need to manually go to app manager and add component to the utility bar (CreateCaseUtilityBar)
 unpause
