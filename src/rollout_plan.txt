@@ -1,6 +1,14 @@
 Existing functionality update:
 - implemented new UserSelector apex class with one method that returns all IDs of inactive Users in Org
-- refactored preventStatusChangeByNotAnOwner() method from CaseServiceto use newly created Selector class and logic improvement 
+- refactored preventStatusChangeByNotAnOwner() method from CaseService to use newly created Selector class and logic improvement 
 - pre-deployment steps
 - changed metadata: CaseService.cls, TestCaseService.cls, UserSelector.cls, TestUserSelector.cls, apex_update.txt, rollout_plan.txt
+- post-deployment steps
+
+New functionality development:
+- implemented new logic for Account object that fires when record is created or updated.
+- pre-deployment steps
+- changed metadata: AccountService.cls, AccountTriggerHandler.cls, AccountTrigger.trigger, TestAccountService.cls, 
+                    TestAccountTriggerHandler.cls, apex_development.txt, rollout_plan.txt,
+                    Account_NewRecordIsAlwaysActive__c.field, Account_PreventUpdateIfInactive__c.field, Account_Trigger__c.field
 - post-deployment steps
