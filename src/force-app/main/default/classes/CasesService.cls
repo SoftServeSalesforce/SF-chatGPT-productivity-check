@@ -9,14 +9,45 @@ public with sharing class CasesService {
         return instance;
     }
 
-    public void preventStatusChangeByNotAnOwner(List<Case> newRecords, Map<Id,Case> oldRecords) {
+    public void preventStatusChangeByNotAnOwner(List<Case> newRecords, Map<Id, Case> oldRecords) {
+        Set<Id> inactiveUserIds = new Set<Id>();
+    
+        List<User> inactiveUsers = UserSelector.getInactiveUsers();
+        for (User user : inactiveUsers) {
+            inactiveUserIds.add(user.Id);
+        }
+    
         Id uId = UserInfo.getUserId();
         for (Case newCase : newRecords) {
-            if (
-                newCase.Status != oldRecords.get(newCase.Id).Status
-                && newCase.OwnerId != uId
-            ) {
+            Case oldCase = oldRecords.get(newCase.Id);
+    
+            if (oldCase.OwnerId != null && inactiveUserIds.contains(oldCase.OwnerId)) {
+                continue;
+            }
+    
+            if (newCase.Status != oldCase.Status && newCase.OwnerId != uId) {
                 newCase.addError(Constants.ERROR_PLEASE_CLAIM_CASE_BEFORE_CHANGING_ITS_STATUS);
+            }
+        }
+    }
+    
+    public static CreateActionsController.CaseDTO handleGetRecordDetails(Id recordId) {
+        SObjectType objectType = recordId.getSObjectType();
+
+        switch on String.valueOf(objectType) {
+            when 'Account' {
+                return new CreateActionsController.CaseDTO(recordId, null, null);
+            }
+            when 'Contact' {
+                Contact con = ContactSelector.getContactById(recordId);
+                return new CreateActionsController.CaseDTO(con.AccountId, con.Id, null);
+            }
+            when 'Case' {
+                Case selectedCase = CaseSelector.getCaseById(recordId);
+                return new CreateActionsController.CaseDTO(selectedCase.AccountId, selectedCase.ContactId, selectedCase.Origin);
+            }
+            when else {
+                throw new AuraHandledException('Unsupported object type: ' + objectType);
             }
         }
     }
