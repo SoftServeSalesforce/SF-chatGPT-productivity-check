@@ -12,3 +12,11 @@ New functionality development:
                     TestAccountTriggerHandler.cls, apex_development.txt, rollout_plan.txt,
                     Account_NewRecordIsAlwaysActive__c.field, Account_PreventUpdateIfInactive__c.field, Account_Trigger__c.field
 - post-deployment steps
+
+New functionality development (Console Utility Bar Component):
+- implemented custom Aura Component and LWC. LWC should recieve record ID from Aura Component and prepare
+  redirection URL for new Case creation and send this URL via custom message channel back to Aura wich finnaly 
+  will open a new Page for Case creation.
+- pre-deployment steps
+- changed metadata: CreateActions.cmp, createCase.lwc, Create_Actions.message_channel, Customer_Support_UtilityBar.flexipage, ui_development.txt
+- post-deployment steps
