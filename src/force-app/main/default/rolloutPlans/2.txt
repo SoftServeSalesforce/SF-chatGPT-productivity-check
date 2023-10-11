@@ -1,0 +1,35 @@
+a.	Change description:
+        Preventing users from updating Inactive Accounts.
+        Auto activate a New Account.
+b.	Pre-deployment steps:
+    None
+c.	Metadata changes listing:
+        Apex Triggers:
+            AccountTrigger.trigger
+        Apex Classes:
+            AccountService.cls
+            TestAccountService.cls
+            AccountTriggerHandler.cls
+            TestAccountTriggerHandler.cls
+            TestAccountTrigger.cls
+        Custom Settings (Add new properties)    
+            Account_Trigger__c
+            Account_PreventUpdateInactiveAccounts__c
+            Account_SetActiveNewAccounts__c
+d.	Post-deployment steps:
+        Set all Undefined Accounts as Active:
+            Open to Developer Console (Setup => Developer Console);
+            Open Execute Anonymous Window (CTRL-E or Debug => Open Execute Anonymous Window );
+            Execute Apex Code: AccountService.getInstance().setActiveAllUndefinedAccounts();
+            Ensure that not error happened;
+        Enable Account trigger features:    
+        Update Default Organization Level Value of “Features Enabler” Custom Setting with all items checked:
+            Go Setup;
+            Type in Quick Find: Custom Settings
+            Chioce 'Custom Settings'
+            Click the 'Manage' Action linck to the left of 'Futures Enabler' Label;
+            Click 'Edit' above the 'Button Default Organization Level Value' section;
+            Check Account.Trigger checkbox;
+            Check Account.SetActiveNewAccounts checkbox;
+            Check Account.PreventUpdateInactiveAccounts checkbox;
+            Click 'Save' Button.

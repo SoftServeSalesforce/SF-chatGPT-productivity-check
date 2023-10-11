@@ -1,0 +1,12 @@
+a.	Change description:
+        Allow users to update Case Status value without claiming record ownership if previous Owner is inactive.
+b.	Pre-deployment steps:
+    None
+c.	Metadata changes listing:
+        Apex Classes:
+            CaseService.cls
+            TestDataBuilderUtils.cls
+            TestCasesService.cls
+d.	Post-deployment steps:
+    None
+    
