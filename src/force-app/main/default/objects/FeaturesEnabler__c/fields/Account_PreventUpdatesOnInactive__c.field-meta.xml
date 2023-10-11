@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Account_PreventUpdatesOnInactive__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Enable/Disable prevention of updates for inactive Accounts</description>
+    <externalId>false</externalId>
+    <label>Account.PreventUpdatesOnInactive</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

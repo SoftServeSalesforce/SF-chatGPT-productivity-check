@@ -1,0 +1,163 @@
+Start: 29 Sep 2023, 16:58
+End: 01 Oct 2023, 19:37
+Pauses:
+29 Sep 2023, 18:26 - Sep 30 2023, 5:58 = 692 min pause 
+30 Sep 2023, 7:33 - Oct 1 2023, 19:15 = 2142 min pause
+Total time = 
+3039 min - 2834 min of pause + 95 min of work between pause + 22 min of work after pause
+ = 322 min
+** About 30 minutes get to fix issue with deployment to org bug - src\.sf\orgs\**\localSourceTracking\index was cleared somehow
+** About 86 minutes to get understanding of how to fix existing tests with fflib mocking Selector 
+
+AI Usage:
+*** TestDataFactory whole class
+@IsTest
+public with sharing class TestDataFactory {
+    private static TestDataFactory instance;
+    //User constants
+    private static final String PROFILE_STANDARD_USER = 'Standard User';
+    private static final String USER_LAST_NAME = 'Test';
+    private static final String USER_EMAIL_ENCODING = 'UTF-8';
+    private static final String USER_LANGUAGE_LOCALE_KEY = 'en_US';
+    private static final String USER_TIME_ZONE_SID_KEY = 'America/Los_Angeles';
+    private static final String USER_LOCALE_SID_KEY = 'en_US';
+    //Case constants
+    private static final String CASE_STATUS_NEW = 'New';
+    private static final String CASE_ORIGIN_PHONE = 'Phone';
+    private static final String CASE_PRIORITY_MEDIUM = 'Medium';
+    private static final String CASE_SUBJECT = 'Test Case';
+
+    private Id standartProfileId;
+
+    private TestDataFactory() {
+        standartProfileId = [SELECT Id FROM Profile WHERE Name =: PROFILE_STANDARD_USER].Id;
+    }
+
+    public static TestDataFactory getInstance() {
+        if (instance == null) {
+            instance = new TestDataFactory();
+        }
+        return instance;
+    }
+
+    public User createUser(String email) {
+        User user = new User();
+        user.Email = email;
+        user.IsActive = true;
+        user.Username = email + System.currentTimeMillis();
+        user.LastName = USER_LAST_NAME;
+        user.Alias = email.substring(0, 8);
+        user.ProfileId = standartProfileId;
+        user.EmailEncodingKey = USER_EMAIL_ENCODING;
+        user.LanguageLocaleKey = USER_LANGUAGE_LOCALE_KEY;
+        user.TimeZoneSidKey = USER_TIME_ZONE_SID_KEY;
+        user.LocaleSidKey = USER_LOCALE_SID_KEY;
+        insert user;
+        return user;
+    }
+
+    public Case buildCase(Id ownerId) {
+        Case cs = new Case();
+        cs.OwnerId = ownerId;
+        cs.Status = CASE_STATUS_NEW;
+        cs.Origin = CASE_ORIGIN_PHONE;
+        cs.Priority = CASE_PRIORITY_MEDIUM;
+        cs.Subject = CASE_SUBJECT;
+        return cs;
+    }
+
+    public List<Case> createCases(Id ownerId, Integer numberOfCases) {
+        List<Case> cases = new List<Case>();
+        for (Integer i = 0; i < numberOfCases; i++) {
+            cases.add(buildCase(ownerId));
+        }
+        insert cases;
+        return cases;
+    }
+
+}
+***
+*** CaseSelector
+private static CaseSelector instance;
+
+    public static CaseSelector getInstance() {
+        if (instance == null) {
+            instance = new CaseSelector();
+        }
+        return instance;
+    }
+
+    public List<Case> getAllCases() {
+        return [SELECT Id FROM Case WITH SECURITY_ENFORCED];
+    }
+***
+*** CaseService minor autocompletion 
+casesWithOwnerStatus.get(newCase.Id) != null 
+***
+*** TestCaseSelector constants autocompletion few methods
+// Test assertation constants
+    private static final String ERROR_CASES_SHOULD_NOT_BE_NULL = 'Cases should not be null';
+    private static final String ERROR_CASES_SHOULD_NOT_BE_EMPTY = 'Cases should not be empty';
+    private static final String ERROR_ACTIVE_USER_CASES_AMOUNT_SHOULD_BE = 'Amount of active user cases should be ';
+    private static final String ERROR_INACTIVE_USER_CASES_AMOUNT_SHOULD_BE = 'Amount of inactive user cases should be ';
+
+    // Data constants
+    private static final String ACTIVE_USER_EMAIL = 'active@example.com.test';
+    private static final String INACTIVE_USER_EMAIL = 'inactive@example.com.test';
+    private static final Integer NUMBER_OF_CASES = 10;
+
+    @TestSetup
+    static void makeData(){
+        User activeUser = TestDataFactory.getInstance().createUser(ACTIVE_USER_EMAIL);
+        User inactiveUser = TestDataFactory.getInstance().createUser(INACTIVE_USER_EMAIL);
+        TestDataFactory.getInstance().createCases(activeUser.Id, NUMBER_OF_CASES);
+        TestDataFactory.getInstance().createCases(inactiveUser.Id, NUMBER_OF_CASES);
+    }
+
+    @IsTest
+    private static void testGetInstance() {
+        CaseSelector original = CaseSelector.instance;
+        Assert.isNull(original, Constants.ERROR_INSTANCE_SHOULD_BE_NULL);
+        CaseSelector newInstance = CaseSelector.getInstance();
+        Assert.isNotNull(newInstance, Constants.ERROR_INSTANCE_SHOULD_NOT_BE_NULL);
+    }
+
+    @IsTest
+    private static void testGetAllCases() {
+        CaseSelector instance = CaseSelector.getInstance();
+        List<Case> cases = instance.getAllCases();
+        Assert.isNotNull(cases, ERROR_CASES_SHOULD_NOT_BE_NULL);
+        Assert.areNotEqual(0, cases.size(), ERROR_CASES_SHOULD_NOT_BE_EMPTY);
+    }
+***
+*** TestCaseService with some minor autocompletion on other methods
+/**
+     * @description testAllowStatusChange_When_OwnerIsInactive: Test method needed to
+     * ensure that 'preventStatusChangeByNotAnOwner' method of 'CasesService' class
+     * does not prevent Owner from changing Case Status when Owner is inactive.
+     */
+    @IsTest
+    private static void testAllowStatusChange_When_OwnerIsInactive() {
+        //Setup data.
+        Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
+        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
+        Case newCase = new Case(
+            Id = caseId,
+            Status = Constants.CASE_STATUS_NEW,
+            OwnerId = ownerId
+        );
+        Case oldCase = new Case(
+            Id = caseId,
+            Status = Constants.CASE_STATUS_CLOSED,
+            OwnerId = ownerId
+        );
+        List<Case> newRecords = new List<Case> { newCase };
+        Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase };
+        //Stub selector.
+        stubCaseSelectorWithUserMock(oldRecords, false);
+        //Execute scenario.
+        CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        //Verify outcomes.
+        System.assert(!newCase.hasErrors(), Constants.ERROR_RECORD_SHOULD_NOT_BE_ERRORED);
+    }
+***

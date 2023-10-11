@@ -1,0 +1,97 @@
+Start: 02 Oct 2023 4:34
+Pause: 02 Oct 2023 6:15
+Back to work: 02 Oct 2023 8:31
+End: 02 Oct 2023 11:02
+Time on timer:
+Development: 101 min
+Apex Test Development: 150 min 
+Documentation: 26 min
+Total: 277 min
+
+AI Usage:
+*** AccountsService.cls minor autocompletion
+***
+*** AccountTriggerHandler.cls autocompletion
+switch on operation {
+    when BEFORE_INSERT {
+        onBeforeInsert(newRecords);
+    }
+    when BEFORE_UPDATE {
+        onBeforeUpdate(newRecords, oldRecords);
+    }
+    when else {
+        throw new IllegalArgumentException(Constants.EXCEPTION_UNSUPPORTED_TRIGGER_OPERATION_TYPE);
+    }
+}
+***
+*** Constants.cls none AI usage
+***
+*** TestAccountsService.cls autocompletion for tests
+@IsTest
+private static void testGetInstance() {
+    //Verify that instance is null by default.
+    AccountsService original = AccountsService.instance;
+    System.assertEquals(null, original, Constants.ERROR_INSTANCE_SHOULD_BE_NULL);
+    //Verify that public accessor works.
+    AccountsService newInstance = AccountsService.getInstance();
+    System.assertNotEquals(null, newInstance, Constants.ERROR_INSTANCE_SHOULD_NOT_BE_NULL);
+}
+
+/**
+    * @description testMakeActive_Positive: Test method needed to ensure that
+    * 'makeActive' method of 'AccountsService' class sets 'Active__c' field to 'Yes' 
+    * when value not provided.
+    */
+@IsTest
+private static void testMakeActive_Default() {
+    // Setup data.
+    Account acct = new Account();
+    List<Account> newRecords = new List<Account>{ acct };
+    // Execute scenario.
+    AccountsService.getInstance().makeActive(newRecords);
+    // Verify outcomes.
+    Assert.areEqual(Constants.ACCOUNT_ACTIVE_PICKLIST_YES, acct.Active__c, ERROR_ACCOUNT_SHOULD_BE_ACTIVE);
+}
+
+/**
+    * @description testMakeActive_Positive: Test method needed to ensure that
+    * 'makeActive' method of 'AccountsService' class sets 'Active__c' field to 'Yes' 
+    * when it set to 'No'.
+    */
+@IsTest
+private static void testMakeActive_Negative() {
+    // Setup data.
+    Account acct = new Account(
+        Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_NO
+    );
+    List<Account> newRecords = new List<Account>{ acct };
+    // Execute scenario.
+    AccountsService.getInstance().makeActive(newRecords);
+    // Verify outcomes.
+    Assert.areEqual(Constants.ACCOUNT_ACTIVE_PICKLIST_YES, acct.Active__c, ERROR_ACCOUNT_SHOULD_BE_ACTIVE);
+}
+
+/**
+    * @description testMakeActive_Positive: Test method needed to ensure that
+    * 'makeActive' method of 'AccountsService' class not override 'Active__c' field 
+    * to any other value when it set to 'Yes'.
+    */
+@IsTest
+private static void testMakeActive_Positive() {
+    // Setup data.
+    Account acct = new Account(
+        Active__c = Constants.ACCOUNT_ACTIVE_PICKLIST_YES
+    );
+    List<Account> newRecords = new List<Account>{ acct };
+    // Execute scenario.
+    AccountsService.getInstance().makeActive(newRecords);
+    // Verify outcomes
+    Assert.areEqual(Constants.ACCOUNT_ACTIVE_PICKLIST_YES, acct.Active__c, ERROR_ACCOUNT_SHOULD_BE_ACTIVE);
+}
+***
+*** TestAccountTrigger.cls none AI usage
+***
+*** TestAccountTriggerHandler.cls minor autocompletion
+***
+*** AccountTrigger.trigger none AI usage
+***

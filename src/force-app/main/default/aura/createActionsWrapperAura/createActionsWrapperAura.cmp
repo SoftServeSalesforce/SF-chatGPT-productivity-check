@@ -1,0 +1,12 @@
+<aura:component implements="force:hasRecordId, force:lightningQuickAction, lightning:utilityItem" access="global">
+    <lightning:utilityBarAPI aura:id="utilitybar" />
+    <lightning:workspaceAPI aura:id="workspace" />
+    <aura:handler name="change" value="{!v.recordId}" action="{!c.onRecordIdChange}"/>
+    <aura:handler name="init" value="{!this}" action="{!c.onInit}"/>
+    <c:createActions recordId="{!v.recordId}"/>
+    <lightning:messageChannel type="createActions__c"
+                          aura:id="createActionsSmc" 
+                          scope="APPLICATION"
+                          onMessage="{!c.onCreateActionsReceived}"
+                     />
+</aura:component>

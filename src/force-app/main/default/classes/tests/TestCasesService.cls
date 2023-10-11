@@ -1,5 +1,7 @@
 @IsTest
 private class TestCasesService {
+    // Case Mock Fields
+    private static final String CASE_OWNER_LOOKUP_FIELD_NAME = 'Owner';
     /**
      * @description testGetInstance: Test method needed to ensure that singleton
      * pattern is properly implemented.
@@ -35,11 +37,13 @@ private class TestCasesService {
             OwnerId = ownerId
         );
         List<Case> newRecords = new List<Case> { newCase };
-        Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
+        Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase };
+        //Stub selector.
+        stubCaseSelectorWithUserMock(oldRecords, true);
         //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.
-        System.assert(!newCase.hasErrors());
+        System.assert(!newCase.hasErrors(), Constants.ERROR_RECORD_SHOULD_NOT_BE_ERRORED);
     }
 
     /**
@@ -64,6 +68,8 @@ private class TestCasesService {
         );
         List<Case> newRecords = new List<Case> { newCase };
         Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
+        //Stub selector.
+        stubCaseSelectorWithUserMock(oldRecords, true);
         //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.
@@ -117,7 +123,9 @@ private class TestCasesService {
         Map<Id,Case> oldRecords = new Map<Id,Case> {
             caseIdPositive => oldCasePositive,
             caseIdNegative => oldCaseNegative
-        }; 
+        };
+        //Stub selector.
+        stubCaseSelectorWithUserMock(oldRecords, true);
         //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.
@@ -131,5 +139,65 @@ private class TestCasesService {
                 Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
             );
         }
+    }
+
+    /**
+     * @description testAllowStatusChange_When_OwnerIsInactive: Test method needed to
+     * ensure that 'preventStatusChangeByNotAnOwner' method of 'CasesService' class
+     * does not prevent Owner from changing Case Status when Owner is inactive.
+     */
+    @IsTest
+    private static void testAllowStatusChange_When_OwnerIsInactive() {
+        //Setup data.
+        Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
+        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
+        Case newCase = new Case(
+            Id = caseId,
+            Status = Constants.CASE_STATUS_NEW,
+            OwnerId = ownerId
+        );
+        Case oldCase = new Case(
+            Id = caseId,
+            Status = Constants.CASE_STATUS_CLOSED,
+            OwnerId = ownerId
+        );
+        List<Case> newRecords = new List<Case> { newCase };
+        Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase };
+        //Stub selector.
+        stubCaseSelectorWithUserMock(oldRecords, false);
+        //Execute scenario.
+        CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        //Verify outcomes.
+        System.assert(!newCase.hasErrors(), Constants.ERROR_RECORD_SHOULD_NOT_BE_ERRORED);
+    }
+
+    /*
+    * @description stubCaseSelectorWithUserMock: Helper method needed to stub
+    * 'CaseSelector' selector with 'User' mock.
+    * @param oldRecords: Map<Id, Case> - Map of old Case records.
+    */
+    private static void stubCaseSelectorWithUserMock(Map<Id, Case> oldRecords, Boolean isUserActive) {
+        fflib_ApexMocks mocks = new fflib_ApexMocks();
+        Case[] mockCases = new List<Case>();
+        Map<Id, User> mockUsers = new Map<Id, User>();
+        for(Case cs: oldRecords.values()) {
+            if (!mockUsers.containsKey(cs.OwnerId)) {
+                mockUsers.put(cs.OwnerId, new User(
+                    Id = cs.OwnerId,
+                    IsActive = isUserActive
+                ));
+            }
+            User mockUser = mockUsers.get(cs.OwnerId);
+            Case mockCaseWithUser = (Case) fflib_ApexMocksUtils.setReadOnlyFields(cs, Case.class, new Map<String, Object> {
+                CASE_OWNER_LOOKUP_FIELD_NAME => mockUser
+            });
+            mockCases.add(mockCaseWithUser);
+        }
+        
+        CaseSelector mockCaseSelector = (CaseSelector) mocks.mock(CaseSelector.class);
+        CaseSelector.instance = mockCaseSelector;
+        mocks.startStubbing();
+        mocks.when(mockCaseSelector.getCasesWithOwnerStatusByIds(oldRecords.keySet())).thenReturn(mockCases);
+        mocks.stopStubbing();
     }
 }
