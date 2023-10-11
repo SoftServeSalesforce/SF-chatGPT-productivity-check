@@ -36,6 +36,7 @@ private class TestCasesService {
         );
         List<Case> newRecords = new List<Case> { newCase };
         Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
+        stubCaseSelector(oldRecords, true, ownerId);
         //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.
@@ -64,6 +65,7 @@ private class TestCasesService {
         );
         List<Case> newRecords = new List<Case> { newCase };
         Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
+        stubCaseSelector(oldRecords, true, ownerId);
         //Execute scenario.
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
         //Verify outcomes.
@@ -131,5 +133,54 @@ private class TestCasesService {
                 Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
             );
         }
+    }
+
+    /**
+     * @description testChangeWhenOwnerIsInactive: Test method needed to
+     * ensure that 'preventStatusChangeByNotAnOwner' method of 'CasesService' class
+     * is not preventing from changing status when owner is inactive
+     */
+    @IsTest
+    private static void testChangeWhenOwnerIsInactive() {
+        //Setup data.
+        Id caseId = fflib_IDGenerator.generate(Case.SObjectType);
+        Id ownerId = fflib_IDGenerator.generate(User.SObjectType);
+        Case newCase = new Case(
+            Id = caseId,
+            Status = Constants.CASE_STATUS_NEW,
+            OwnerId = ownerId
+        );
+        Case oldCase = new Case(
+            Id = caseId,
+            Status = Constants.CASE_STATUS_CLOSED,
+            OwnerId = ownerId
+        );
+        List<Case> newRecords = new List<Case> { newCase };
+        Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase };
+        //Stub selector.
+        stubCaseSelector(oldRecords, false, ownerId);
+        //Execute scenario.
+        CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        //Verify outcomes.
+        System.assert(!newCase.hasErrors(), Constants.ERROR_RECORD_SHOULDNT_BE_ERRORED);
+    }
+
+     /*
+    * @description stubUserSelector: Mock method
+    * @param oldRecords: Map<Id, Case> - Map of old Case records.
+    * @param Boolean isUserActive
+    * @param Id userId - id of an owner
+    */
+    private static void stubCaseSelector(Map<Id, Case> oldRecords, Boolean isUserActive, Id userId) {
+        fflib_ApexMocks mocks = new fflib_ApexMocks();
+        Set<Id> mockUsers = new Set<Id>();
+        if(!isUserActive && userId != null) {
+            mockUsers.add(userId);
+        }
+        UserSelector mockUserSelector = (UserSelector) mocks.mock(UserSelector.class);
+        UserSelector.instance = mockUserSelector;
+        mocks.startStubbing();
+        mocks.when(mockUserSelector.getAllInactiveUsersForCases(oldRecords.values())).thenReturn(mockUsers);
+        mocks.stopStubbing();
     }
 }

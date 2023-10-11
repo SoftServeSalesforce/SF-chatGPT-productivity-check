@@ -14,4 +14,8 @@ public with sharing class Constants {
     private static final String ERROR_RECORD_SHOULD_BE_ERRORED = 'Record should be errored.';
     @TestVisible
     private static final String ERROR_RECORD_HAS_UNEXPECTED_ERROR = 'Record has unexpected error.';
+    @TestVisible
+    private static final String ERROR_RECORD_SHOULDNT_BE_ERRORED = 'Record shouldnt be errored.';
+    @TestVisible
+    public static final String ERROR_CANT_UPDATE_NON_ACTIVE_ACCOUNT = 'Cant update account that is not active';
 }
