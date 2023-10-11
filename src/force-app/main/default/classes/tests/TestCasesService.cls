@@ -36,8 +36,11 @@ private class TestCasesService {
         );
         List<Case> newRecords = new List<Case> { newCase };
         Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
+        stubUserSelector(ownerId);
         //Execute scenario.
+        Test.startTest();
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        Test.stopTest();
         //Verify outcomes.
         System.assert(!newCase.hasErrors());
     }
@@ -65,7 +68,9 @@ private class TestCasesService {
         List<Case> newRecords = new List<Case> { newCase };
         Map<Id,Case> oldRecords = new Map<Id,Case> { caseId => oldCase }; 
         //Execute scenario.
+        Test.startTest();
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        Test.stopTest();
         //Verify outcomes.
         System.assert(newCase.hasErrors(), Constants.ERROR_RECORD_SHOULD_BE_ERRORED);
         List<Database.Error> errors = newCase.getErrors();
@@ -117,9 +122,12 @@ private class TestCasesService {
         Map<Id,Case> oldRecords = new Map<Id,Case> {
             caseIdPositive => oldCasePositive,
             caseIdNegative => oldCaseNegative
-        }; 
+        };
+        stubUserSelector(ownerIdPositive);
         //Execute scenario.
+        Test.startTest();
         CasesService.getInstance().preventStatusChangeByNotAnOwner(newRecords, oldRecords);
+        Test.stopTest();
         //Verify outcomes.
         System.assert(!newCasePositive.hasErrors(), Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR);
         System.assert(newCaseNegative.hasErrors(), Constants.ERROR_RECORD_SHOULD_BE_ERRORED);
@@ -131,5 +139,15 @@ private class TestCasesService {
                 Constants.ERROR_RECORD_HAS_UNEXPECTED_ERROR
             );
         }
+    }
+
+    private static void stubUserSelector(Id userId) {
+        fflib_ApexMocks apexMocks = new fflib_ApexMocks();
+        UserSelector stubedUserSelector = (UserSelector) apexMocks.mock(UserSelector.class);
+        UserSelector.instance = stubedUserSelector;
+
+        apexMocks.startStubbing();
+        apexMocks.when(stubedUserSelector.getAllInactiveUserIds()).thenReturn(new Set<Id>{userId});
+        apexMocks.stopStubbing();
     }
 }

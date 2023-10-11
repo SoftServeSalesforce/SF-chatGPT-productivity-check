@@ -11,11 +11,12 @@ public with sharing class CasesService {
 
     public void preventStatusChangeByNotAnOwner(List<Case> newRecords, Map<Id,Case> oldRecords) {
         Id uId = UserInfo.getUserId();
+        Set<Id> inactiveUserIds = UserSelector.getInstance().getAllInactiveUserIds();
+
         for (Case newCase : newRecords) {
-            if (
-                newCase.Status != oldRecords.get(newCase.Id).Status
-                && newCase.OwnerId != uId
-            ) {
+            Case oldCase = oldRecords.get(newCase.Id);
+            if (newCase.Status != oldCase.Status
+                && !inactiveUserIds.contains(oldCase.OwnerId)) {
                 newCase.addError(Constants.ERROR_PLEASE_CLAIM_CASE_BEFORE_CHANGING_ITS_STATUS);
             }
         }

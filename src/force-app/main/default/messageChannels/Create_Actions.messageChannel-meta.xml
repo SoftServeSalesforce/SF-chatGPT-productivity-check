@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningMessageChannel xmlns="http://soap.sforce.com/2006/04/metadata">
+    <masterLabel>CreateActions</masterLabel>
+    <isExposed>true</isExposed>
+    <description>This Lightning Message Channel sends information from LWC to Aura</description>
+
+    <lightningMessageFields>
+        <fieldName>URL</fieldName>
+        <description>Redirection URL for newly created Case record</description>
+    </lightningMessageFields>
+
+</LightningMessageChannel>
